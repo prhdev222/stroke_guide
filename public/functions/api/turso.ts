@@ -48,7 +48,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   try {
-    const tursoResp = await fetch(`${TURSO_URL}/v2/pipeline`, {
+    const url = TURSO_URL.startsWith("http") ? TURSO_URL : `https://${TURSO_URL.replace(/^libsql:\/\//, "").replace(/^\/+/, "")}`;
+    const tursoResp = await fetch(`${url}/v2/pipeline`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${TURSO_AUTH_TOKEN}`,
@@ -70,7 +71,22 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       }),
     });
 
-    const data: any = await tursoResp.json();
+    const raw = await tursoResp.text();
+    if (!raw) {
+      return new Response(
+        JSON.stringify({ error: "Turso returned empty response" }),
+        { status: 502, headers: corsHeaders }
+      );
+    }
+    let data: any;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid Turso response" }),
+        { status: 502, headers: corsHeaders }
+      );
+    }
 
     if (data.results?.[0]?.type === "error") {
       return new Response(
