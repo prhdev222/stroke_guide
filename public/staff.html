@@ -1156,7 +1156,7 @@ async function tursoExec(sql,args=[]){
     });
     const text=await r.text();
     if(!text){return{error:r.status===500?'Server error':r.status+' '+r.statusText};}
-    let d; try{d=JSON.parse(text);}catch(){return{error:'Invalid response from server'};}
+    let d; try{d=JSON.parse(text);}catch(e){return{error:'Invalid response from server'};}
     if(d.error)return{error:d.error};
     return{rows:d.rows||[]};
   }catch(e){return{error:e.message};}

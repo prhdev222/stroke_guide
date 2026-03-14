@@ -141,7 +141,7 @@ button{font-family:inherit;cursor:pointer}
 <script>
 // ── CONFIG (saved in localStorage) ──
 function getCfg(){
-  try{return JSON.parse(localStorage.getItem('stroke_menu_cfg')||'{}');}catch{return {};}
+  try{return JSON.parse(localStorage.getItem('stroke_menu_cfg')||'{}');}catch(e){return {};}
 }
 function saveCfg(c){localStorage.setItem('stroke_menu_cfg',JSON.stringify(c));}
 function getPin(){return localStorage.getItem('menu_pin')||'2567';}
@@ -173,7 +173,7 @@ function rHome(){
   <div style="font-size:13px;color:var(--tx2);margin-bottom:18px">เลือกโหมดการใช้งาน</div>
   </div>
 
-  <a class="launch-card" href="${STAFF_FILE}" style="border-color:var(--dbd)">
+  <a class="launch-card" href="/staff.html" style="border-color:var(--dbd)">
     <div class="launch-icon" style="background:var(--dbg)">🔐</div>
     <div>
       <div class="launch-title">Staff Mode</div>
@@ -182,7 +182,7 @@ function rHome(){
     <div class="launch-arrow">›</div>
   </a>
 
-  <a class="launch-card" href="${GUEST_FILE}" style="border-color:var(--sbd)">
+  <a class="launch-card" href="/guest.html" style="border-color:var(--sbd)">
     <div class="launch-icon" style="background:var(--sbg)">⚡</div>
     <div>
       <div class="launch-title">Guest Mode</div>
