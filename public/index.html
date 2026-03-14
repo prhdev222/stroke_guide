@@ -141,13 +141,14 @@ button{font-family:inherit;cursor:pointer}
 <script>
 // ── CONFIG (saved in localStorage) ──
 function getCfg(){
-  try{return JSON.parse(localStorage.getItem('stroke_menu_cfg')||'{}');}catch(e){return {};}
+  try{return JSON.parse(localStorage.getItem('stroke_menu_cfg')||'{}');}catch{return {};}
 }
 function saveCfg(c){localStorage.setItem('stroke_menu_cfg',JSON.stringify(c));}
 function getPin(){return localStorage.getItem('menu_pin')||'2567';}
 
-const STAFF_FILE='/staff.html';
-const GUEST_FILE='/guest.html';
+// Staff file paths (same folder assumed)
+const STAFF_FILE='stroke_staff_wizard.html';
+const GUEST_FILE='stroke_guest.html';
 
 // ── CLOCK ──
 setInterval(()=>{const d=new Date();const el=document.getElementById('clockEl');if(el)el.textContent=d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});},1000);
@@ -173,7 +174,7 @@ function rHome(){
   <div style="font-size:13px;color:var(--tx2);margin-bottom:18px">เลือกโหมดการใช้งาน</div>
   </div>
 
-  <a class="launch-card" href="/staff.html" style="border-color:var(--dbd)">
+  <a class="launch-card" href="${STAFF_FILE}" style="border-color:var(--dbd)">
     <div class="launch-icon" style="background:var(--dbg)">🔐</div>
     <div>
       <div class="launch-title">Staff Mode</div>
@@ -182,7 +183,7 @@ function rHome(){
     <div class="launch-arrow">›</div>
   </a>
 
-  <a class="launch-card" href="/guest.html" style="border-color:var(--sbd)">
+  <a class="launch-card" href="${GUEST_FILE}" style="border-color:var(--sbd)">
     <div class="launch-icon" style="background:var(--sbg)">⚡</div>
     <div>
       <div class="launch-title">Guest Mode</div>
@@ -214,19 +215,21 @@ function rHome(){
   </div>`;
 }
 
-// ── TURSO API (via server-side proxy) ──
+// ── TURSO API ──
 async function tursoQuery(sql,args=[]){
+  const cfg=getCfg();
+  if(!cfg.tursoUrl||!cfg.tursoToken)return{error:'no_config'};
   try{
-    const r=await fetch('/api/turso',{
+    const r=await fetch(`${cfg.tursoUrl}/v2/pipeline`,{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({sql,args})
+      headers:{'Authorization':`Bearer ${cfg.tursoToken}`,'Content-Type':'application/json'},
+      body:JSON.stringify({requests:[{type:'execute',stmt:{sql,args:args.map(a=>({type:typeof a==='number'?'integer':'text',value:String(a)}))}}]})
     });
-    const text=await r.text();
-    if(!text){return{error:r.status===500?'Server error':r.status+' '+r.statusText};}
-    let d; try{d=JSON.parse(text);}catch(e){return{error:'Invalid response from server'};}
-    if(d.error)return{error:d.error};
-    return{rows:d.rows||[]};
+    const d=await r.json();
+    if(d.results?.[0]?.type==='error')return{error:d.results[0].error.message};
+    const rows=d.results?.[0]?.response?.result?.rows||[];
+    const cols=d.results?.[0]?.response?.result?.cols||[];
+    return{rows:rows.map(row=>Object.fromEntries(cols.map((c,i)=>([c.name,row[i].value]))))};
   }catch(e){return{error:e.message};}
 }
 
@@ -254,6 +257,16 @@ async function loadGuidelines(){
 }
 
 function rGuidelines(){
+  const cfg=getCfg();
+  if(!cfg.tursoUrl){
+    return `<div class="setup-box">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">⚙️ ต้องการตั้งค่า Turso Database ก่อน</div>
+      <div style="font-size:12px;color:var(--wtx);line-height:1.7;margin-bottom:12px">กด ⚙️ มุมบนขวา → ใส่ Turso Database URL และ Token เพื่อเปิดใช้ฟีเจอร์นี้</div>
+      <button onclick="showSettings()" class="btn-red" style="font-size:13px;padding:9px 18px">ตั้งค่า Turso →</button>
+      <div style="margin-top:12px;font-size:11px;color:var(--wtx)">Turso: สมัครฟรีที่ turso.tech — ไม่มีค่าใช้จ่ายสำหรับโปรเจกต์ขนาดเล็ก</div>
+    </div>
+    ${rGlPlaceholder()}`;
+  }
   return `<div id="glContent"><div class="empty-state"><div class="spin"></div><div style="margin-top:10px;font-size:12px">กำลังโหลด...</div></div></div>
   <script>loadAndShowGl();<\/script>`;
 }
@@ -394,6 +407,14 @@ window.deleteGl=function(id){
 
 // ── VIDEOS TAB ──
 function rVideos(){
+  const cfg=getCfg();
+  if(!cfg.tursoUrl){
+    return `<div class="setup-box">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">⚙️ ตั้งค่า Turso ก่อนใช้งาน</div>
+      <button onclick="showSettings()" class="btn-red" style="font-size:13px;padding:9px 18px;margin-top:8px">ตั้งค่า →</button>
+    </div>
+    ${rVideoPlaceholder()}`;
+  }
   return `<div id="vidContent"><div class="empty-state"><div class="spin"></div><div style="margin-top:10px;font-size:12px">กำลังโหลด...</div></div></div>
   <script>loadAndShowVid();<\/script>`;
 }
@@ -545,18 +566,29 @@ function showSettings(){
   document.getElementById('content').innerHTML=`
   <div class="card">
     <div style="font-size:16px;font-weight:700;margin-bottom:4px">⚙️ การตั้งค่า</div>
-    <div style="font-size:12px;color:var(--tx2);margin-bottom:14px">กำหนดค่าระบบ</div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:14px">กำหนดค่าระบบและ Turso Database</div>
 
-    <div class="card" style="background:var(--sbg);border-color:var(--sbd)">
-      <div style="font-size:13px;font-weight:600;color:var(--stx);margin-bottom:4px">✓ Turso Database</div>
-      <div style="font-size:12px;color:var(--stx);line-height:1.7">
-        Turso ถูกตั้งค่าผ่าน Environment Variables ฝั่ง server แล้ว<br>
-        ไม่ต้องใส่ URL/Token ในแอป — ปลอดภัยกว่า
+    <div class="card" style="background:var(--ibg);border-color:var(--ibd)">
+      <div style="font-size:13px;font-weight:600;color:var(--itx);margin-bottom:8px">📦 วิธีเปิดใช้ Turso (ฟรี)</div>
+      <div style="font-size:12px;color:var(--itx);line-height:1.8">
+        1. ไปที่ <strong>turso.tech</strong> → Sign up (ฟรี GitHub login)<br>
+        2. Create database → ตั้งชื่อ เช่น <code style="background:#B5D4F4;padding:1px 5px;border-radius:3px">stroke-db</code><br>
+        3. Copy <strong>Database URL</strong> (https://...) และ <strong>Auth Token</strong><br>
+        4. วางด้านล่างนี้แล้วกด Save
       </div>
     </div>
 
-    <div id="tursoTestResult" style="margin-top:8px;min-height:20px"></div>
-    <button onclick="testTursoConnection()" class="btn-gray" style="margin-top:6px;margin-bottom:14px;font-size:12px">🔗 ทดสอบการเชื่อมต่อ Turso</button>
+    <div class="form-row" style="margin-top:10px"><div class="lbl">Turso Database URL</div>
+    <input id="s_url" value="${cfg.tursoUrl||''}" placeholder="https://stroke-db-xxx.turso.io"></div>
+
+    <div class="form-row"><div class="lbl">Turso Auth Token</div>
+    <input type="password" id="s_token" value="${cfg.tursoToken||''}" placeholder="eyJhbGci..."></div>
+
+    <div class="form-row"><div class="lbl">ไฟล์ Staff Wizard</div>
+    <input id="s_staff" value="${cfg.staffFile||STAFF_FILE}" placeholder="stroke_staff_wizard.html"></div>
+
+    <div class="form-row"><div class="lbl">ไฟล์ Guest Mode</div>
+    <input id="s_guest" value="${cfg.guestFile||GUEST_FILE}" placeholder="stroke_guest.html"></div>
 
     <div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px">เปลี่ยน PIN</div>
     <div class="form-row"><div class="lbl">PIN ปัจจุบัน</div>
@@ -570,35 +602,28 @@ function showSettings(){
     </div>
   </div>`;
 }
-window.testTursoConnection=async function(){
-  const el=document.getElementById('tursoTestResult');
-  el.innerHTML='<div style="font-size:12px;color:var(--wtx)">กำลังทดสอบ...</div>';
-  try {
-    const r=await fetch('/api/turso',{method:'GET'});
-    const text=await r.text();
-    if(!r.ok){
-      el.innerHTML=`<div style="font-size:12px;color:var(--dtx);padding:8px;background:var(--dbg);border-radius:var(--rm)">❌ เชื่อมต่อไม่ได้: ${r.status}${text? ' '+text.slice(0,80):''}</div>`;
-      return;
-    }
-    let d; try{d=JSON.parse(text);}catch(e){el.innerHTML=`<div style="font-size:12px;color:var(--dtx);padding:8px;background:var(--dbg);border-radius:var(--rm)">❌ คำตอบจาก server ไม่ถูกต้อง</div>`;return;}
-    if(d.error){el.innerHTML=`<div style="font-size:12px;color:var(--dtx);padding:8px;background:var(--dbg);border-radius:var(--rm)">❌ เชื่อมต่อไม่ได้: ${d.error}</div>`;return;}
-    el.innerHTML='<div style="font-size:12px;color:var(--stx);padding:8px;background:var(--sbg);border-radius:var(--rm)">✓ เชื่อมต่อ Turso สำเร็จ</div>';
-  }catch(e){
-    el.innerHTML=`<div style="font-size:12px;color:var(--dtx);padding:8px;background:var(--dbg);border-radius:var(--rm)">❌ เชื่อมต่อไม่ได้: ${e.message}</div>`;
-  }
-};
-
 window.saveSettings=function(){
+  const url=document.getElementById('s_url')?.value?.trim();
+  const token=document.getElementById('s_token')?.value?.trim();
+  const staffFile=document.getElementById('s_staff')?.value?.trim();
+  const guestFile=document.getElementById('s_guest')?.value?.trim();
   const oldPin=document.getElementById('s_oldpin')?.value;
   const newPin=document.getElementById('s_newpin')?.value;
+
+  const cfg=getCfg();
+  if(url)cfg.tursoUrl=url;
+  if(token)cfg.tursoToken=token;
+  if(staffFile)cfg.staffFile=staffFile;
+  if(guestFile)cfg.guestFile=guestFile;
+  saveCfg(cfg);
 
   if(newPin){
     if(oldPin!==getPin()){alert('PIN ปัจจุบันไม่ถูกต้อง');return;}
     if(newPin.length!==4||!/^\d+$/.test(newPin)){alert('PIN ต้องเป็นตัวเลข 4 หลัก');return;}
     localStorage.setItem('menu_pin',newPin);
-    alert('เปลี่ยน PIN สำเร็จ');
+    alert('บันทึกการตั้งค่าและเปลี่ยน PIN สำเร็จ');
   } else {
-    alert('ไม่มีการเปลี่ยนแปลง');
+    alert('บันทึกการตั้งค่าสำเร็จ');
   }
   switchTab('home',document.querySelectorAll('.tab-btn')[0]);
 };
