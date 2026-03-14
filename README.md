@@ -175,13 +175,15 @@ git push -u origin main
 7. กด "Begin setup"
 ```
 
-### 6.2 ตั้งค่า Build
+### 6.2 ตั้งค่า Build (สำคัญ — ต้องตรงนี้)
 ```
-Project name:        stroke-app
+Project name:        stroke_guide (หรือ stroke-fast-tract)
 Production branch:   main
-Build command:       (เว้นว่าง — ไม่มี build step)
-Build output dir:    /   (slash เดียว)
+Build command:       เว้นว่าง หรือ npm run build
+Build output directory:  public
+Root directory:      (เว้นว่าง)
 ```
+⚠️ **ห้ามใช้** `npx wrangler deploy` — เป็นคำสั่งของ Workers จะ error "Missing entry-point". ใช้แค่ Build output = **public** แล้วเว้น Build command ว่าง (หรือใส่ `npm run build`)
 
 ### 6.3 Deploy
 ```
@@ -477,13 +479,16 @@ Groq:     ต้องมี API key จาก console.groq.com (ฟรี)
 Custom:   ตรวจสอบ Base URL และ Model name ถูกต้อง
 ```
 
-### ❌ Cloudflare Pages ไม่ deploy
+### ❌ Cloudflare Pages ไม่ deploy / ERROR Missing entry-point
 
 ```
-ตรวจสอบ:
-1. Build command: (เว้นว่าง)
-2. Build output directory: /
-3. ไฟล์ชื่อ index.html อยู่ใน root ของ repo?
+ถ้าเห็น "Missing entry-point" หรือ "wrangler deploy":
+→ อย่าใช้ Build command เป็น npx wrangler deploy (ใช้กับ Workers เท่านั้น)
+
+แก้ไข:
+1. Build command: เว้นว่าง หรือ npm run build
+2. Build output directory: public (ไม่ใช่ /)
+3. Root directory: เว้นว่าง
 4. Branch: main
 ```
 
