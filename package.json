@@ -1,0 +1,13 @@
+{
+  "name": "stroke-fast-tract",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler pages dev public --compatibility-date=2024-12-01 --port 8788",
+    "deploy": "wrangler pages deploy public --project-name stroke-fast-tract"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260313.1",
+    "wrangler": "^4"
+  }
+}

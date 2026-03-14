@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stroke Fast Tract — Menu</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f5f5f4;--bg3:#eeece8;--tx:#1a1a18;--tx2:#6b6b67;
+  --bl:#e5e3dc;--bm:#c8c6be;--rm:8px;--rl:12px;
+  --sbg:#EAF3DE;--stx:#27500A;--sbd:#97C459;
+  --wbg:#FAEEDA;--wtx:#633806;--wbd:#EF9F27;
+  --dbg:#FCEBEB;--dtx:#791F1F;--dbd:#F09595;
+  --ibg:#E6F1FB;--itx:#185FA5;--ibd:#85B7EB;
+  --red:#C41E3A;
+  --purple-bg:#EEEDFE;--purple-tx:#3C3489;--purple-bd:#AFA9EC;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1e1e1c;--bg2:#2a2a27;--bg3:#111110;--tx:#f0ede6;--tx2:#9a9893;
+  --bl:#2e2e2b;--bm:#3a3a36;
+  --sbg:#173404;--stx:#C0DD97;--sbd:#3B6D11;
+  --wbg:#412402;--wtx:#FAC775;--wbd:#854F0B;
+  --dbg:#501313;--dtx:#F7C1C1;--dbd:#A32D2D;
+  --ibg:#042C53;--itx:#B5D4F4;--ibd:#185FA5;
+  --purple-bg:#26215C;--purple-tx:#CECBF6;--purple-bd:#534AB7;
+}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sans-serif;background:var(--bg3);color:var(--tx);font-size:14px;min-height:100vh}
+input,select,textarea{font-family:inherit;font-size:14px;padding:8px 10px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg);color:var(--tx);width:100%;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#378ADD;box-shadow:0 0 0 2px rgba(55,138,221,.15)}
+button{font-family:inherit;cursor:pointer}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bm);border-radius:4px}
+
+/* TOPBAR */
+.topbar{background:var(--bg);border-bottom:0.5px solid var(--bl);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.tab-bar{display:flex;background:var(--bg);border-bottom:0.5px solid var(--bl);overflow-x:auto;position:sticky;top:57px;z-index:99;-webkit-overflow-scrolling:touch}
+.tab-btn{padding:10px 16px;border:none;border-bottom:2px solid transparent;background:transparent;cursor:pointer;font-size:13px;color:var(--tx2);white-space:nowrap;font-family:inherit}
+.tab-btn.active{color:var(--red);border-bottom-color:var(--red);font-weight:600}
+.content{padding:14px;max-width:680px;margin:0 auto;padding-bottom:60px}
+.card{background:var(--bg);border:0.5px solid var(--bl);border-radius:var(--rl);padding:16px;margin-bottom:10px}
+
+/* LAUNCH CARDS */
+.launch-card{background:var(--bg);border-radius:var(--rl);padding:20px;display:flex;align-items:center;gap:16px;margin-bottom:10px;border:1px solid var(--bl);cursor:pointer;text-decoration:none;color:var(--tx);transition:box-shadow .15s,transform .1s}
+.launch-card:active{transform:scale(.98)}
+.launch-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+.launch-title{font-size:16px;font-weight:700;margin-bottom:2px}
+.launch-sub{font-size:12px;color:var(--tx2);line-height:1.5}
+.launch-arrow{font-size:20px;color:var(--bm);margin-left:auto;flex-shrink:0}
+
+/* GUIDELINE CARDS */
+.gl-card{background:var(--bg);border:0.5px solid var(--bl);border-radius:var(--rl);padding:14px;margin-bottom:10px}
+.gl-title{font-size:14px;font-weight:700;margin-bottom:4px}
+.gl-body{font-size:13px;color:var(--tx2);line-height:1.7;margin-bottom:10px;white-space:pre-wrap}
+.gl-cat{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;display:inline-block;margin-bottom:8px}
+.cat-nihss{background:#E6F1FB;color:#185FA5}
+.cat-rtpa{background:#EAF3DE;color:#27500A}
+.cat-refer{background:#FAEEDA;color:#633806}
+.cat-general{background:var(--purple-bg);color:var(--purple-tx)}
+.cat-protocol{background:#FCEBEB;color:#791F1F}
+.link-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--rm);font-size:12px;font-weight:600;text-decoration:none;border:0.5px solid;transition:opacity .1s;margin-right:6px;margin-top:4px}
+.link-btn:active{opacity:.7}
+.link-yt{background:#FCEBEB;color:#791F1F;border-color:#F09595}
+.link-gdrive{background:#EAF3DE;color:#27500A;border-color:#97C459}
+.link-url{background:#E6F1FB;color:#185FA5;border-color:#85B7EB}
+.yt-embed{margin-top:10px;border-radius:var(--rm);overflow:hidden;aspect-ratio:16/9;background:#000}
+.yt-embed iframe{width:100%;height:100%;border:none}
+
+/* FORMS */
+.sec{font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.lbl{font-size:12px;color:var(--tx2);margin-bottom:4px}
+.form-row{margin-bottom:12px}
+.btn-red{padding:11px 20px;border:none;border-radius:var(--rl);background:var(--red);color:white;font-size:14px;font-weight:700;font-family:inherit}
+.btn-gray{padding:9px 16px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx);font-size:13px;font-family:inherit}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip-sel{padding:5px 12px;border-radius:10px;border:1px solid var(--bm);font-size:12px;cursor:pointer;background:var(--bg2);color:var(--tx)}
+.chip-sel.on{background:var(--red);border-color:var(--red);color:white;font-weight:600}
+
+/* PIN MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;padding:20px}
+.modal-bg.show{display:flex}
+.modal{background:var(--bg);border-radius:20px;padding:24px;width:100%;max-width:320px;text-align:center}
+.pdots{display:flex;justify-content:center;gap:12px;margin:14px 0}
+.pd{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--bm)}
+.pd.f{background:var(--red);border-color:#8B1225}
+.pd.e{animation:sh .3s}
+@keyframes sh{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;max-width:240px;margin-left:auto;margin-right:auto}
+.pbtn{padding:12px;border:0.5px solid var(--bm);border-radius:10px;background:var(--bg2);font-size:18px;font-weight:500;color:var(--tx)}
+.pbtn:active{background:var(--bl);transform:scale(.95)}
+
+/* SETUP TURSO */
+.setup-box{background:var(--wbg);border:0.5px solid var(--wbd);border-radius:var(--rl);padding:14px;margin-bottom:10px}
+.empty-state{text-align:center;padding:40px 20px;color:var(--tx2)}
+.spin{display:inline-block;width:20px;height:20px;border:2px solid var(--bl);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tag-badge{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:600;display:inline-block;margin-left:6px}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div>
+    <div style="font-size:14px;font-weight:700">Stroke Fast Tract</div>
+    <div style="font-size:10px;color:var(--tx2)">โรงพยาบาลสงฆ์ — Priest Hospital</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div id="clockEl" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--tx2)"></div>
+    <button onclick="showSettings()" style="padding:5px 8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:12px">⚙️</button>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('home',this)">🏠 หน้าหลัก</button>
+  <button class="tab-btn" onclick="switchTab('guidelines',this)">📋 Guideline</button>
+  <button class="tab-btn" onclick="switchTab('videos',this)">🎬 วิดีโอ</button>
+</div>
+
+<div class="content" id="content"></div>
+
+<!-- PIN MODAL -->
+<div class="modal-bg" id="pinModal">
+  <div class="modal">
+    <div style="font-size:28px;margin-bottom:8px" id="pinIcon">🔐</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:4px" id="pinTitle">Staff Login</div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:4px" id="pinSub">ใส่ PIN เพื่อเพิ่ม/แก้ไขข้อมูล</div>
+    <div class="pdots" id="pinDots"><div class="pd"></div><div class="pd"></div><div class="pd"></div><div class="pd"></div></div>
+    <div class="pgrid">
+      <button class="pbtn" onclick="pk('1')">1</button><button class="pbtn" onclick="pk('2')">2</button><button class="pbtn" onclick="pk('3')">3</button>
+      <button class="pbtn" onclick="pk('4')">4</button><button class="pbtn" onclick="pk('5')">5</button><button class="pbtn" onclick="pk('6')">6</button>
+      <button class="pbtn" onclick="pk('7')">7</button><button class="pbtn" onclick="pk('8')">8</button><button class="pbtn" onclick="pk('9')">9</button>
+      <button class="pbtn" onclick="pk('0')" style="grid-column:2">0</button>
+      <button class="pbtn" onclick="pdel()" style="font-size:14px;color:var(--tx2)">⌫</button>
+    </div>
+    <div style="font-size:12px;color:var(--dtx);min-height:16px;margin-top:4px" id="pinErr"></div>
+    <button onclick="closePinModal()" style="margin-top:10px;padding:7px 20px;border:0.5px solid var(--bm);border-radius:var(--rm);background:transparent;color:var(--tx2);font-size:12px;font-family:inherit">ยกเลิก</button>
+  </div>
+</div>
+
+<script>
+// ── CONFIG (saved in localStorage) ──
+function getCfg(){
+  try{return JSON.parse(localStorage.getItem('stroke_menu_cfg')||'{}');}catch{return {};}
+}
+function saveCfg(c){localStorage.setItem('stroke_menu_cfg',JSON.stringify(c));}
+function getPin(){return localStorage.getItem('menu_pin')||'2567';}
+
+// Staff file paths (same folder assumed)
+const STAFF_FILE='stroke_staff_wizard.html';
+const GUEST_FILE='stroke_guest.html';
+
+// ── CLOCK ──
+setInterval(()=>{const d=new Date();const el=document.getElementById('clockEl');if(el)el.textContent=d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});},1000);
+
+// ── TABS ──
+let currentTab='home';
+function switchTab(t,btn){
+  currentTab=t;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  render();
+}
+
+function render(){
+  const fns={home:rHome,guidelines:rGuidelines,videos:rVideos};
+  document.getElementById('content').innerHTML=(fns[currentTab]||rHome)();
+}
+
+// ── HOME ──
+function rHome(){
+  return `<div style="padding:10px 0 6px">
+  <div style="font-size:20px;font-weight:700;margin-bottom:2px">Stroke Fast Tract</div>
+  <div style="font-size:13px;color:var(--tx2);margin-bottom:18px">เลือกโหมดการใช้งาน</div>
+  </div>
+
+  <a class="launch-card" href="${STAFF_FILE}" style="border-color:var(--dbd)">
+    <div class="launch-icon" style="background:var(--dbg)">🔐</div>
+    <div>
+      <div class="launch-title">Staff Mode</div>
+      <div class="launch-sub">บันทึกข้อมูลผู้ป่วย · Timeline · AI ประเมิน<br>สร้าง Refer PDF · ต้องใส่ PIN</div>
+    </div>
+    <div class="launch-arrow">›</div>
+  </a>
+
+  <a class="launch-card" href="${GUEST_FILE}" style="border-color:var(--sbd)">
+    <div class="launch-icon" style="background:var(--sbg)">⚡</div>
+    <div>
+      <div class="launch-title">Guest Mode</div>
+      <div class="launch-sub">BEFAST · Checklist · NIHSS · rt-PA dose<br>ใช้ได้ทันที ไม่ต้อง PIN ไม่เก็บข้อมูล</div>
+    </div>
+    <div class="launch-arrow">›</div>
+  </a>
+
+  <a class="launch-card" onclick="switchTab('guidelines',document.querySelectorAll('.tab-btn')[1])" href="javascript:void(0)" style="border-color:var(--purple-bd)">
+    <div class="launch-icon" style="background:var(--purple-bg)">📋</div>
+    <div>
+      <div class="launch-title">Guideline & Protocol</div>
+      <div class="launch-sub">แนวทาง Stroke · rt-PA Protocol · Refer criteria<br>เนื้อหาที่ทีมเพิ่มเข้ามาเอง</div>
+    </div>
+    <div class="launch-arrow">›</div>
+  </a>
+
+  <a class="launch-card" onclick="switchTab('videos',document.querySelectorAll('.tab-btn')[2])" href="javascript:void(0)" style="border-color:var(--ibd)">
+    <div class="launch-icon" style="background:var(--ibg)">🎬</div>
+    <div>
+      <div class="launch-title">วิดีโอ & ลิงก์อ้างอิง</div>
+      <div class="launch-sub">สอนประเมิน NIHSS · เนื้อหา Neurology<br>YouTube · Google Drive · ลิงก์อื่นๆ</div>
+    </div>
+    <div class="launch-arrow">›</div>
+  </a>
+
+  <div style="padding:12px 14px;background:var(--ibg);border-radius:var(--rl);border:0.5px solid var(--ibd);font-size:12px;color:var(--itx);line-height:1.7;margin-top:4px">
+    🔒 ข้อมูลผู้ป่วยในแอปนี้ไม่ถูกส่งออกจากเครื่อง — ปฏิบัติตาม พ.ร.บ. PDPA พ.ศ. 2562
+  </div>`;
+}
+
+// ── TURSO API ──
+async function tursoQuery(sql,args=[]){
+  const cfg=getCfg();
+  if(!cfg.tursoUrl||!cfg.tursoToken)return{error:'no_config'};
+  try{
+    const r=await fetch(`${cfg.tursoUrl}/v2/pipeline`,{
+      method:'POST',
+      headers:{'Authorization':`Bearer ${cfg.tursoToken}`,'Content-Type':'application/json'},
+      body:JSON.stringify({requests:[{type:'execute',stmt:{sql,args:args.map(a=>({type:typeof a==='number'?'integer':'text',value:String(a)}))}}]})
+    });
+    const d=await r.json();
+    if(d.results?.[0]?.type==='error')return{error:d.results[0].error.message};
+    const rows=d.results?.[0]?.response?.result?.rows||[];
+    const cols=d.results?.[0]?.response?.result?.cols||[];
+    return{rows:rows.map(row=>Object.fromEntries(cols.map((c,i)=>([c.name,row[i].value]))))};
+  }catch(e){return{error:e.message};}
+}
+
+async function ensureTable(){
+  await tursoQuery(`CREATE TABLE IF NOT EXISTS guidelines (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL DEFAULT 'general',
+    title TEXT NOT NULL,
+    body TEXT,
+    link_url TEXT,
+    link_type TEXT,
+    link_label TEXT,
+    sort_order INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`);
+}
+
+// ── GUIDELINES TAB ──
+let glData=null;
+async function loadGuidelines(){
+  await ensureTable();
+  const r=await tursoQuery("SELECT * FROM guidelines WHERE link_type != 'youtube' OR link_type IS NULL ORDER BY sort_order ASC, created_at DESC");
+  if(r.error)return null;
+  return r.rows;
+}
+
+function rGuidelines(){
+  const cfg=getCfg();
+  if(!cfg.tursoUrl){
+    return `<div class="setup-box">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">⚙️ ต้องการตั้งค่า Turso Database ก่อน</div>
+      <div style="font-size:12px;color:var(--wtx);line-height:1.7;margin-bottom:12px">กด ⚙️ มุมบนขวา → ใส่ Turso Database URL และ Token เพื่อเปิดใช้ฟีเจอร์นี้</div>
+      <button onclick="showSettings()" class="btn-red" style="font-size:13px;padding:9px 18px">ตั้งค่า Turso →</button>
+      <div style="margin-top:12px;font-size:11px;color:var(--wtx)">Turso: สมัครฟรีที่ turso.tech — ไม่มีค่าใช้จ่ายสำหรับโปรเจกต์ขนาดเล็ก</div>
+    </div>
+    ${rGlPlaceholder()}`;
+  }
+  return `<div id="glContent"><div class="empty-state"><div class="spin"></div><div style="margin-top:10px;font-size:12px">กำลังโหลด...</div></div></div>
+  <script>loadAndShowGl();<\/script>`;
+}
+
+async function loadAndShowGl(){
+  const rows=await loadGuidelines();
+  const el=document.getElementById('glContent');
+  if(!el)return;
+  if(!rows){el.innerHTML=`<div class="empty-state"><div style="font-size:28px;margin-bottom:8px">⚠️</div><div style="font-size:13px">ไม่สามารถเชื่อมต่อ Turso ได้<br><span style="font-size:11px;color:var(--tx2)">ตรวจสอบ URL/Token ในการตั้งค่า</span></div></div>`;return;}
+  if(rows.length===0){el.innerHTML=glEmptyWithAdd();return;}
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-size:12px;color:var(--tx2)">${rows.length} รายการ</div>
+    <button onclick="showAddGl()" style="padding:6px 14px;border:0.5px solid var(--red);border-radius:var(--rm);background:var(--dbg);color:var(--red);font-size:12px;font-weight:600;font-family:inherit">+ เพิ่มรายการ</button>
+  </div>
+  ${rows.map(r=>glCard(r)).join('')}`;
+}
+
+function catLabel(c){const m={nihss:'NIHSS',rtpa:'rt-PA',refer:'Refer',protocol:'Protocol',general:'ทั่วไป'};return m[c]||c;}
+function catClass(c){const m={nihss:'cat-nihss',rtpa:'cat-rtpa',refer:'cat-refer',protocol:'cat-protocol',general:'cat-general'};return m[c]||'cat-general';}
+function linkTypeIcon(t){return t==='youtube'?'▶ YouTube':t==='gdrive'?'📂 Google Drive':'🔗 เปิดลิงก์';}
+function linkClass(t){return t==='youtube'?'link-yt':t==='gdrive'?'link-gdrive':'link-url';}
+
+function glCard(r){
+  return `<div class="gl-card" id="glcard-${r.id}">
+    <div class="gl-cat ${catClass(r.category)}">${catLabel(r.category)}</div>
+    <div class="gl-title">${r.title||''}</div>
+    ${r.body?`<div class="gl-body">${r.body}</div>`:''}
+    ${r.link_url?`<a href="${r.link_url}" target="_blank" class="link-btn ${linkClass(r.link_type)}">${linkTypeIcon(r.link_type)}${r.link_label?' — '+r.link_label:''}</a>`:''}
+    <div style="margin-top:10px;display:flex;gap:6px">
+      <button onclick="showEditGl(${JSON.stringify(r).replace(/"/g,'&quot;')})" style="padding:4px 10px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);font-size:11px;color:var(--tx2);font-family:inherit">แก้ไข</button>
+      <button onclick="deleteGl(${r.id})" style="padding:4px 10px;border:0.5px solid var(--dbd);border-radius:var(--rm);background:var(--dbg);font-size:11px;color:var(--dtx);font-family:inherit">ลบ</button>
+    </div>
+  </div>`;}
+
+function glEmptyWithAdd(){
+  return `<div class="empty-state">
+    <div style="font-size:36px;margin-bottom:10px">📋</div>
+    <div style="font-size:14px;font-weight:600;margin-bottom:4px">ยังไม่มี Guideline</div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:16px">เพิ่มแนวทาง protocol หรือ link สื่อการสอน</div>
+    <button onclick="showAddGl()" class="btn-red">+ เพิ่มรายการแรก</button>
+  </div>`;}
+
+function rGlPlaceholder(){
+  return `<div class="card" style="border-style:dashed;opacity:.6">
+    <div class="sec">ตัวอย่างรายการที่จะแสดง</div>
+    ${[{cat:'nihss',title:'การประเมิน NIHSS',body:'ประเมิน 15 หัวข้อ — LOC, Gaze, Visual, Facial, Motor arm, Motor leg, Ataxia, Sensory, Language, Dysarthria, Inattention'},
+       {cat:'rtpa',title:'rt-PA Dosing',body:'0.9 mg/kg (max 90 mg) — 10% IV bolus 1 นาที + 90% infusion 60 นาที'},
+       {cat:'refer',title:'เกณฑ์ Refer Thrombectomy',body:'Onset 4.5-24h + NIHSS ≥6 + ASPECT ≥6 + สงสัย LVO → ส่ง สถาบันประสาท'}
+    ].map(r=>`<div style="padding:10px 0;border-bottom:0.5px solid var(--bl)">
+      <div class="gl-cat ${catClass(r.cat)}" style="margin-bottom:4px">${catLabel(r.cat)}</div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:2px">${r.title}</div>
+      <div style="font-size:12px;color:var(--tx2)">${r.body}</div>
+    </div>`).join('')}
+  </div>`;}
+
+// ADD/EDIT GUIDELINE
+let editingGlId=null;
+let pinCallback=null;
+
+function showAddGl(){requirePin(()=>{editingGlId=null;showGlForm({})});}
+function showEditGl(r){requirePin(()=>{editingGlId=r.id;showGlForm(r)});}
+
+function showGlForm(r={}){
+  const cats=['general','nihss','rtpa','refer','protocol'];
+  document.getElementById('content').innerHTML=`
+  <div class="card">
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px">${editingGlId?'แก้ไขรายการ':'เพิ่มรายการใหม่'}</div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:14px">Guideline / Protocol / Reference</div>
+
+    <div class="form-row"><div class="lbl">หมวดหมู่</div>
+    <div class="chip-row">
+      ${cats.map(c=>`<button class="chip-sel${(r.category||'general')===c?' on':''}" onclick="selectCat('${c}',this)" data-cat="${c}">${catLabel(c)}</button>`).join('')}
+    </div></div>
+    <input type="hidden" id="f_cat" value="${r.category||'general'}">
+
+    <div class="form-row"><div class="lbl">ชื่อ / หัวข้อ ★</div>
+    <input id="f_title" value="${r.title||''}" placeholder="เช่น วิธีประเมิน NIHSS 1a" maxlength="100"></div>
+
+    <div class="form-row"><div class="lbl">เนื้อหา / รายละเอียด</div>
+    <textarea id="f_body" rows="4" placeholder="อธิบาย protocol ขั้นตอน หรือ note สำคัญ...">${r.body||''}</textarea></div>
+
+    <div class="form-row"><div class="lbl">ลิงก์ (ถ้ามี)</div>
+    <input id="f_link" value="${r.link_url||''}" placeholder="https://..." style="margin-bottom:8px">
+    <div class="lbl">ประเภทลิงก์</div>
+    <select id="f_ltype">
+      <option value="">— ไม่มีลิงก์ —</option>
+      <option value="youtube" ${r.link_type==='youtube'?'selected':''}>▶ YouTube</option>
+      <option value="gdrive" ${r.link_type==='gdrive'?'selected':''}>📂 Google Drive</option>
+      <option value="url" ${r.link_type==='url'?'selected':''}>🔗 ลิงก์ทั่วไป</option>
+    </select>
+    <div class="lbl" style="margin-top:8px">ชื่อลิงก์ (optional)</div>
+    <input id="f_llabel" value="${r.link_label||''}" placeholder="เช่น สอน NIHSS โดย อ.นพ. ..."></div>
+
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn-gray" onclick="switchTab('guidelines',document.querySelectorAll('.tab-btn')[1])">ยกเลิก</button>
+      <button onclick="saveGl()" class="btn-red" style="flex:2">บันทึก</button>
+    </div>
+  </div>`;
+}
+
+window.selectCat=function(c,btn){
+  document.getElementById('f_cat').value=c;
+  document.querySelectorAll('.chip-sel').forEach(b=>{b.classList.remove('on');});
+  btn.classList.add('on');
+};
+
+window.saveGl=async function(){
+  const title=document.getElementById('f_title')?.value?.trim();
+  if(!title){alert('กรุณาใส่ชื่อ/หัวข้อ');return;}
+  const cat=document.getElementById('f_cat')?.value||'general';
+  const body=document.getElementById('f_body')?.value?.trim()||'';
+  const link=document.getElementById('f_link')?.value?.trim()||'';
+  const ltype=document.getElementById('f_ltype')?.value||'';
+  const llabel=document.getElementById('f_llabel')?.value?.trim()||'';
+
+  document.querySelector('.btn-red').textContent='กำลังบันทึก...';
+  document.querySelector('.btn-red').disabled=true;
+  await ensureTable();
+  let r;
+  if(editingGlId){
+    r=await tursoQuery('UPDATE guidelines SET category=?,title=?,body=?,link_url=?,link_type=?,link_label=? WHERE id=?',[cat,title,body,link,ltype,llabel,editingGlId]);
+  } else {
+    r=await tursoQuery('INSERT INTO guidelines(category,title,body,link_url,link_type,link_label) VALUES(?,?,?,?,?,?)',[cat,title,body,link,ltype,llabel]);
+  }
+  if(r.error){alert('บันทึกไม่สำเร็จ: '+r.error);document.querySelector('.btn-red').textContent='บันทึก';document.querySelector('.btn-red').disabled=false;return;}
+  glData=null;
+  switchTab('guidelines',document.querySelectorAll('.tab-btn')[1]);
+};
+
+window.deleteGl=function(id){
+  requirePin(async()=>{
+    if(!confirm('ลบรายการนี้?'))return;
+    await tursoQuery('DELETE FROM guidelines WHERE id=?',[id]);
+    const el=document.getElementById('glcard-'+id);
+    if(el)el.style.display='none';
+  });
+};
+
+// ── VIDEOS TAB ──
+function rVideos(){
+  const cfg=getCfg();
+  if(!cfg.tursoUrl){
+    return `<div class="setup-box">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">⚙️ ตั้งค่า Turso ก่อนใช้งาน</div>
+      <button onclick="showSettings()" class="btn-red" style="font-size:13px;padding:9px 18px;margin-top:8px">ตั้งค่า →</button>
+    </div>
+    ${rVideoPlaceholder()}`;
+  }
+  return `<div id="vidContent"><div class="empty-state"><div class="spin"></div><div style="margin-top:10px;font-size:12px">กำลังโหลด...</div></div></div>
+  <script>loadAndShowVid();<\/script>`;
+}
+
+async function loadAndShowVid(){
+  await ensureTable();
+  const r=await tursoQuery("SELECT * FROM guidelines WHERE link_type='youtube' OR link_type='gdrive' ORDER BY sort_order ASC, created_at DESC");
+  const el=document.getElementById('vidContent');
+  if(!el)return;
+  if(r.error){el.innerHTML=`<div class="empty-state">⚠️ ไม่สามารถเชื่อมต่อได้</div>`;return;}
+  const rows=r.rows||[];
+  const ytRows=rows.filter(x=>x.link_type==='youtube');
+  const otherRows=rows.filter(x=>x.link_type!=='youtube');
+
+  let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-size:12px;color:var(--tx2)">${rows.length} รายการ</div>
+    <button onclick="showAddVid()" style="padding:6px 14px;border:0.5px solid var(--red);border-radius:var(--rm);background:var(--dbg);color:var(--red);font-size:12px;font-weight:600;font-family:inherit">+ เพิ่มวิดีโอ/ลิงก์</button>
+  </div>`;
+
+  if(rows.length===0){
+    html+=`<div class="empty-state">
+      <div style="font-size:36px;margin-bottom:10px">🎬</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px">ยังไม่มีวิดีโอ</div>
+      <div style="font-size:12px;color:var(--tx2);margin-bottom:14px">เพิ่ม YouTube หรือ Google Drive link</div>
+      <button onclick="showAddVid()" class="btn-red">+ เพิ่มวิดีโอแรก</button>
+    </div>`;
+  } else {
+    ytRows.forEach(r=>{html+=vidCard(r);});
+    if(otherRows.length>0){
+      html+=`<div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px">ลิงก์อื่นๆ</div>`;
+      otherRows.forEach(r=>{html+=vidLinkCard(r);});
+    }
+  }
+  el.innerHTML=html;
+}
+
+function getYTId(url){
+  const m=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([^&\s?#]+)/);
+  return m?m[1]:null;
+}
+function vidCard(r){
+  const ytId=getYTId(r.link_url||'');
+  return `<div class="gl-card" id="glcard-${r.id}">
+    <div class="gl-cat ${catClass(r.category)}" style="margin-bottom:6px">${catLabel(r.category)}</div>
+    <div class="gl-title" style="margin-bottom:6px">${r.title}</div>
+    ${r.body?`<div class="gl-body">${r.body}</div>`:''}
+    ${ytId?`<div class="yt-embed"><iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen loading="lazy"></iframe></div>`:
+    `<a href="${r.link_url}" target="_blank" class="link-btn link-yt">▶ เปิด YouTube</a>`}
+    <div style="margin-top:10px;display:flex;gap:6px">
+      <button onclick="deleteGl(${r.id})" style="padding:4px 10px;border:0.5px solid var(--dbd);border-radius:var(--rm);background:var(--dbg);font-size:11px;color:var(--dtx);font-family:inherit">ลบ</button>
+    </div>
+  </div>`;}
+
+function vidLinkCard(r){
+  return `<div class="gl-card" id="glcard-${r.id}" style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+    <div style="font-size:24px;flex-shrink:0">${r.link_type==='gdrive'?'📂':'🔗'}</div>
+    <div style="flex:1">
+      <div class="gl-cat ${catClass(r.category)}" style="margin-bottom:3px">${catLabel(r.category)}</div>
+      <div style="font-size:13px;font-weight:600">${r.title}</div>
+      ${r.body?`<div style="font-size:12px;color:var(--tx2)">${r.body}</div>`:''}
+      <a href="${r.link_url}" target="_blank" class="link-btn ${linkClass(r.link_type)}" style="margin-top:6px">${linkTypeIcon(r.link_type)}${r.link_label?' — '+r.link_label:''}</a>
+    </div>
+    <button onclick="deleteGl(${r.id})" style="padding:4px 8px;border:0.5px solid var(--dbd);border-radius:var(--rm);background:var(--dbg);font-size:11px;color:var(--dtx);font-family:inherit">ลบ</button>
+  </div>`;}
+
+function rVideoPlaceholder(){
+  return `<div class="card" style="border-style:dashed;opacity:.6">
+    <div class="sec">ตัวอย่างวิดีโอที่จะแสดง</div>
+    ${[{title:'การประเมิน NIHSS — เนื้อหาโดยแพทย์ระบบประสาท',body:'สอนครบ 15 หัวข้อ พร้อมตัวอย่างผู้ป่วยจริง',ltype:'youtube'},
+       {title:'Acute Stroke Management',body:'แนวทางการดูแลผู้ป่วย Stroke ระยะเฉียบพลัน',ltype:'gdrive'},
+    ].map(r=>`<div style="padding:10px 0;border-bottom:0.5px solid var(--bl)">
+      <div style="font-size:13px;font-weight:600;margin-bottom:2px">${r.title}</div>
+      <div style="font-size:12px;color:var(--tx2);margin-bottom:6px">${r.body}</div>
+      <span class="link-btn ${linkClass(r.ltype)}" style="cursor:default">${linkTypeIcon(r.ltype)}</span>
+    </div>`).join('')}
+  </div>`;}
+
+function showAddVid(){
+  requirePin(()=>{
+    editingGlId=null;
+    document.getElementById('content').innerHTML=`
+    <div class="card">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px">เพิ่มวิดีโอ / ลิงก์</div>
+      <div style="font-size:12px;color:var(--tx2);margin-bottom:14px">YouTube · Google Drive · ลิงก์ทั่วไป</div>
+
+      <div class="form-row"><div class="lbl">ประเภท</div>
+      <select id="f_ltype" onchange="vidTypeChange()">
+        <option value="youtube">▶ YouTube (embed ได้)</option>
+        <option value="gdrive">📂 Google Drive</option>
+        <option value="url">🔗 ลิงก์ทั่วไป</option>
+      </select></div>
+
+      <div class="form-row"><div class="lbl">URL / Link ★</div>
+      <input id="f_link" placeholder="https://youtube.com/watch?v=... หรือ https://drive.google.com/..." oninput="autoFillVidTitle()"></div>
+
+      <div class="form-row"><div class="lbl">ชื่อวิดีโอ / หัวข้อ ★</div>
+      <input id="f_title" placeholder="เช่น สอนการประเมิน NIHSS" maxlength="100"></div>
+
+      <div class="form-row"><div class="lbl">รายละเอียดเพิ่มเติม</div>
+      <textarea id="f_body" rows="3" placeholder="บรรยายเนื้อหา ระดับ ความยาว ฯลฯ"></textarea></div>
+
+      <div class="form-row"><div class="lbl">หมวดหมู่</div>
+      <select id="f_cat">
+        <option value="nihss">NIHSS</option>
+        <option value="general" selected>ทั่วไป</option>
+        <option value="rtpa">rt-PA</option>
+        <option value="refer">Refer</option>
+        <option value="protocol">Protocol</option>
+      </select></div>
+
+      <div id="yt-preview" style="display:none;margin-bottom:12px"></div>
+
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn-gray" onclick="switchTab('videos',document.querySelectorAll('.tab-btn')[2])">ยกเลิก</button>
+        <button onclick="saveVid()" class="btn-red" style="flex:2">บันทึก</button>
+      </div>
+    </div>`;
+  });
+}
+window.vidTypeChange=function(){};
+window.autoFillVidTitle=function(){
+  const url=document.getElementById('f_link')?.value||'';
+  const ytId=getYTId(url);
+  const prev=document.getElementById('yt-preview');
+  if(ytId&&prev){
+    prev.style.display='block';
+    prev.innerHTML=`<div class="yt-embed"><iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen loading="lazy"></iframe></div>`;
+  } else if(prev){prev.style.display='none';}
+};
+window.saveVid=async function(){
+  const title=document.getElementById('f_title')?.value?.trim();
+  const link=document.getElementById('f_link')?.value?.trim();
+  if(!title){alert('กรุณาใส่ชื่อ/หัวข้อ');return;}
+  if(!link){alert('กรุณาใส่ URL');return;}
+  const ltype=document.getElementById('f_ltype')?.value||'url';
+  const body=document.getElementById('f_body')?.value?.trim()||'';
+  const cat=document.getElementById('f_cat')?.value||'general';
+  const btn=document.querySelector('.btn-red');
+  btn.textContent='กำลังบันทึก...';btn.disabled=true;
+  await ensureTable();
+  const r=await tursoQuery('INSERT INTO guidelines(category,title,body,link_url,link_type,link_label) VALUES(?,?,?,?,?,?)',[cat,title,body,link,ltype,'']);
+  if(r.error){alert('บันทึกไม่สำเร็จ: '+r.error);btn.textContent='บันทึก';btn.disabled=false;return;}
+  switchTab('videos',document.querySelectorAll('.tab-btn')[2]);
+};
+
+// ── SETTINGS MODAL (shown via topbar ⚙️) ──
+function showSettings(){
+  const cfg=getCfg();
+  document.getElementById('content').innerHTML=`
+  <div class="card">
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px">⚙️ การตั้งค่า</div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:14px">กำหนดค่าระบบและ Turso Database</div>
+
+    <div class="card" style="background:var(--ibg);border-color:var(--ibd)">
+      <div style="font-size:13px;font-weight:600;color:var(--itx);margin-bottom:8px">📦 วิธีเปิดใช้ Turso (ฟรี)</div>
+      <div style="font-size:12px;color:var(--itx);line-height:1.8">
+        1. ไปที่ <strong>turso.tech</strong> → Sign up (ฟรี GitHub login)<br>
+        2. Create database → ตั้งชื่อ เช่น <code style="background:#B5D4F4;padding:1px 5px;border-radius:3px">stroke-db</code><br>
+        3. Copy <strong>Database URL</strong> (https://...) และ <strong>Auth Token</strong><br>
+        4. วางด้านล่างนี้แล้วกด Save
+      </div>
+    </div>
+
+    <div class="form-row" style="margin-top:10px"><div class="lbl">Turso Database URL</div>
+    <input id="s_url" value="${cfg.tursoUrl||''}" placeholder="https://stroke-db-xxx.turso.io"></div>
+
+    <div class="form-row"><div class="lbl">Turso Auth Token</div>
+    <input type="password" id="s_token" value="${cfg.tursoToken||''}" placeholder="eyJhbGci..."></div>
+
+    <div class="form-row"><div class="lbl">ไฟล์ Staff Wizard</div>
+    <input id="s_staff" value="${cfg.staffFile||STAFF_FILE}" placeholder="stroke_staff_wizard.html"></div>
+
+    <div class="form-row"><div class="lbl">ไฟล์ Guest Mode</div>
+    <input id="s_guest" value="${cfg.guestFile||GUEST_FILE}" placeholder="stroke_guest.html"></div>
+
+    <div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px">เปลี่ยน PIN</div>
+    <div class="form-row"><div class="lbl">PIN ปัจจุบัน</div>
+    <input type="password" id="s_oldpin" maxlength="4" placeholder="PIN ปัจจุบัน"></div>
+    <div class="form-row"><div class="lbl">PIN ใหม่ (4 หลัก)</div>
+    <input type="password" id="s_newpin" maxlength="4" placeholder="PIN ใหม่"></div>
+
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button onclick="switchTab('home',document.querySelectorAll('.tab-btn')[0])" class="btn-gray">ยกเลิก</button>
+      <button onclick="saveSettings()" class="btn-red" style="flex:2">บันทึกการตั้งค่า</button>
+    </div>
+  </div>`;
+}
+window.saveSettings=function(){
+  const url=document.getElementById('s_url')?.value?.trim();
+  const token=document.getElementById('s_token')?.value?.trim();
+  const staffFile=document.getElementById('s_staff')?.value?.trim();
+  const guestFile=document.getElementById('s_guest')?.value?.trim();
+  const oldPin=document.getElementById('s_oldpin')?.value;
+  const newPin=document.getElementById('s_newpin')?.value;
+
+  const cfg=getCfg();
+  if(url)cfg.tursoUrl=url;
+  if(token)cfg.tursoToken=token;
+  if(staffFile)cfg.staffFile=staffFile;
+  if(guestFile)cfg.guestFile=guestFile;
+  saveCfg(cfg);
+
+  if(newPin){
+    if(oldPin!==getPin()){alert('PIN ปัจจุบันไม่ถูกต้อง');return;}
+    if(newPin.length!==4||!/^\d+$/.test(newPin)){alert('PIN ต้องเป็นตัวเลข 4 หลัก');return;}
+    localStorage.setItem('menu_pin',newPin);
+    alert('บันทึกการตั้งค่าและเปลี่ยน PIN สำเร็จ');
+  } else {
+    alert('บันทึกการตั้งค่าสำเร็จ');
+  }
+  switchTab('home',document.querySelectorAll('.tab-btn')[0]);
+};
+
+// ── PIN MODAL ──
+let pinBuf='';
+function requirePin(cb){
+  pinCallback=cb;pinBuf='';
+  updPD(0);
+  document.getElementById('pinErr').textContent='';
+  document.getElementById('pinModal').classList.add('show');
+}
+function closePinModal(){document.getElementById('pinModal').classList.remove('show');pinBuf='';pinCallback=null;}
+function updPD(len,err=false){
+  const d=document.getElementById('pinDots').children;
+  for(let i=0;i<4;i++)d[i].className='pd'+(i<len?(err?' e':' f'):'');
+}
+window.pk=function(k){if(pinBuf.length>=4)return;pinBuf+=k;updPD(pinBuf.length);if(pinBuf.length===4)setTimeout(chkPin,150);};
+window.pdel=function(){if(pinBuf.length){pinBuf=pinBuf.slice(0,-1);updPD(pinBuf.length);document.getElementById('pinErr').textContent='';}};
+function chkPin(){
+  if(pinBuf===getPin()){
+    document.getElementById('pinModal').classList.remove('show');
+    pinBuf='';
+    if(pinCallback){const cb=pinCallback;pinCallback=null;cb();}
+  } else {
+    updPD(4,true);document.getElementById('pinErr').textContent='รหัสไม่ถูกต้อง';
+    setTimeout(()=>{pinBuf='';updPD(0);},800);
+  }
+}
+
+// ── INIT ──
+window.loadAndShowGl=loadAndShowGl;
+window.loadAndShowVid=loadAndShowVid;
+render();
+</script>
+</body>
+</html>
