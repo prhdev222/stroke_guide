@@ -146,8 +146,8 @@ function getCfg(){
 function saveCfg(c){localStorage.setItem('stroke_menu_cfg',JSON.stringify(c));}
 function getPin(){return localStorage.getItem('menu_pin')||'2567';}
 
-const STAFF_FILE='/staff';
-const GUEST_FILE='/guest';
+const STAFF_FILE='/staff.html';
+const GUEST_FILE='/guest.html';
 
 // ── CLOCK ──
 setInterval(()=>{const d=new Date();const el=document.getElementById('clockEl');if(el)el.textContent=d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});},1000);
@@ -573,11 +573,18 @@ function showSettings(){
 window.testTursoConnection=async function(){
   const el=document.getElementById('tursoTestResult');
   el.innerHTML='<div style="font-size:12px;color:var(--wtx)">กำลังทดสอบ...</div>';
-  const r=await tursoQuery("SELECT 1 as ok");
-  if(r.error){
-    el.innerHTML=`<div style="font-size:12px;color:var(--dtx);padding:8px;background:var(--dbg);border-radius:var(--rm)">❌ เชื่อมต่อไม่ได้: ${r.error}</div>`;
-  } else {
+  try {
+    const r=await fetch('/api/turso',{method:'GET'});
+    const text=await r.text();
+    if(!r.ok){
+      el.innerHTML=`<div style="font-size:12px;color:var(--dtx);padding:8px;background:var(--dbg);border-radius:var(--rm)">❌ เชื่อมต่อไม่ได้: ${r.status}${text? ' '+text.slice(0,80):''}</div>`;
+      return;
+    }
+    let d; try{d=JSON.parse(text);}catch(e){el.innerHTML=`<div style="font-size:12px;color:var(--dtx);padding:8px;background:var(--dbg);border-radius:var(--rm)">❌ คำตอบจาก server ไม่ถูกต้อง</div>`;return;}
+    if(d.error){el.innerHTML=`<div style="font-size:12px;color:var(--dtx);padding:8px;background:var(--dbg);border-radius:var(--rm)">❌ เชื่อมต่อไม่ได้: ${d.error}</div>`;return;}
     el.innerHTML='<div style="font-size:12px;color:var(--stx);padding:8px;background:var(--sbg);border-radius:var(--rm)">✓ เชื่อมต่อ Turso สำเร็จ</div>';
+  }catch(e){
+    el.innerHTML=`<div style="font-size:12px;color:var(--dtx);padding:8px;background:var(--dbg);border-radius:var(--rm)">❌ เชื่อมต่อไม่ได้: ${e.message}</div>`;
   }
 };
 

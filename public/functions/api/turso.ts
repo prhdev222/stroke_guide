@@ -10,13 +10,50 @@ interface TursoRequest {
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
   "Content-Type": "application/json",
 };
 
 export const onRequestOptions: PagesFunction<Env> = async () => {
   return new Response(null, { headers: corsHeaders });
+};
+
+/** GET = health check (SELECT 1) so "Test connection" works even if request is GET */
+export const onRequestGet: PagesFunction<Env> = async (context) => {
+  const { TURSO_URL, TURSO_AUTH_TOKEN } = context.env;
+  if (!TURSO_URL || !TURSO_AUTH_TOKEN) {
+    return new Response(
+      JSON.stringify({ error: "Turso not configured on server" }),
+      { status: 500, headers: corsHeaders }
+    );
+  }
+  try {
+    const url = TURSO_URL.startsWith("http") ? TURSO_URL : `https://${TURSO_URL.replace(/^libsql:\/\//, "").replace(/^\/+/, "")}`;
+    const tursoResp = await fetch(`${url}/v2/pipeline`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${TURSO_AUTH_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        requests: [{ type: "execute", stmt: { sql: "SELECT 1 AS ok", args: [] } }],
+      }),
+    });
+    const raw = await tursoResp.text();
+    if (!raw) {
+      return new Response(JSON.stringify({ error: "Turso empty response" }), { status: 502, headers: corsHeaders });
+    }
+    const data = JSON.parse(raw);
+    if (data.results?.[0]?.type === "error") {
+      return new Response(JSON.stringify({ error: data.results[0].error.message }), { status: 400, headers: corsHeaders });
+    }
+    const rows = data.results?.[0]?.response?.result?.rows || [];
+    const mapped = rows.map((row: any[]) => ({ ok: row[0]?.value ?? 1 }));
+    return new Response(JSON.stringify({ rows: mapped }), { headers: corsHeaders });
+  } catch (e: any) {
+    return new Response(JSON.stringify({ error: e.message || "Turso connection failed" }), { status: 500, headers: corsHeaders });
+  }
 };
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
