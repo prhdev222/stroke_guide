@@ -52,18 +52,27 @@ button{font-family:inherit;cursor:pointer}
 .chip-dot{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--bm);flex-shrink:0;transition:all .1s}
 .sym-chip.on .chip-dot{background:#639922;border-color:#3B6D11}
 
-/* Checklist */
-.ck-row{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;border-radius:var(--rm);margin-bottom:5px;cursor:pointer;user-select:none;border:0.5px solid var(--bl);background:var(--bg2)}
+/* Checklist — mobile-friendly: box + text ไม่ทับกัน */
+.ck-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--rm);margin-bottom:6px;cursor:pointer;user-select:none;border:0.5px solid var(--bl);background:var(--bg2);min-height:44px;box-sizing:border-box}
 .ck-row.ok{background:var(--sbg);border-color:var(--sbd)}
 .ck-row.bad{background:var(--dbg);border-color:var(--dbd)}
-.ckbox{width:16px;height:16px;border-radius:3px;border:1.5px solid var(--bm);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;margin-top:1px}
-.ckbox.ok{background:#639922;border-color:#3B6D11;color:white}
-.ckbox.bad{background:#C41E3A;border-color:#8B1225;color:white}
-.ckbox.on{background:var(--accent);border-color:var(--accent);color:white}
+.ck-row label{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;margin:0;font-size:13px;line-height:1.4}
+.ck-row .ckbox{width:22px;height:22px;min-width:22px;min-height:22px;border-radius:4px;border:1.5px solid var(--bm);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;margin:0}
+.ck-row .ckbox.ok{background:#639922;border-color:#3B6D11;color:white}
+.ck-row .ckbox.bad{background:#C41E3A;border-color:#8B1225;color:white}
+.ck-row .ckbox.on{background:var(--accent);border-color:var(--accent);color:white}
+.ck-row .ck-text{flex:1;min-width:0;word-break:break-word}
+.ck-row .ck-badge{flex-shrink:0;font-size:11px;color:var(--tx2)}
+.ck-row input[type=checkbox]{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
 .aspect-btn{min-width:36px;height:36px;border-radius:var(--rm);border:1.5px solid var(--bm);background:var(--bg2);color:var(--tx);font-size:13px;font-weight:500;cursor:pointer}
 .aspect-btn.on{background:var(--accent);border-color:var(--accent);color:white}
 .link-pill{display:inline-block;padding:6px 12px;border-radius:999px;background:var(--ibg);color:var(--itx);text-decoration:none;font-size:12px}
 .link-pill:hover{opacity:0.9}
+@media (max-width:480px){
+  .ck-row{padding:12px 14px;gap:12px;min-height:48px}
+  .ck-row .ckbox{width:24px;height:24px;min-width:24px;min-height:24px;font-size:13px}
+  .ck-row label{font-size:14px}
+}
 .dec-box{padding:12px 16px;border-radius:var(--rl);text-align:center;font-size:14px;font-weight:700;border:1.5px solid;margin-top:6px}
 
 /* NIHSS */
@@ -281,8 +290,8 @@ function rBEFAST(){
 // ── CRITERIA ──
 function ckr(checked,label,onclick,danger=false){
   return `<div class="ck-row${checked?(danger?' bad':' ok'):''}" onclick="${onclick}">
-    <div class="ckbox${checked?(danger?' bad':' ok'):''}${checked?'':''}">${checked?'✓':''}</div>
-    <div style="flex:1;font-size:13px;line-height:1.5">${label}</div>
+    <div class="ckbox${checked?(danger?' bad':' ok'):''}">${checked?'✓':''}</div>
+    <div class="ck-text" style="font-size:13px;line-height:1.5">${label}</div>
   </div>`;}
 function rCriteria(){
   const el=elig(),ab=hasAbs(),inc=allIncl();
@@ -441,11 +450,11 @@ function rAspectLvo(){
     ${(Array.isArray(links)?links:ASPECT_DEFAULTS).map((l,i)=>`<a href="${(l.url||l).replace(/"/g,'&quot;')}" target="_blank" rel="noopener" class="link-pill">${typeof l==='object'&&l.label?l.label:'ลิงก์ '+(i+1)}</a>`).join('')}
   </div>
   <div class="sec">สงสัย LVO เมื่อใด</div>
-  <div class="ck-row"><label class="ckbox ${nihss6?'on':''}"><input type="checkbox" ${nihss6?'checked':''} disabled> NIHSS ≥6</label><span style="font-size:11px;color:var(--tx2)">${n}</span></div>
-  <div class="ck-row"><label class="ckbox ${(D.lvoSigns?.lvo_gaze)||gaze?'on':''}"><input type="checkbox" ${(D.lvoSigns?.lvo_gaze)||gaze?'checked':''} onchange="D.lvoSigns=D.lvoSigns||{};D.lvoSigns.lvo_gaze=this.checked;render()"> Gaze deviation</label></div>
-  <div class="ck-row"><label class="ckbox ${hemi?'on':''}"><input type="checkbox" ${hemi?'checked':''} onchange="D.lvoSigns=D.lvoSigns||{};D.lvoSigns.lvo_hemi=this.checked;render()"> Hemiplegia ครึ่งซีก</label></div>
-  <div class="ck-row"><label class="ckbox ${aphasia?'on':''}"><input type="checkbox" ${aphasia?'checked':''} onchange="D.lvoSigns=D.lvoSigns||{};D.lvoSigns.lvo_aphasia=this.checked;render()"> Aphasia รุนแรง</label></div>
-  <div class="ck-row"><label class="ckbox ${neglect?'on':''}"><input type="checkbox" ${neglect?'checked':''} onchange="D.lvoSigns=D.lvoSigns||{};D.lvoSigns.lvo_neglect=this.checked;render()"> Hemispatial neglect</label></div>
+  <div class="ck-row ${nihss6?'ok':''}"><label><span class="ckbox ${nihss6?'on':''}">${nihss6?'✓':''}</span><span class="ck-text">NIHSS ≥6</span><input type="checkbox" ${nihss6?'checked':''} disabled></label><span class="ck-badge">${n}</span></div>
+  <div class="ck-row ${(D.lvoSigns?.lvo_gaze)||gaze?'ok':''}"><label><span class="ckbox ${(D.lvoSigns?.lvo_gaze)||gaze?'on':''}">${(D.lvoSigns?.lvo_gaze)||gaze?'✓':''}</span><span class="ck-text">Gaze deviation</span><input type="checkbox" ${(D.lvoSigns?.lvo_gaze)||gaze?'checked':''} onchange="D.lvoSigns=D.lvoSigns||{};D.lvoSigns.lvo_gaze=this.checked;render()"></label></div>
+  <div class="ck-row ${hemi?'ok':''}"><label><span class="ckbox ${hemi?'on':''}">${hemi?'✓':''}</span><span class="ck-text">Hemiplegia ครึ่งซีก</span><input type="checkbox" ${hemi?'checked':''} onchange="D.lvoSigns=D.lvoSigns||{};D.lvoSigns.lvo_hemi=this.checked;render()"></label></div>
+  <div class="ck-row ${aphasia?'ok':''}"><label><span class="ckbox ${aphasia?'on':''}">${aphasia?'✓':''}</span><span class="ck-text">Aphasia รุนแรง</span><input type="checkbox" ${aphasia?'checked':''} onchange="D.lvoSigns=D.lvoSigns||{};D.lvoSigns.lvo_aphasia=this.checked;render()"></label></div>
+  <div class="ck-row ${neglect?'ok':''}"><label><span class="ckbox ${neglect?'on':''}">${neglect?'✓':''}</span><span class="ck-text">Hemispatial neglect</span><input type="checkbox" ${neglect?'checked':''} onchange="D.lvoSigns=D.lvoSigns||{};D.lvoSigns.lvo_neglect=this.checked;render()"></label></div>
   <div style="margin-top:10px;padding:8px 10px;background:var(--cbg);border-radius:8px;font-size:13px"><strong>สรุป:</strong> ${lvoText}</div>
   <div class="sec" style="margin-top:12px">เกณฑ์ Refer Thrombectomy</div>
   <div style="font-size:12px;color:var(--tx2);line-height:1.5">
@@ -463,7 +472,7 @@ function rAspectLvo(){
     {k:'aspect6',l:'ASPECTS ≥6'},
     {k:'groin6',l:'ทำ groin puncture ได้ภายใน 6 ชม. หลัง onset'},
     {k:'noContra',l:'ไม่มีข้อห้าม IV rt-PA (หรือมีแต่ยังพิจารณา thrombectomy ได้)'},
-  ].map(x=>{ const v=!!(x.k==='nihss6'?nihss6:x.k==='aspect6'?aspectOk:D.thromboIncl?.[x.k]); return `<div class="ck-row ${v?'ok':''}"><label class="ckbox ${v?'ok':''}"><input type="checkbox" ${v?'checked':''} onchange="D.thromboIncl=D.thromboIncl||{};D.thromboIncl['${x.k}']=this.checked;render()" ${x.k==='nihss6'||x.k==='aspect6'?'disabled':''}> ${x.l}</label>${x.k==='nihss6'?`<span style="font-size:11px;color:var(--tx2)">NIHSS=${n}</span>`:x.k==='aspect6'?`<span style="font-size:11px;color:var(--tx2)">ASPECT=${aspect!==undefined?aspect:'–'}</span>`:''}</div>`; }).join('')}
+  ].map(x=>{ const v=!!(x.k==='nihss6'?nihss6:x.k==='aspect6'?aspectOk:D.thromboIncl?.[x.k]); const dis=x.k==='nihss6'||x.k==='aspect6'; return `<div class="ck-row ${v?'ok':''}"><label><span class="ckbox ${v?'ok':''}">${v?'✓':''}</span><span class="ck-text">${x.l}</span><input type="checkbox" ${v?'checked':''} onchange="D.thromboIncl=D.thromboIncl||{};D.thromboIncl['${x.k}']=this.checked;render()" ${dis?'disabled':''}></label>${x.k==='nihss6'?`<span class="ck-badge">NIHSS=${n}</span>`:x.k==='aspect6'?`<span class="ck-badge">ASPECT=${aspect!==undefined?aspect:'–'}</span>`:''}</div>`; }).join('')}
   <div class="sec-sub" style="margin-top:10px">Relative exclusion criteria (เกณฑ์ออกเชิงเปรียบเทียบ)</div>
   ${[
     {k:'m2etc',l:'MCA (M2,M3), ACA, VA, PCA, BA occlusion'},
@@ -471,7 +480,7 @@ function rAspectLvo(){
     {k:'nihss6ex',l:'NIHSS &lt;6'},
     {k:'age18ex',l:'อายุ &lt;18 ปี'},
     {k:'groin24',l:'ทำ groin puncture ได้ภายใน 24 ชม. หลัง onset'},
-  ].map(x=>{ const v=!!(x.k==='nihss6ex'?n<6:D.thromboExcl?.[x.k]); return `<div class="ck-row ${v?'bad':''}"><label class="ckbox ${v?'bad':''}"><input type="checkbox" ${v?'checked':''} onchange="D.thromboExcl=D.thromboExcl||{};D.thromboExcl['${x.k}']=this.checked;render()" ${x.k==='nihss6ex'?'disabled':''}> ${x.l}</label>${x.k==='nihss6ex'?`<span style="font-size:11px;color:var(--tx2)">NIHSS=${n}</span>`:''}</div>`; }).join('')}
+  ].map(x=>{ const v=!!(x.k==='nihss6ex'?n<6:D.thromboExcl?.[x.k]); const dis=x.k==='nihss6ex'; return `<div class="ck-row ${v?'bad':''}"><label><span class="ckbox ${v?'bad':''}">${v?'✓':''}</span><span class="ck-text">${x.l}</span><input type="checkbox" ${v?'checked':''} onchange="D.thromboExcl=D.thromboExcl||{};D.thromboExcl['${x.k}']=this.checked;render()" ${dis?'disabled':''}></label>${x.k==='nihss6ex'?`<span class="ck-badge">NIHSS=${n}</span>`:''}</div>`; }).join('')}
   <div class="thrombo-notes">
     <div class="sec-sub" style="margin-top:12px">หมายเหตุ 1</div>
     <p style="font-size:12px;color:var(--tx2);line-height:1.5;margin:4px 0">นอกเหนือจากเกณฑ์ 8 ข้อแล้ว ยังสามารถทำ endovascular therapy ได้ โดยพิจารณาเป็นรายกรณี เช่น หลอดเลือด ACA, VA, BA, PCA หรือระยะเวลาหลัง onset มากกว่า 6 ชม.</p>
