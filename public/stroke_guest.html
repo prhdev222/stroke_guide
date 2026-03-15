@@ -63,12 +63,19 @@ button{font-family:inherit;cursor:pointer}
 /* NIHSS */
 .score-ring{display:flex;align-items:center;gap:14px;padding:14px;border-radius:var(--rl);margin-bottom:10px;border:1.5px solid;position:sticky;top:57px;z-index:90}
 .ring{width:70px;height:70px;border-radius:50%;border:3px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
-.ni-item{padding:10px 12px;background:var(--bg2);border-radius:var(--rm);border:0.5px solid var(--bl);margin-bottom:8px}
-.ni-opts{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
-.ni-btn{padding:4px 10px;border-radius:6px;border:0.5px solid var(--bm);background:var(--bg);font-size:12px;color:var(--tx);cursor:pointer;transition:all .1s}
-.ni-btn.s0{background:var(--sbg);border-color:var(--sbd);color:var(--stx);font-weight:600}
-.ni-btn.sw{background:var(--wbg);border-color:var(--wbd);color:var(--wtx);font-weight:600}
-.ni-btn.sd{background:var(--dbg);border-color:var(--dbd);color:var(--dtx);font-weight:600}
+.nihss-item{position:relative;margin-bottom:10px;padding:12px;background:var(--bg2);border-radius:var(--rm);border:0.5px solid var(--bl)}
+.nihss-desc{font-size:11px;color:var(--tx2);line-height:1.5;margin-bottom:8px;padding:8px 10px;background:var(--bg3);border-radius:var(--rm);border:0.5px solid var(--bl)}
+.nihss-desc-lang{display:inline-block;margin-right:8px;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;margin-bottom:4px}
+.nihss-desc-lang.active{background:var(--ibg);color:var(--itx);border:0.5px solid var(--ibd)}
+.nihss-desc-lang:not(.active){background:var(--bg3);color:var(--tx2);border:0.5px solid var(--bm)}
+.nihss-desc-en{display:none}
+.nihss-lang-en .nihss-desc-th{display:none}
+.nihss-lang-en .nihss-desc-en{display:block}
+.nihss-opts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.nihss-btn{padding:5px 11px;border-radius:6px;border:0.5px solid var(--bm);background:var(--bg);font-size:13px;color:var(--tx);cursor:pointer;transition:all .1s}
+.nihss-btn.s0{background:var(--sbg);border-color:var(--sbd);color:var(--stx);font-weight:600}
+.nihss-btn.sw{background:var(--wbg);border-color:var(--wbd);color:var(--wtx);font-weight:600}
+.nihss-btn.sd{background:var(--dbg);border-color:var(--dbd);color:var(--dtx);font-weight:600}
 
 /* rt-PA */
 .dose-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
@@ -114,21 +121,21 @@ let D={
 };
 
 const NIHSS=[
-  {id:'1a',th:'1a. ระดับความรู้สึก (LOC)',opts:[{v:0,t:'ตื่นดี'},{v:1,t:'ง่วง/ปลุกได้'},{v:2,t:'ต้องกระตุ้น'},{v:3,t:'ไม่ตอบสนอง'}]},
-  {id:'1b',th:'1b. LOC คำถาม (เดือน/อายุ)',opts:[{v:0,t:'ถูก 2'},{v:1,t:'ถูก 1'},{v:2,t:'ถูก 0'}]},
-  {id:'1c',th:'1c. LOC คำสั่ง (กำมือ/หลับตา)',opts:[{v:0,t:'ทำ 2'},{v:1,t:'ทำ 1'},{v:2,t:'ทำ 0'}]},
-  {id:'2',th:'2. การมองตาม (Best Gaze)',opts:[{v:0,t:'ปกติ'},{v:1,t:'Partial palsy'},{v:2,t:'Forced deviation'}]},
-  {id:'3',th:'3. การมองเห็น (Visual)',opts:[{v:0,t:'ปกติ'},{v:1,t:'Partial hemianopia'},{v:2,t:'Complete hemianopia'},{v:3,t:'Bilateral hemianopia'}]},
-  {id:'4',th:'4. ใบหน้า (Facial Palsy)',opts:[{v:0,t:'ปกติ'},{v:1,t:'Minor'},{v:2,t:'Partial (ล่าง)'},{v:3,t:'Complete'}]},
-  {id:'5a',th:'5a. แขนซ้าย (90° / 10 วิ)',opts:[{v:0,t:'ไม่ drift'},{v:1,t:'Drift'},{v:2,t:'ต้านบ้าง'},{v:3,t:'ต้านไม่ได้'},{v:4,t:'ไม่เคลื่อน'}]},
-  {id:'5b',th:'5b. แขนขวา (90° / 10 วิ)',opts:[{v:0,t:'ไม่ drift'},{v:1,t:'Drift'},{v:2,t:'ต้านบ้าง'},{v:3,t:'ต้านไม่ได้'},{v:4,t:'ไม่เคลื่อน'}]},
-  {id:'6a',th:'6a. ขาซ้าย (30° / 5 วิ)',opts:[{v:0,t:'ไม่ drift'},{v:1,t:'Drift'},{v:2,t:'ต้านบ้าง'},{v:3,t:'ต้านไม่ได้'},{v:4,t:'ไม่เคลื่อน'}]},
-  {id:'6b',th:'6b. ขาขวา (30° / 5 วิ)',opts:[{v:0,t:'ไม่ drift'},{v:1,t:'Drift'},{v:2,t:'ต้านบ้าง'},{v:3,t:'ต้านไม่ได้'},{v:4,t:'ไม่เคลื่อน'}]},
-  {id:'7',th:'7. Limb Ataxia',opts:[{v:0,t:'ไม่มี'},{v:1,t:'มี 1 ข้าง'},{v:2,t:'มี 2 ข้าง'}]},
-  {id:'8',th:'8. ความรู้สึก (Sensory)',opts:[{v:0,t:'ปกติ'},{v:1,t:'ลดลงบ้าง'},{v:2,t:'รุนแรง/หมด'}]},
-  {id:'9',th:'9. การพูด (Language)',opts:[{v:0,t:'ปกติ'},{v:1,t:'Mild aphasia'},{v:2,t:'Severe aphasia'},{v:3,t:'Mute/Global'}]},
-  {id:'10',th:'10. Dysarthria',opts:[{v:0,t:'ปกติ'},{v:1,t:'ไม่ชัดบ้าง'},{v:2,t:'ไม่ชัดมาก'}]},
-  {id:'11',th:'11. Extinction/Inattention',opts:[{v:0,t:'ปกติ'},{v:1,t:'1 ด้าน'},{v:2,t:'Profound'}]},
+  {id:'1a',th:'1a. ระดับความรู้สึกตัว (LOC)',en:'1a. Level of Consciousness',descTh:'ประเมินระดับการตื่น (arousal) และการตอบสนอง — ตื่นดี / ง่วงแต่ปลุกได้ / ต้องกระตุ้นซ้ำจึงตอบสนอง / ไม่ตอบสนอง',descEn:'Assess level of arousal and responsiveness. Alert / Drowsy but arousable / Requires repeated stimulation / Unresponsive.',opts:[{v:0,th:'ตื่นดี',en:'Alert'},{v:1,th:'ง่วง/ปลุกได้',en:'Drowsy'},{v:2,th:'ต้องกระตุ้นซ้ำ',en:'Repeated stimulation'},{v:3,th:'ไม่ตอบสนอง',en:'Unresponsive'}]},
+  {id:'1b',th:'1b. LOC คำถาม (เดือน/อายุ)',en:'1b. LOC Questions (month, age)',descTh:'ถามผู้ป่วยว่า «ตอนนี้เดือนอะไร» และ «อายุเท่าไร» — ให้คะแนนตามจำนวนที่ตอบถูก (2 / 1 / 0)',descEn:'Ask patient: «What month is it?» and «How old are you?» Score 2 = both correct, 1 = one correct, 0 = none.',opts:[{v:0,th:'ถูก 2',en:'Both correct'},{v:1,th:'ถูก 1',en:'One correct'},{v:2,th:'ถูก 0',en:'None'}]},
+  {id:'1c',th:'1c. LOC คำสั่ง (กำมือ/หลับตา)',en:'1c. LOC Commands (eyes, grip)',descTh:'สั่งให้ «หลับตา» «เปิดตา» «กำมือ» «แบมือ» — ทำได้ครบ 2 อย่าง / 1 อย่าง / 0',descEn:'Ask to open/close eyes, grip/release hand. Score 2 = both done, 1 = one, 0 = none.',opts:[{v:0,th:'ทำ 2',en:'Both'},{v:1,th:'ทำ 1',en:'One'},{v:2,th:'ทำ 0',en:'None'}]},
+  {id:'2',th:'2. การมองตาม (Gaze)',en:'2. Best Gaze',descTh:'ให้มองตามนิ้วแพทย์ทางแนวนอน — ปกติ / พิการบางส่วน (full horizontal movement ไม่ครบ) / ลูกตาเบนไปด้านหนึ่งชัดเจน (forced deviation)',descEn:'Horizontal eye tracking. Normal / Partial gaze palsy (reduced but full range) / Forced deviation (total gaze palsy).',opts:[{v:0,th:'ปกติ',en:'Normal'},{v:1,th:'Partial palsy',en:'Partial'},{v:2,th:'Forced deviation',en:'Forced deviation'}]},
+  {id:'3',th:'3. การมองเห็น (Visual)',en:'3. Visual',descTh:'ตรวจลานสายตา (visual fields) — ปกติ / บอดครึ่งหนึ่งบางส่วน / บอดครึ่งหนึ่งสมบูรณ์ / บอดทั้งสองข้าง',descEn:'Visual field testing. No visual loss / Partial hemianopia / Complete hemianopia / Bilateral hemianopia.',opts:[{v:0,th:'ปกติ',en:'No loss'},{v:1,th:'Partial hemianopia',en:'Partial'},{v:2,th:'Complete hemianopia',en:'Complete'},{v:3,th:'Bilateral hemianopia',en:'Bilateral'}]},
+  {id:'4',th:'4. ใบหน้า (Facial Palsy)',en:'4. Facial Palsy',descTh:'ประเมินอ่อนแรงใบหน้า (ปากเบี้ยว หลับตาอ่อนแรง) — ปกติ / เล็กน้อย / พิการบางส่วน (ครึ่งล่างชัด) / พิการสมบูรณ์',descEn:'Facial weakness. Normal / Minor paralysis / Partial (lower face) / Complete paralysis.',opts:[{v:0,th:'ปกติ',en:'Normal'},{v:1,th:'Minor',en:'Minor'},{v:2,th:'Partial (ล่าง)',en:'Partial'},{v:3,th:'Complete',en:'Complete'}]},
+  {id:'5a',th:'5a. แขนซ้าย (90° / 10 วิ)',en:'5a. Motor Arm Left',descTh:'ยกแขนข้างที่อ่อนแรง 90° (นอน) หรือ 45° (นั่ง) ค้าง 10 วินาที — ไม่ drift / drift ก่อน 10 วิ / ต้านแรงได้บ้าง / ต้านแรงไม่ได้ / ไม่ยกได้',descEn:'Hold left arm at 90° (supine) or 45° (sitting) for 10 sec. No drift / Drift before 10 sec / Some effort vs gravity / No effort / No movement.',opts:[{v:0,th:'ไม่ drift',en:'No drift'},{v:1,th:'Drift',en:'Drift'},{v:2,th:'ต้านแรงบ้าง',en:'Some effort'},{v:3,th:'ต้านไม่ได้',en:'No effort'},{v:4,th:'ไม่เคลื่อน',en:'No movement'}]},
+  {id:'5b',th:'5b. แขนขวา (90° / 10 วิ)',en:'5b. Motor Arm Right',descTh:'ยกแขนข้างที่อ่อนแรง 90° (นอน) หรือ 45° (นั่ง) ค้าง 10 วินาที — เกณฑ์เดียวกับ 5a',descEn:'Same as 5a for right arm. Hold 90° or 45° for 10 sec.',opts:[{v:0,th:'ไม่ drift',en:'No drift'},{v:1,th:'Drift',en:'Drift'},{v:2,th:'ต้านแรงบ้าง',en:'Some effort'},{v:3,th:'ต้านไม่ได้',en:'No effort'},{v:4,th:'ไม่เคลื่อน',en:'No movement'}]},
+  {id:'6a',th:'6a. ขาซ้าย (30° / 5 วิ)',en:'6a. Motor Leg Left',descTh:'ยกขาข้างที่อ่อนแรง 30° ค้าง 5 วินาที — ไม่ drift / drift ก่อน 5 วิ / ต้านแรงได้บ้าง / ต้านไม่ได้ / ไม่ยกได้',descEn:'Hold left leg at 30° for 5 sec. No drift / Drift / Some effort / No effort / No movement.',opts:[{v:0,th:'ไม่ drift',en:'No drift'},{v:1,th:'Drift',en:'Drift'},{v:2,th:'ต้านแรงบ้าง',en:'Some effort'},{v:3,th:'ต้านไม่ได้',en:'No effort'},{v:4,th:'ไม่เคลื่อน',en:'No movement'}]},
+  {id:'6b',th:'6b. ขาขวา (30° / 5 วิ)',en:'6b. Motor Leg Right',descTh:'ยกขาข้างที่อ่อนแรง 30° ค้าง 5 วินาที — เกณฑ์เดียวกับ 6a',descEn:'Same as 6a for right leg. Hold 30° for 5 sec.',opts:[{v:0,th:'ไม่ drift',en:'No drift'},{v:1,th:'Drift',en:'Drift'},{v:2,th:'ต้านแรงบ้าง',en:'Some effort'},{v:3,th:'ต้านไม่ได้',en:'No effort'},{v:4,th:'ไม่เคลื่อน',en:'No movement'}]},
+  {id:'7',th:'7. Limb Ataxia (การเคลื่อนไหวไม่ประสาน)',en:'7. Limb Ataxia',descTh:'ตรวจ finger-nose และ heel-shin — ไม่มี ataxia / มีที่แขนหรือขาข้างใดข้างหนึ่ง / มีทั้งสองข้าง (ให้คะแนนเฉพาะเมื่อไม่ใช่จากอ่อนแรงหรือความรู้สึกเสีย)',descEn:'Finger-nose and heel-shin. No ataxia / Ataxia in one limb / Ataxia in two limbs. Score only if not due to weakness or sensory loss.',opts:[{v:0,th:'ไม่มี',en:'None'},{v:1,th:'มี 1 ข้าง',en:'One limb'},{v:2,th:'มี 2 ข้าง',en:'Two limbs'}]},
+  {id:'8',th:'8. ความรู้สึก (Sensory)',en:'8. Sensory',descTh:'ตรวจความรู้สึกสัมผัส/เข็มที่หน้า แขน ขา — ปกติ / ลดลงบ้าง / หมดความรู้สึกหรือไม่รู้สึกที่ด้านใดด้านหนึ่ง',descEn:'Pinprick and light touch on face, arm, leg. Normal / Mild to moderate decrease / Severe decrease or total loss.',opts:[{v:0,th:'ปกติ',en:'Normal'},{v:1,th:'ลดลงบ้าง',en:'Mild-moderate'},{v:2,th:'หมด/รุนแรง',en:'Severe/total loss'}]},
+  {id:'9',th:'9. การพูด/ภาษา (Language)',en:'9. Best Language',descTh:'ให้ตั้งชื่อรูป อ่านประโยค ตอบคำถาม — ปกติ / aphasia เล็กน้อย-ปานกลาง / aphasia รุนแรง (สื่อสารได้น้อยมาก) / Mute หรือ global aphasia',descEn:'Name objects, read sentences, describe picture. No aphasia / Mild-moderate aphasia / Severe aphasia / Mute or global aphasia.',opts:[{v:0,th:'ปกติ',en:'No aphasia'},{v:1,th:'Mild aphasia',en:'Mild-moderate'},{v:2,th:'Severe aphasia',en:'Severe'},{v:3,th:'Mute/Global',en:'Mute/Global'}]},
+  {id:'10',th:'10. การออกเสียง (Dysarthria)',en:'10. Dysarthria',descTh:'ประเมินความชัดของการออกเสียง (articulation) จากคำหรือประโยคที่อ่าน — ปกติ / ไม่ชัดเล็กน้อย-ปานกลาง / ไม่ชัดมากจนฟังไม่เข้าใจ',descEn:'Articulation and intelligibility. Normal / Mild to moderate slurring / Severe (unintelligible or mute from dysarthria).',opts:[{v:0,th:'ปกติ',en:'Normal'},{v:1,th:'ไม่ชัดเล็กน้อย',en:'Mild-moderate'},{v:2,th:'ไม่ชัดมาก',en:'Severe'}]},
+  {id:'11',th:'11. Extinction / Inattention',en:'11. Extinction and Inattention',descTh:'ตรวจ double simultaneous stimulation (สัมผัสหรือเห็นทั้งสองด้านพร้อมกัน) — ปกติ / ไม่ใส่ใจหรือ extinction หนึ่งด้าน / ไม่ใส่ใจรุนแรง (hemi-inattention หรือ neglect ชัด)',descEn:'Double simultaneous stimulation. Normal / Inattention or extinction in one modality / Profound hemi-inattention or neglect.',opts:[{v:0,th:'ปกติ',en:'Normal'},{v:1,th:'ไม่ใส่ใจ 1 ด้าน',en:'One modality'},{v:2,th:'Profound',en:'Profound'}]},
 ];
 const ABS=[
   {id:'sbp',t:'SBP >185 หรือ DBP >110 mmHg'},
@@ -283,8 +290,11 @@ window.updDec=function(){
 
 // ── NIHSS ──
 function rNIHSS(){
+  D.nihssDescLang=D.nihssDescLang||'th';
   const t=totNIHSS();const sv=getSev(t);const sc=Object.keys(D.nihss).length;
-  return `<div class="score-ring" style="background:${sv.bg};border-color:${sv.bd}">
+  const langEn=D.nihssDescLang==='en';
+  return `<div id="nihssGuestWrap" class="${langEn?'nihss-lang-en':''}">
+  <div class="score-ring" style="background:${sv.bg};border-color:${sv.bd}">
     <div class="ring" style="border-color:${sv.bd}">
       <div style="font-size:28px;font-weight:700;color:${sv.co};line-height:1">${t}</div>
       <div style="font-size:10px;color:${sv.co};opacity:.7">/42</div>
@@ -295,15 +305,33 @@ function rNIHSS(){
     </div>
     <button onclick="resetNIHSS()" style="margin-left:auto;padding:5px 10px;border:0.5px solid ${sv.bd};border-radius:var(--rm);background:transparent;color:${sv.co};font-size:11px;font-family:inherit">รีเซ็ต</button>
   </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="sec">คำอธิบายแต่ละข้อ — เลือกภาษา / Description — Select language</div>
+    <div style="display:flex;gap:8px;margin-bottom:4px">
+      <button type="button" class="nihss-desc-lang ${!langEn?'active':''}" onclick="D.nihssDescLang='th';render()">ไทย</button>
+      <button type="button" class="nihss-desc-lang ${langEn?'active':''}" onclick="D.nihssDescLang='en';render()">English</button>
+    </div>
+  </div>
   ${NIHSS.map(item=>{
     const cur=D.nihss[item.id];
-    return `<div class="ni-item"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <div style="font-size:12px;font-weight:600">${item.th}</div>
-      ${cur!==undefined?`<div style="padding:1px 8px;border-radius:4px;background:var(--bg3);font-size:12px;font-weight:700">${cur}</div>`:''}
-    </div>
-    <div class="ni-opts">
-      ${item.opts.map(o=>{const sel=cur===o.v;const cls=sel?(o.v===0?'s0':o.v/(item.opts.length-1)<=0.5?'sw':'sd'):'';return `<button class="ni-btn${sel?' '+cls:''}" onclick="setNihss('${item.id}',${o.v})">${o.v}: ${o.t}</button>`;}).join('')}
-    </div></div>`;
+    const optLabel=(o)=>langEn&&o.en?o.en:o.th;
+    return `<div class="nihss-item" data-id="${item.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div>
+          <div style="font-size:13px;font-weight:600">${item.th}</div>
+          ${item.en?`<div style="font-size:11px;color:var(--tx2);margin-top:2px">${item.en}</div>`:''}
+        </div>
+        ${cur!==undefined?`<div style="padding:2px 8px;border-radius:4px;background:var(--bg3);font-size:13px;font-weight:700">${cur}</div>`:''}
+      </div>
+      ${(item.descTh||item.descEn)?`<div class="nihss-desc nihss-desc-th">${item.descTh||''}</div><div class="nihss-desc nihss-desc-en">${item.descEn||''}</div>`:''}
+      <div class="nihss-opts">
+        ${item.opts.map(o=>{
+          const sel=cur===o.v;
+          const cls=sel?(o.v===0?'s0':o.v/(item.opts.length-1)<=0.5?'sw':'sd'):'';
+          return `<button class="nihss-btn${sel?' '+cls:''}" onclick="setNihss('${item.id}',${o.v})">${o.v}: ${optLabel(o)}</button>`;
+        }).join('')}
+      </div>
+    </div>`;
   }).join('')}
   <div class="card" style="margin-top:4px">
     <div class="sec">ระดับความรุนแรง NIHSS</div>
@@ -331,19 +359,18 @@ window.setNihss=function(id,v){
     const scoreEl=ring.querySelector('.ring div:first-child');if(scoreEl){scoreEl.textContent=t;scoreEl.style.color=sv.co;}
     const subEl=ring.querySelector('.ring div:last-child');if(subEl)subEl.style.color=sv.co;
     const labelEl=ring.querySelector('div:nth-child(2)>div:first-child');if(labelEl){labelEl.textContent=sv.l;labelEl.style.color=sv.co;}
-    const cntEl=ring.querySelector('div:nth-child(2)>div:last-child');if(cntEl){cntEl.textContent=`${sc}/15${sc===15?' ✓ ครบแล้ว':''}`;cntEl.style.color=sv.co;}
+    const cntEl=ring.querySelector('div:nth-child(2)>div:nth-child(2)');if(cntEl){cntEl.textContent=`${sc}/15${sc===15?' ✓ ครบแล้ว':''}`;cntEl.style.color=sv.co;}
     const resetBtn=ring.querySelector('button');if(resetBtn){resetBtn.style.borderColor=sv.bd;resetBtn.style.color=sv.co;}
   }
-  // update item display
-  const item=document.querySelector(`.ni-item:nth-child(${NIHSS.findIndex(i=>i.id===id)+2})`);
+  // update nihss-item display
+  const item=document.querySelector(`.nihss-item[data-id="${id}"]`);
   if(item){
     const scoreDisp=item.querySelector('div:first-child>div:last-child');
-    if(scoreDisp&&scoreDisp.style.padding){scoreDisp.textContent=v;}
-    else if(scoreDisp){scoreDisp.innerHTML+=`<div style="padding:1px 8px;border-radius:4px;background:var(--bg3);font-size:12px;font-weight:700">${v}</div>`;}
-    item.querySelectorAll('.ni-btn').forEach(btn=>{
+    if(scoreDisp){scoreDisp.textContent=v;}
+    item.querySelectorAll('.nihss-btn').forEach(btn=>{
       const bv=parseInt(btn.textContent.split(':')[0]);
-      const cls=v===0?'s0':v/(NIHSS.find(i=>i.id===id)?.opts.length-1)<=0.5?'sw':'sd';
-      btn.className='ni-btn'+(bv===v?' '+cls:'');
+      const cls=bv===v?(v===0?'s0':v/(NIHSS.find(i=>i.id===id)?.opts.length-1)<=0.5?'sw':'sd'):'';
+      btn.className='nihss-btn'+(cls?' '+cls:'');
     });
   }
 };

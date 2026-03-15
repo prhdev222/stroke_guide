@@ -167,6 +167,9 @@ function switchTab(t,btn){
 function render(){
   const fns={home:rHome,guidelines:rGuidelines,videos:rVideos,admin:rAdmin};
   document.getElementById('content').innerHTML=(fns[currentTab]||rHome)();
+  if(currentTab==='guidelines')setTimeout(loadAndShowGl,0);
+  if(currentTab==='videos')setTimeout(loadAndShowVid,0);
+  if(currentTab==='admin')setTimeout(loadAdminLists,0);
 }
 
 // ── HOME ──
@@ -262,8 +265,7 @@ async function loadGuidelines(){
 }
 
 function rGuidelines(){
-  return `<div id="glContent"><div class="empty-state"><div style="font-size:36px;margin-bottom:8px">📋</div><div style="font-size:13px;color:var(--tx2)">ไม่มีข้อมูล — กำลังตรวจสอบ Turso...</div></div></div>
-  <script>loadAndShowGl();<\/script>`;
+  return `<div id="glContent"><div class="empty-state"><div class="spin"></div><div style="margin-top:10px;font-size:12px">กำลังโหลด...</div></div></div>`;
 }
 
 async function loadAndShowGl(){
@@ -812,9 +814,13 @@ function getAspectLinksAdmin(){
   catch{return ASPECT_DEFAULTS;}
 }
 
+async function ensureSettingsTable(){
+  await tursoQuery(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)`);
+}
 async function loadAspectAdmin(){
   const el=document.getElementById('aspectLinkList');
   if(!el)return;
+  await ensureSettingsTable();
   const r=await tursoQuery("SELECT value FROM settings WHERE key='aspect_links' LIMIT 1");
   if(!r.error&&r.rows?.[0]?.value){
     try{
@@ -894,6 +900,7 @@ window.saveAspectLink=async function(idx){
 async function saveAspectLinksTurso(links){
   const st=document.getElementById('aspectSaveStatus');
   if(st){st.textContent='กำลังบันทึก...';st.style.color='var(--tx2)';}
+  await ensureSettingsTable();
   const r=await tursoQuery(
     "INSERT INTO settings(key,value) VALUES('aspect_links',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
     [JSON.stringify(links)]
