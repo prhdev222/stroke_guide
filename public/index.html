@@ -167,9 +167,6 @@ function switchTab(t,btn){
 function render(){
   const fns={home:rHome,guidelines:rGuidelines,videos:rVideos,admin:rAdmin};
   document.getElementById('content').innerHTML=(fns[currentTab]||rHome)();
-  if(currentTab==='guidelines')setTimeout(loadAndShowGl,0);
-  if(currentTab==='videos')setTimeout(loadAndShowVid,0);
-  if(currentTab==='admin')setTimeout(loadAdminLists,0);
 }
 
 // ── HOME ──
@@ -221,24 +218,33 @@ function rHome(){
 }
 
 // ── TURSO API ──
-const TURSO_TIMEOUT_MS = 12000;
 async function tursoQuery(sql,args=[]){
   try{
-    const ctrl=new AbortController();
-    const t=setTimeout(()=>ctrl.abort(),TURSO_TIMEOUT_MS);
-    const r=await fetch('/turso',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sql,args}),signal:ctrl.signal});
-    clearTimeout(t);
+    const r=await fetch('/turso',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sql,args})});
+    if(!r.ok && r.status===503){return{error:'Turso ยังไม่ได้ตั้งค่า — เพิ่ม TURSO_URL และ TURSO_TOKEN ใน Cloudflare Pages Environment Variables'};}
     const d=await r.json();
-    if(d.error)return{error:typeof d.error==='string'?d.error:JSON.stringify(d.error)};
+    if(d.error)return{error:d.error};
     if(d.results?.[0]?.type==='error')return{error:d.results[0].error.message};
     const rows=d.results?.[0]?.response?.result?.rows||[];
     const cols=d.results?.[0]?.response?.result?.cols||[];
     return{rows:rows.map(row=>Object.fromEntries(cols.map((c,i)=>([c.name,row[i].value]))))};
-  }catch(e){return{error:e.name==='AbortError'?'การเชื่อมต่อเกินเวลา — ตรวจสอบอินเทอร์เน็ตหรือการตั้งค่า Turso':e.message};}
+  }catch(e){return{error:e.message};}
 }
 
-async function ensureTable(){
-  await tursoQuery(`CREATE TABLE IF NOT EXISTS guidelines (
+
+// ── GUIDELINES TAB ──
+let glData=null;
+function tursoErrorHtml(msg){
+  return `<div class="empty-state">
+    <div style="font-size:36px;margin-bottom:10px">📋</div>
+    <div style="font-size:14px;font-weight:600;margin-bottom:4px">ไม่มีข้อมูลจาก Turso</div>
+    <div style="font-size:12px;color:var(--tx2);max-width:280px;line-height:1.6">${msg}</div>
+    <div style="font-size:11px;color:var(--tx2);margin-top:12px">ถ้าไม่ได้ใช้ Turso สามารถข้ามได้ — ใช้แอปได้ตามปกติ</div>
+  </div>`;
+}
+
+async function loadGuidelines(){
+  const createResult=await tursoQuery(`CREATE TABLE IF NOT EXISTS guidelines (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     category TEXT NOT NULL DEFAULT 'general',
     title TEXT NOT NULL,
@@ -249,27 +255,23 @@ async function ensureTable(){
     sort_order INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now'))
   )`);
-}
-
-// ── GUIDELINES TAB ──
-let glData=null;
-async function loadGuidelines(){
-  await ensureTable();
+  if(createResult.error)return{error:createResult.error};
   const r=await tursoQuery("SELECT * FROM guidelines WHERE link_type != 'youtube' OR link_type IS NULL ORDER BY sort_order ASC, created_at DESC");
-  if(r.error)return null;
-  return r.rows;
+  if(r.error)return{error:r.error};
+  return{rows:r.rows||[]};
 }
 
 function rGuidelines(){
-  return `<div id="glContent"><div class="empty-state"><div class="spin"></div><div style="margin-top:10px;font-size:12px">กำลังโหลด...</div></div></div>`;
+  return `<div id="glContent"><div class="empty-state"><div style="font-size:36px;margin-bottom:8px">📋</div><div style="font-size:13px;color:var(--tx2)">ไม่มีข้อมูล — กำลังตรวจสอบ Turso...</div></div></div>
+  <script>loadAndShowGl();<\/script>`;
 }
 
 async function loadAndShowGl(){
   const el=document.getElementById('glContent');
   if(!el)return;
-  let rows;
-  try{ rows=await loadGuidelines(); }catch(e){ el.innerHTML=`<div class="empty-state"><div style="font-size:28px;margin-bottom:8px">⚠️</div><div style="font-size:13px;font-weight:600">โหลดไม่สำเร็จ</div><div style="font-size:12px;color:var(--tx2);margin-top:6px">${escHtml(e.message||'Unknown error')}</div></div>`;return; }
-  if(!rows){el.innerHTML=`<div class="empty-state"><div style="font-size:28px;margin-bottom:8px">⚠️</div><div style="font-size:13px;font-weight:600">ไม่สามารถเชื่อมต่อ Turso ได้</div><div style="font-size:12px;color:var(--tx2);margin-top:6px">ตรวจสอบ .dev.vars (รัน local) หรือ Environment Variables ( deploy ) — ต้องมี TURSO_URL และ TURSO_TOKEN</div><div style="font-size:12px;color:var(--tx2);margin-top:8px">หรือ Admin เพิ่ม Guideline ได้ที่ tab จัดการ</div></div>`;return;}
+  const result=await loadGuidelines();
+  if(result.error){el.innerHTML=tursoErrorHtml(result.error);return;}
+  const rows=result.rows;
   if(rows.length===0){el.innerHTML=glEmptyWithAdd();return;}
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div style="font-size:12px;color:var(--tx2)">${rows.length} รายการ</div>
@@ -398,16 +400,27 @@ window.deleteGl=function(id){
 
 // ── VIDEOS TAB ──
 function rVideos(){
-  return `<div id="vidContent"><div class="empty-state"><div class="spin"></div><div style="margin-top:10px;font-size:12px">กำลังโหลด...</div></div></div>
+  return `<div id="vidContent"><div class="empty-state"><div style="font-size:36px;margin-bottom:8px">🎬</div><div style="font-size:13px;color:var(--tx2)">ไม่มีข้อมูล — กำลังตรวจสอบ Turso...</div></div></div>
   <script>loadAndShowVid();<\/script>`;
 }
 
 async function loadAndShowVid(){
-  await ensureTable();
-  const r=await tursoQuery("SELECT * FROM guidelines WHERE link_type='youtube' OR link_type='gdrive' ORDER BY sort_order ASC, created_at DESC");
+  const createResult=await tursoQuery(`CREATE TABLE IF NOT EXISTS guidelines (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL DEFAULT 'general',
+    title TEXT NOT NULL,
+    body TEXT,
+    link_url TEXT,
+    link_type TEXT,
+    link_label TEXT,
+    sort_order INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`);
   const el=document.getElementById('vidContent');
   if(!el)return;
-  if(r.error){el.innerHTML=`<div class="empty-state"><div style="font-size:36px;margin-bottom:10px">🎬</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">ยังไม่มีวิดีโอ</div><div style="font-size:12px;color:var(--tx2)">Admin เพิ่มได้ที่ tab ⚙️ จัดการ</div></div>`;return;}
+  if(createResult.error){el.innerHTML=tursoErrorHtml(createResult.error);return;}
+  const r=await tursoQuery("SELECT * FROM guidelines WHERE link_type='youtube' OR link_type='gdrive' ORDER BY sort_order ASC, created_at DESC");
+  if(r.error){el.innerHTML=tursoErrorHtml(r.error);return;}
   const rows=r.rows||[];
   const ytRows=rows.filter(x=>x.link_type==='youtube');
   const otherRows=rows.filter(x=>x.link_type!=='youtube');
@@ -553,13 +566,13 @@ function rAdmin(){
   <div class="card">
     <div class="sec">จัดการ Guideline</div>
     <button onclick="requirePin(()=>{editingGlId=null;showGlForm({})})" class="btn-red" style="width:100%;margin-bottom:8px">+ เพิ่ม Guideline ใหม่</button>
-    <div id="adminGlList"><div class="empty-state" style="padding:14px"><div class="spin"></div></div></div>
+    <div id="adminGlList"><div class="empty-state" style="padding:14px"><div style="font-size:12px;color:var(--tx2)">ไม่มีข้อมูล — กำลังตรวจสอบ Turso...</div></div></div>
   </div>
 
   <div class="card">
     <div class="sec">จัดการ วิดีโอ / ลิงก์</div>
     <button onclick="requirePin(()=>showAddVidForm())" class="btn-red" style="width:100%;margin-bottom:8px">+ เพิ่มวิดีโอ/ลิงก์ใหม่</button>
-    <div id="adminVidList"><div class="empty-state" style="padding:14px"><div class="spin"></div></div></div>
+    <div id="adminVidList"><div class="empty-state" style="padding:14px"><div style="font-size:12px;color:var(--tx2)">ไม่มีข้อมูล — กำลังตรวจสอบ Turso...</div></div></div>
   </div>
 
   <div class="card">
@@ -569,6 +582,30 @@ function rAdmin(){
     <div class="form-row"><div class="lbl">PIN ใหม่ (4 หลัก)</div>
     <input type="password" id="s_newpin" maxlength="4" placeholder="PIN ใหม่"></div>
     <button onclick="saveSettings()" class="btn-red" style="width:100%">บันทึก PIN ใหม่</button>
+  </div>
+
+  <div class="card" style="border-color:#06C755">
+    <div class="sec" style="color:#06C755">📲 LINE OA — การตั้งค่า</div>
+    <div style="font-size:12px;color:var(--tx2);line-height:1.8;margin-bottom:10px">
+      ระบบส่งแบบ <strong>Broadcast</strong> — ทุกคนที่ Add OA จะได้รับแจ้งเตือน
+    </div>
+    <div style="padding:10px 12px;background:var(--ibg);border-radius:var(--rm);font-size:12px;color:var(--itx);line-height:1.8">
+      <strong>วิธีใช้:</strong><br>
+      1. สร้าง LINE OA ที่ <a href="https://business.line.me" target="_blank" style="color:var(--itx)">business.line.me</a><br>
+      2. ตั้งค่า <code style="background:rgba(0,0,0,.07);padding:1px 5px;border-radius:3px">LINE_CHANNEL_ACCESS_TOKEN</code> ใน Cloudflare ENV<br>
+      3. บอกหมอระบบประสาท + ทีม Refer ให้ <strong>Add OA เป็นเพื่อน</strong><br>
+      4. Staff กดปุ่มแจ้งเตือนใน wizard → ทุกคนได้รับทันที
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sec">🔗 ลิงก์ ASPECT Score Calculator</div>
+    <div style="font-size:11px;color:var(--tx2);margin-bottom:10px;line-height:1.6">
+      ลิงก์เหล่านี้จะแสดงใน Staff Wizard ขั้น CT Brain — Admin เปลี่ยนได้ที่นี่
+    </div>
+    <div id="aspectLinkList"><div style="font-size:12px;color:var(--tx2)">กำลังโหลด...</div></div>
+    <button onclick="addAspectLink()" style="width:100%;padding:8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);font-size:12px;font-family:inherit;margin-top:8px">+ เพิ่มลิงก์</button>
+    <div id="aspectSaveStatus" style="font-size:11px;min-height:14px;margin-top:6px;text-align:center"></div>
   </div>
 
   <div class="card" style="border-color:#AFA9EC">
@@ -590,31 +627,34 @@ function rAdmin(){
     </div>
   </div>
 
-  <script>loadAdminLists();<\/script>`;
+  <script>loadAdminLists();loadAspectAdmin();<\/script>`;
 }
 
+function setAdminGlList(html){const el=document.getElementById('adminGlList');if(el)el.innerHTML=html;}
+function setAdminVidList(html){const el=document.getElementById('adminVidList');if(el)el.innerHTML=html;}
+const TURSO_WAIT_MS=12000;
 async function loadAdminLists(){
-  // Guideline list
-  const gr = await tursoQuery("SELECT * FROM guidelines WHERE link_type != 'youtube' OR link_type IS NULL ORDER BY sort_order ASC, created_at DESC");
-  const glEl = document.getElementById('adminGlList');
-  if(glEl){
-    if(!gr.rows||gr.rows.length===0){glEl.innerHTML='<div style="font-size:12px;color:var(--tx2);padding:8px">ยังไม่มี guideline</div>';}
-    else{glEl.innerHTML=gr.rows.map(r=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--bl)">
-      <div style="flex:1"><div class="gl-cat ${catClass(r.category)}">${catLabel(r.category)}</div><div style="font-size:13px;font-weight:500">${r.title}</div></div>
-      <button onclick="requirePin(()=>showEditGl(${JSON.stringify(r).replace(/"/g,'&quot;')}))" style="padding:4px 10px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);font-size:11px;font-family:inherit">แก้ไข</button>
-      <button onclick="requirePin(async()=>{if(confirm('ลบ?')){await tursoQuery('DELETE FROM guidelines WHERE id=?',[${r.id}]);loadAdminLists();}})" style="padding:4px 10px;border:0.5px solid var(--dbd);border-radius:var(--rm);background:var(--dbg);font-size:11px;color:var(--dtx);font-family:inherit">ลบ</button>
-    </div>`).join('');}
-  }
-  // Video list
-  const vr = await tursoQuery("SELECT * FROM guidelines WHERE link_type='youtube' OR link_type='gdrive' ORDER BY sort_order ASC, created_at DESC");
-  const vEl = document.getElementById('adminVidList');
-  if(vEl){
-    if(!vr.rows||vr.rows.length===0){vEl.innerHTML='<div style="font-size:12px;color:var(--tx2);padding:8px">ยังไม่มีวิดีโอ</div>';}
-    else{vEl.innerHTML=vr.rows.map(r=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--bl)">
-      <div style="flex:1"><div style="font-size:13px;font-weight:500">${r.link_type==='youtube'?'▶':'📂'} ${r.title}</div></div>
-      <button onclick="requirePin(async()=>{if(confirm('ลบ?')){await tursoQuery('DELETE FROM guidelines WHERE id=?',[${r.id}]);loadAdminLists();}})" style="padding:4px 10px;border:0.5px solid var(--dbd);border-radius:var(--rm);background:var(--dbg);font-size:11px;color:var(--dtx);font-family:inherit">ลบ</button>
-    </div>`).join('');}
-  }
+  const timeout=()=>new Promise((_,rej)=>setTimeout(()=>rej(new Error('หมดเวลารอการเชื่อมต่อ Turso')),TURSO_WAIT_MS));
+  let gr,vr;
+  try{gr=await Promise.race([tursoQuery("SELECT * FROM guidelines WHERE link_type != 'youtube' OR link_type IS NULL ORDER BY sort_order ASC, created_at DESC"),timeout()]);}catch(e){gr={error:e.message};}
+  setAdminGlList(gr.error
+    ? `<div style="font-size:12px;color:var(--dtx);padding:8px">ไม่มีข้อมูลจาก Turso — ${gr.error}</div>`
+    : (!gr.rows||gr.rows.length===0)
+      ? '<div style="font-size:12px;color:var(--tx2);padding:8px">ยังไม่มี guideline</div>'
+      : gr.rows.map(r=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--bl)">
+          <div style="flex:1"><div class="gl-cat ${catClass(r.category)}">${catLabel(r.category)}</div><div style="font-size:13px;font-weight:500">${r.title}</div></div>
+          <button onclick="requirePin(()=>showEditGl(${JSON.stringify(r).replace(/"/g,'&quot;')}))" style="padding:4px 10px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);font-size:11px;font-family:inherit">แก้ไข</button>
+          <button onclick="requirePin(async()=>{if(confirm('ลบ?')){await tursoQuery('DELETE FROM guidelines WHERE id=?',[${r.id}]);loadAdminLists();}})" style="padding:4px 10px;border:0.5px solid var(--dbd);border-radius:var(--rm);background:var(--dbg);font-size:11px;color:var(--dtx);font-family:inherit">ลบ</button>
+        </div>`).join(''));
+  try{vr=await Promise.race([tursoQuery("SELECT * FROM guidelines WHERE link_type='youtube' OR link_type='gdrive' ORDER BY sort_order ASC, created_at DESC"),timeout()]);}catch(e){vr={error:e.message};}
+  setAdminVidList(vr.error
+    ? `<div style="font-size:12px;color:var(--dtx);padding:8px">ไม่มีข้อมูลจาก Turso — ${vr.error}</div>`
+    : (!vr.rows||vr.rows.length===0)
+      ? '<div style="font-size:12px;color:var(--tx2);padding:8px">ยังไม่มีวิดีโอ</div>'
+      : vr.rows.map(r=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--bl)">
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">${r.link_type==='youtube'?'▶':'📂'} ${r.title}</div></div>
+          <button onclick="requirePin(async()=>{if(confirm('ลบ?')){await tursoQuery('DELETE FROM guidelines WHERE id=?',[${r.id}]);loadAdminLists();}})" style="padding:4px 10px;border:0.5px solid var(--dbd);border-radius:var(--rm);background:var(--dbg);font-size:11px;color:var(--dtx);font-family:inherit">ลบ</button>
+        </div>`).join(''));
 }
 
 
@@ -708,15 +748,26 @@ async function fetchCaseLogSummary(){
       FROM case_log`);
     if(r.error || !r.rows?.length) return null;
     const s = r.rows[0];
+    // Turso returns all values as strings — coerce to numbers
+    const total   = Number(s.total   || 0);
+    const rtpa_n  = Number(s.rtpa_n  || 0);
+    const refer_n = Number(s.refer_n || 0);
+    const ich_n   = Number(s.ich_n   || 0);
+    const dtn_ok  = Number(s.dtn_ok  || 0);
+    const avg_nihss = s.avg_nihss ? Number(s.avg_nihss).toFixed(1) : 'ไม่มีข้อมูล';
+    const avg_dtn   = s.avg_dtn   ? Math.round(Number(s.avg_dtn))  : 'ไม่มีข้อมูล';
+    const first_c = s.first_case?.substring(0,10) || '?';
+    const last_c  = s.last_case?.substring(0,10)  || '?';
+    if(total === 0) return 'ยังไม่มีข้อมูล Case Log — กรณีที่บันทึกไว้จะแสดงที่นี่หลังจาก Staff สร้าง PDF ครั้งแรก';
     return `ข้อมูล Case Log รพ.สงฆ์:
-- รวมทั้งหมด: ${s.total} เคส (${s.first_case?.substring(0,10)||'?'} ถึง ${s.last_case?.substring(0,10)||'?'})
-- ให้ rt-PA: ${s.rtpa_n} เคส (${s.total>0?Math.round(s.rtpa_n/s.total*100):0}%)
-- Refer: ${s.refer_n} เคส (${s.total>0?Math.round(s.refer_n/s.total*100):0}%)
-- Hemorrhagic stroke: ${s.ich_n} เคส
-- NIHSS เฉลี่ย: ${s.avg_nihss}
-- DTN เฉลี่ย: ${s.avg_dtn} นาที
-- DTN ≤60 นาที: ${s.dtn_ok} จาก ${s.rtpa_n} เคส rt-PA`;
-  } catch{ return null; }
+- รวมทั้งหมด: ${total} เคส (${first_c} ถึง ${last_c})
+- ให้ rt-PA: ${rtpa_n} เคส (${total>0?Math.round(rtpa_n/total*100):0}%)
+- Refer: ${refer_n} เคส (${total>0?Math.round(refer_n/total*100):0}%)
+- Hemorrhagic stroke: ${ich_n} เคส
+- NIHSS เฉลี่ย: ${avg_nihss}
+- DTN เฉลี่ย: ${avg_dtn} นาที
+- DTN ≤60 นาที: ${dtn_ok} จาก ${rtpa_n} เคส rt-PA`;
+  } catch(e){ console.error('fetchCaseLogSummary error:', e); return null; }
 }
 
 function buildAdminSystemPrompt(caseData){
@@ -727,7 +778,9 @@ function buildAdminSystemPrompt(caseData){
 สรุปข้อมูล Case Log:
 ${caseData}
 ──────────────────────────────────`
-    : `(ยังไม่มีข้อมูล Case Log หรือเชื่อมต่อ Turso ไม่ได้)`;
+    : `
+
+(ยังไม่มีข้อมูล Case Log หรือเชื่อมต่อ Turso ไม่ได้)`;
 
   return `คุณคือผู้ช่วยข้อมูลของทีมแพทย์โรงพยาบาลสงฆ์ สำหรับ Admin เท่านั้น
 
@@ -746,9 +799,146 @@ const styleEl = document.createElement('style');
 styleEl.textContent = '@keyframes bo{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}';
 document.head.appendChild(styleEl);
 
+
+// ── ASPECT Links Admin (index.html side) ─────────────────────────────────
+const ASPECT_KEY = 'aspect_links';
+const ASPECT_DEFAULTS = [
+  {label:'MDCalc ASPECT', url:'https://www.mdcalc.com/calc/3164/alberta-stroke-program-early-ct-score-aspects'},
+  {label:'RadAtHand Calculator', url:'https://radathand.com/radiology-calculators/neuroradiology/aspects-score-calculator/'},
+];
+
+function getAspectLinksAdmin(){
+  try{return JSON.parse(localStorage.getItem(ASPECT_KEY)||'null')||ASPECT_DEFAULTS;}
+  catch{return ASPECT_DEFAULTS;}
+}
+
+async function loadAspectAdmin(){
+  const el=document.getElementById('aspectLinkList');
+  if(!el)return;
+  const r=await tursoQuery("SELECT value FROM settings WHERE key='aspect_links' LIMIT 1");
+  if(!r.error&&r.rows?.[0]?.value){
+    try{
+      const arr=JSON.parse(r.rows[0].value);
+      if(Array.isArray(arr)&&arr.length)localStorage.setItem(ASPECT_KEY,JSON.stringify(arr));
+    }catch(_){}
+  }
+  renderAspectLinks();
+}
+
+function renderAspectLinks(){
+  const el=document.getElementById('aspectLinkList');
+  if(!el)return;
+  document.getElementById('aspectForm')?.remove();
+  const links=getAspectLinksAdmin();
+  if(links.length===0){
+    el.innerHTML='<div style="font-size:12px;color:var(--tx2);padding:8px 0">ยังไม่มีลิงก์ — กดปุ่ม + เพิ่มลิงก์</div>';
+    return;
+  }
+  el.innerHTML=links.map((l,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--bl)">
+    <div style="flex:1"><a href="${l.url}" target="_blank" rel="noopener" style="font-size:13px;color:var(--itx)">${escapeHtml(l.label)}</a></div>
+    <button type="button" onclick="requirePin(()=>showAspectForm(${i}))" style="padding:4px 10px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);font-size:11px;font-family:inherit">แก้ไข</button>
+    <button type="button" onclick="requirePin(()=>delAspectLink(${i}))" style="padding:4px 10px;border:0.5px solid var(--dbd);border-radius:var(--rm);background:var(--dbg);font-size:11px;color:var(--dtx);font-family:inherit">ลบ</button>
+  </div>`).join('');
+}
+
+function escapeHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+function showAspectForm(editIdx){
+  document.getElementById('aspectForm')?.remove();
+  const links=getAspectLinksAdmin();
+  const item=editIdx>=0&&editIdx<links.length?links[editIdx]:{label:'',url:''};
+  const form=document.createElement('div');
+  form.id='aspectForm';
+  form.style.cssText='padding:10px 0;margin-top:8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);padding:12px;';
+  form.innerHTML=`
+    <div style="font-size:12px;font-weight:600;margin-bottom:8px">${editIdx>=0?'แก้ไขลิงก์':'เพิ่มลิงก์ใหม่'}</div>
+    <div class="form-row"><div class="lbl">ชื่อ</div><input id="aLink_label" value="${escapeHtml(item.label)}" placeholder="เช่น MDCalc ASPECT" style="flex:1"></div>
+    <div class="form-row"><div class="lbl">URL</div><input id="aLink_url" value="${escapeHtml(item.url)}" placeholder="https://..." style="flex:1"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button type="button" onclick="document.getElementById('aspectForm').remove();renderAspectLinks();" style="padding:6px 12px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);font-size:12px;font-family:inherit">ยกเลิก</button>
+      <button type="button" onclick="saveAspectLink(${editIdx>=0?editIdx:-1})" style="padding:6px 12px;border:0;border-radius:var(--rm);background:var(--red);color:#fff;font-size:12px;font-family:inherit">บันทึก</button>
+    </div>`;
+  document.getElementById('aspectLinkList').appendChild(form);
+}
+
+function delAspectLink(idx){
+  if(!confirm('ลบลิงก์นี้?'))return;
+  const links=getAspectLinksAdmin();
+  if(idx>=0&&idx<links.length){
+    links.splice(idx,1);
+    localStorage.setItem(ASPECT_KEY,JSON.stringify(links));
+    renderAspectLinks();
+    saveAspectLinksTurso(links);
+  }
+}
+
+window.addAspectLink=function(){requirePin(()=>showAspectForm(-1));};
+
+// ── LIFF Link display ─────────────────────────────────────────────────────
+
+// ── LINE Users Admin ──────────────────────────────────────────────────────
+
+
+window.saveAspectLink=async function(idx){
+  const label=document.getElementById('aLink_label')?.value?.trim();
+  const url=document.getElementById('aLink_url')?.value?.trim();
+  if(!label||!url){alert('กรุณากรอกชื่อและ URL');return;}
+  const links=getAspectLinksAdmin();
+  if(idx>=0&&idx<links.length)links[idx]={label,url};
+  else links.push({label,url});
+  localStorage.setItem(ASPECT_KEY,JSON.stringify(links));
+  document.getElementById('aspectForm')?.remove();
+  renderAspectLinks();
+  await saveAspectLinksTurso(links);
+};
+async function saveAspectLinksTurso(links){
+  const st=document.getElementById('aspectSaveStatus');
+  if(st){st.textContent='กำลังบันทึก...';st.style.color='var(--tx2)';}
+  const r=await tursoQuery(
+    "INSERT INTO settings(key,value) VALUES('aspect_links',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+    [JSON.stringify(links)]
+  );
+  if(st){
+    st.textContent=r.error?'❌ Turso error: '+r.error:'✓ บันทึกแล้ว — Staff Wizard จะใช้ลิงก์ใหม่ทันที';
+    st.style.color=r.error?'var(--dtx)':'var(--stx)';
+    setTimeout(()=>{if(st)st.textContent='';},3000);
+  }
+}
+
 function showAddVidForm(){
-  document.getElementById('content').innerHTML = document.getElementById('content').innerHTML; // keep
-  showAddVid();
+  // PIN ผ่านแล้ว (เรียกจาก requirePin) — เปิดฟอร์มเพิ่มวิดีโอได้เลย
+  // showAddVid() จะ call requirePin() อีกรอบ → bypass โดยเรียก inner function โดยตรง
+  editingGlId = null;
+  document.getElementById('content').innerHTML = `
+  <div class="card">
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px">เพิ่มวิดีโอ / ลิงก์</div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:14px">YouTube · Google Drive · ลิงก์ทั่วไป</div>
+    <div class="form-row"><div class="lbl">ประเภท</div>
+    <select id="f_ltype" onchange="vidTypeChange()">
+      <option value="youtube">▶ YouTube (embed ได้)</option>
+      <option value="gdrive">📂 Google Drive</option>
+      <option value="url">🔗 ลิงก์ทั่วไป</option>
+    </select></div>
+    <div class="form-row"><div class="lbl">URL / Link ★</div>
+    <input id="f_link" placeholder="https://youtube.com/watch?v=... หรือ https://drive.google.com/..." oninput="autoFillVidTitle()"></div>
+    <div class="form-row"><div class="lbl">ชื่อวิดีโอ / หัวข้อ ★</div>
+    <input id="f_title" placeholder="เช่น สอนการประเมิน NIHSS" maxlength="100"></div>
+    <div class="form-row"><div class="lbl">รายละเอียดเพิ่มเติม</div>
+    <textarea id="f_body" rows="3" placeholder="บรรยายเนื้อหา ระดับ ความยาว ฯลฯ"></textarea></div>
+    <div class="form-row"><div class="lbl">หมวดหมู่</div>
+    <select id="f_cat">
+      <option value="nihss">NIHSS</option>
+      <option value="general" selected>ทั่วไป</option>
+      <option value="rtpa">rt-PA</option>
+      <option value="refer">Refer</option>
+      <option value="protocol">Protocol</option>
+    </select></div>
+    <div id="yt-preview" style="display:none;margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn-gray" onclick="switchTab('admin',document.querySelectorAll('.tab-btn')[3])">ยกเลิก</button>
+      <button onclick="saveVid()" class="btn-red" style="flex:2">บันทึก</button>
+    </div>
+  </div>`;
 }
 
 function showSettings(){

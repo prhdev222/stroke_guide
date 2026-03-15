@@ -1,10 +1,17 @@
-# .dev.vars — ใช้สำหรับทดสอบ local ด้วย wrangler pages dev
-# ไฟล์นี้ไม่ถูก commit ขึ้น GitHub (อยู่ใน .gitignore แล้ว)
+# .dev.vars — สำหรับทดสอบ local ด้วย wrangler pages dev
+# copy ไฟล์นี้ → .dev.vars แล้วใส่ค่าจริง
+# ไฟล์ .dev.vars อยู่ใน .gitignore แล้ว — ไม่ขึ้น GitHub
 
-# Turso Database (ใส่ค่าจริงจาก app.turso.tech)
+# ── Turso Database (จาก app.turso.tech) ─────────────────
 TURSO_URL=https://stroke-db-xxxxxx.turso.io
-TURSO_TOKEN=eyJhbGci...your-token-here
+TURSO_TOKEN=eyJhbGci...
 
-# AI — ใส่อย่างน้อย 1 key
+# ── AI Keys (ใส่อย่างน้อย 1) ────────────────────────────
 GROQ_API_KEY=gsk_...
 SAMBANOVA_API_KEY=sn-...
+
+# ── LINE (optional) ──────────────────────────────────────
+LINE_CHANNEL_ACCESS_TOKEN=
+WEBAPP_URL=http://localhost:8788
+LINE_NEURO_USER_ID=
+LINE_REFER_USER_ID=
