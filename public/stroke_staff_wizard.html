@@ -60,6 +60,7 @@ button{font-family:inherit;cursor:pointer}
 .step-title{font-size:18px;font-weight:700;margin-bottom:4px}
 .step-sub{font-size:13px;color:var(--tx2);margin-bottom:16px}
 .sec{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.sec-sub{font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:6px}
 .lbl{font-size:12px;color:var(--tx2);margin-bottom:4px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
@@ -727,6 +728,15 @@ function getCTExtraHTML(){
       Onset 0–4.5 ชม. + ให้ rt-PA แล้ว + สงสัย LVO → Refer ด่วน<br>
       Onset 4.5–24 ชม. + NIHSS ≥6 + ASPECT ≥6 + สงสัย LVO → Refer Thrombectomy<br>
       ไม่จำเป็นต้องรอผล CTA ก่อน refer ถ้าคลินิกชัดเจน
+    </div>
+    <div class="sec" style="margin-top:14px">Thrombectomy checklist (รพ.สงฆ์)</div>
+    <div class="sec-sub" style="font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:6px">Inclusion criteria (เกณฑ์เข้า)</div>
+    ${(()=>{const n=getNIHSS();const aspectOk=D.aspect!==undefined&&D.aspect>=6;const incl=D.thromboIncl||{};const inclList=[{k:'mrs01',l:'prestroke mRS 0–1'},{k:'rtpa45',l:'ได้รับ IV rt-PA ภายใน 4.5 ชม. หลัง onset'},{k:'icam1',l:'ICA หรือ MCA (M1) occlusion/ severe stenosis'},{k:'age18',l:'อายุ >18 ปี'},{k:'nihss6',l:'NIHSS ≥6'},{k:'aspect6',l:'ASPECTS ≥6'},{k:'groin6',l:'ทำ groin puncture ได้ภายใน 6 ชม. หลัง onset'},{k:'noContra',l:'ไม่มีข้อห้าม IV rt-PA (หรือมีแต่ยังพิจารณา thrombectomy ได้)'}];return inclList.map(x=>{const v=x.k==='nihss6'?(n>=6):x.k==='aspect6'?aspectOk:!!incl[x.k];return `<div class="ck-row${v?' ck-ok':''}" onclick="${(x.k==='nihss6'||x.k==='aspect6')?'return':`D.thromboIncl=D.thromboIncl||{};D.thromboIncl['${x.k}']=!D.thromboIncl['${x.k}'];updCTResult()`}"}"><div class="ck-box${v?' ok':''}">${v?'✓':''}</div><div style="flex:1;font-size:13px">${x.l}</div>${x.k==='nihss6'?`<span style="font-size:11px;color:var(--tx2)">NIHSS=${n}</span>`:x.k==='aspect6'?`<span style="font-size:11px;color:var(--tx2)">ASPECT=${D.aspect!==undefined?D.aspect:'–'}</span>`:''}</div>`;}).join('');})()}
+    <div class="sec-sub" style="font-size:11px;font-weight:600;color:var(--tx2);margin-top:10px;margin-bottom:6px">Relative exclusion criteria (เกณฑ์ออกเชิงเปรียบเทียบ)</div>
+    ${(()=>{const n=getNIHSS();const excl=D.thromboExcl||{};const exclList=[{k:'m2etc',l:'MCA (M2,M3), ACA, VA, PCA, BA occlusion'},{k:'mrs2',l:'mRS &lt;2'},{k:'nihss6ex',l:'NIHSS &lt;6'},{k:'age18ex',l:'อายุ &lt;18 ปี'},{k:'groin24',l:'ทำ groin puncture ได้ภายใน 24 ชม. หลัง onset'}];return exclList.map(x=>{const v=x.k==='nihss6ex'?(n<6):!!excl[x.k];return `<div class="ck-row${v?' ck-bad':''}" onclick="${x.k==='nihss6ex'?'return':`D.thromboExcl=D.thromboExcl||{};D.thromboExcl['${x.k}']=!D.thromboExcl['${x.k}'];updCTResult()`}"}"><div class="ck-box${v?' bad':''}">${v?'✓':''}</div><div style="flex:1;font-size:13px">${x.l}</div>${x.k==='nihss6ex'?`<span style="font-size:11px;color:var(--tx2)">NIHSS=${n}</span>`:''}</div>`;}).join('');})()}
+    <div style="margin-top:12px;padding:10px 12px;background:var(--cbg);border-radius:var(--rm);font-size:11px;color:var(--tx2);line-height:1.6">
+      <strong>หมายเหตุ 1:</strong> นอกเหนือจากเกณฑ์ 8 ข้อแล้ว ยังสามารถทำ endovascular therapy ได้ โดยพิจารณาเป็นรายกรณี เช่น หลอดเลือด ACA, VA, BA, PCA หรือระยะเวลาหลัง onset มากกว่า 6 ชม.<br>
+      <strong>หมายเหตุ 2 — วิธีคำนวณ ASPECT:</strong> แบ่งเป็น anterior และ posterior circulation คะแนนเต็ม 10 หัก 1 คะแนนต่อตำแหน่งที่พบ hypodensity หรือ swelling บน CT Brain
     </div>
   </div>`;
 }
@@ -1426,7 +1436,7 @@ function clearAll(){
     befast:{B:false,E:false,F:false,A:false,S:false},symptoms:{hemi:false,numb:false,comm:false,dysarthria:false,vis:false,drow:false,ataxia:false},
     ctResult:'',nihss:{},incl:{ais:false,onset45:false,age18:false},absExcl:{},relExcl:{},
     excl45:{nihss25:false,inr17:false},relExcl45:{age80:false,strokeDM:false},
-    attachImages:[],attachDocs:[],lab:{glucose:null,plt:null,pt:null,inr:null,ptt:null,cr:null,hb:null,onAnticoag:'unknown'},lvoSigns:{},aspect:undefined};
+    attachImages:[],attachDocs:[],lab:{glucose:null,plt:null,pt:null,inr:null,ptt:null,cr:null,hb:null,onAnticoag:'unknown'},lvoSigns:{},aspect:undefined,thromboIncl:{},thromboExcl:{}};
   step=0;
   document.getElementById('app').style.display='none';
   document.getElementById('lockWrap').style.display='flex';

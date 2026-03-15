@@ -38,6 +38,7 @@ button{font-family:inherit;cursor:pointer}
 .content{padding:14px;max-width:680px;margin:0 auto;padding-bottom:60px}
 .card{background:var(--bg);border:0.5px solid var(--bl);border-radius:var(--rl);padding:14px;margin-bottom:10px}
 .sec{font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.sec-sub{font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:6px}
 .lbl{font-size:12px;color:var(--tx2);margin-bottom:4px}
 
 /* BF chips */
@@ -58,6 +59,11 @@ button{font-family:inherit;cursor:pointer}
 .ckbox{width:16px;height:16px;border-radius:3px;border:1.5px solid var(--bm);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;margin-top:1px}
 .ckbox.ok{background:#639922;border-color:#3B6D11;color:white}
 .ckbox.bad{background:#C41E3A;border-color:#8B1225;color:white}
+.ckbox.on{background:var(--accent);border-color:var(--accent);color:white}
+.aspect-btn{min-width:36px;height:36px;border-radius:var(--rm);border:1.5px solid var(--bm);background:var(--bg2);color:var(--tx);font-size:13px;font-weight:500;cursor:pointer}
+.aspect-btn.on{background:var(--accent);border-color:var(--accent);color:white}
+.link-pill{display:inline-block;padding:6px 12px;border-radius:999px;background:var(--ibg);color:var(--itx);text-decoration:none;font-size:12px}
+.link-pill:hover{opacity:0.9}
 .dec-box{padding:12px 16px;border-radius:var(--rl);text-align:center;font-size:14px;font-weight:700;border:1.5px solid;margin-top:6px}
 
 /* NIHSS */
@@ -103,6 +109,7 @@ button{font-family:inherit;cursor:pointer}
   <button class="tab-btn active" onclick="switchTab('befast',this)">BEFAST</button>
   <button class="tab-btn" onclick="switchTab('criteria',this)">Checklist</button>
   <button class="tab-btn" onclick="switchTab('nihss',this)">NIHSS</button>
+  <button class="tab-btn" onclick="switchTab('aspectlvo',this)">ASPECT & LVO</button>
   <button class="tab-btn" onclick="switchTab('rtpa',this)">rt-PA</button>
 </div>
 
@@ -117,6 +124,10 @@ let D={
   incl:{ais:false,o45:false,a18:false},
   absX:{},relX:{},excl45:{n25:false,i17:false},rel45:{a80:false,sdm:false},
   nihss:{},
+  aspect:undefined,
+  lvoSigns:{},
+  thromboIncl:{},
+  thromboExcl:{},
   weight:'',
 };
 
@@ -160,8 +171,37 @@ const REL=[
   {id:'prg',t:'ตั้งครรภ์'},
 ];
 
+// ── ASPECT Links (เดียวกับ Staff — จาก Turso หรือ localStorage) ──
+const ASPECT_LINK_KEY='aspect_links';
+const ASPECT_DEFAULTS=[
+  {label:'MDCalc ASPECT',url:'https://www.mdcalc.com/calc/3164/alberta-stroke-program-early-ct-score-aspects'},
+  {label:'RadAtHand Calculator',url:'https://radathand.com/radiology-calculators/neuroradiology/aspects-score-calculator/'},
+];
+function getAspectLinks(){
+  try{ const s=localStorage.getItem(ASPECT_LINK_KEY); return s?JSON.parse(s):ASPECT_DEFAULTS; }catch{ return ASPECT_DEFAULTS; }
+}
+async function loadAspectLinksFromTurso(){
+  try{
+    const r=await fetch('/turso',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sql:"SELECT value FROM settings WHERE key='aspect_links' LIMIT 1",args:[]})});
+    const d=await r.json();
+    const rows=d.results?.[0]?.response?.result?.rows||[];
+    if(rows.length&&rows[0]?.[0]?.value){ localStorage.setItem(ASPECT_LINK_KEY,rows[0][0].value); }
+  }catch(_){}
+}
+loadAspectLinksFromTurso();
+
 // ── HELPERS ──
 function totNIHSS(){return NIHSS.reduce((s,i)=>s+(D.nihss[i.id]??0),0);}
+function guestSuspectLVO(){
+  const n=totNIHSS();
+  const gaze=(D.nihss['2']??0)>0;
+  const motor=[(D.nihss['5a']??0),(D.nihss['5b']??0),(D.nihss['6a']??0),(D.nihss['6b']??0)].some(v=>v>=2);
+  const aphasia=(D.nihss['9']??0)>=2;
+  const neglect=(D.nihss['11']??0)>=1;
+  const hemi=(motor&&(D.lvoSigns?.lvo_hemi))||(D.lvoSigns?.lvo_hemi);
+  const lvoN=(n>=6?1:0)+(gaze||D.lvoSigns?.lvo_gaze?1:0)+(hemi?1:0)+(aphasia||D.lvoSigns?.lvo_aphasia?1:0)+(neglect||D.lvoSigns?.lvo_neglect?1:0);
+  return lvoN>=2;
+}
 function getSev(n){
   if(n<=0)return{l:'ปกติ',bg:'var(--sbg)',co:'var(--stx)',bd:'var(--sbd)',hx:'#EAF3DE',hco:'#27500A'};
   if(n<=4)return{l:'เล็กน้อย',bg:'var(--sbg)',co:'var(--stx)',bd:'var(--sbd)',hx:'#EAF3DE',hco:'#27500A'};
@@ -200,7 +240,7 @@ function render(){
     tabBar.style.top='57px';
   }
 
-  const fns={befast:rBEFAST,criteria:rCriteria,nihss:rNIHSS,rtpa:rRtPA};
+  const fns={befast:rBEFAST,criteria:rCriteria,nihss:rNIHSS,aspectlvo:rAspectLvo,rtpa:rRtPA};
   document.getElementById('content').innerHTML=(fns[currentTab]||rBEFAST)();
 }
 
@@ -374,6 +414,72 @@ window.setNihss=function(id,v){
     });
   }
 };
+
+// ── ASPECT & LVO ──
+function rAspectLvo(){
+  const aspect=Number(D.aspect);
+  const links=getAspectLinks();
+  const n=totNIHSS();
+  const nihss6=n>=6;
+  const gaze=(D.nihss['2']??0)>0;
+  const hemi=(D.lvoSigns?.lvo_hemi)||([(D.nihss['5a']??0),(D.nihss['5b']??0),(D.nihss['6a']??0),(D.nihss['6b']??0)].some(v=>v>=2));
+  const aphasia=(D.nihss['9']??0)>=2||(D.lvoSigns?.lvo_aphasia);
+  const neglect=(D.nihss['11']??0)>=1||(D.lvoSigns?.lvo_neglect);
+  const lvoCount=[nihss6,gaze,hemi,aphasia,neglect].filter(Boolean).length;
+  const lvoText=lvoCount>=2?'สงสัย LVO ชัดเจน':lvoCount===1?'อาจสงสัย LVO':'ยังไม่สงสัย LVO';
+  const aspectOk=aspect>=6;
+  return `<div class="card">
+  <div class="sec">ASPECT Score (0–10)</div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+    ${[0,1,2,3,4,5,6,7,8,9,10].map(v=>`<button type="button" class="aspect-btn ${aspect===v?'on':''}" onclick="D.aspect=${v};render()">${v}</button>`).join('')}
+  </div>
+  <div style="font-size:12px;color:var(--tx2);margin-bottom:12px">
+    ${aspectOk?'<strong style="color:var(--accent)">≥6</strong> เข้าเกณฑ์พิจารณา Thrombectomy':'ค่า &lt;6 อาจไม่เหมาะกับ Thrombectomy'}
+  </div>
+  <div class="sec" style="margin-top:12px">เครื่องคิดเลข ASPECT</div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+    ${(Array.isArray(links)?links:ASPECT_DEFAULTS).map((l,i)=>`<a href="${(l.url||l).replace(/"/g,'&quot;')}" target="_blank" rel="noopener" class="link-pill">${typeof l==='object'&&l.label?l.label:'ลิงก์ '+(i+1)}</a>`).join('')}
+  </div>
+  <div class="sec">สงสัย LVO เมื่อใด</div>
+  <div class="ck-row"><label class="ckbox ${nihss6?'on':''}"><input type="checkbox" ${nihss6?'checked':''} disabled> NIHSS ≥6</label><span style="font-size:11px;color:var(--tx2)">${n}</span></div>
+  <div class="ck-row"><label class="ckbox ${(D.lvoSigns?.lvo_gaze)||gaze?'on':''}"><input type="checkbox" ${(D.lvoSigns?.lvo_gaze)||gaze?'checked':''} onchange="D.lvoSigns=D.lvoSigns||{};D.lvoSigns.lvo_gaze=this.checked;render()"> Gaze deviation</label></div>
+  <div class="ck-row"><label class="ckbox ${hemi?'on':''}"><input type="checkbox" ${hemi?'checked':''} onchange="D.lvoSigns=D.lvoSigns||{};D.lvoSigns.lvo_hemi=this.checked;render()"> Hemiplegia ครึ่งซีก</label></div>
+  <div class="ck-row"><label class="ckbox ${aphasia?'on':''}"><input type="checkbox" ${aphasia?'checked':''} onchange="D.lvoSigns=D.lvoSigns||{};D.lvoSigns.lvo_aphasia=this.checked;render()"> Aphasia รุนแรง</label></div>
+  <div class="ck-row"><label class="ckbox ${neglect?'on':''}"><input type="checkbox" ${neglect?'checked':''} onchange="D.lvoSigns=D.lvoSigns||{};D.lvoSigns.lvo_neglect=this.checked;render()"> Hemispatial neglect</label></div>
+  <div style="margin-top:10px;padding:8px 10px;background:var(--cbg);border-radius:8px;font-size:13px"><strong>สรุป:</strong> ${lvoText}</div>
+  <div class="sec" style="margin-top:12px">เกณฑ์ Refer Thrombectomy</div>
+  <div style="font-size:12px;color:var(--tx2);line-height:1.5">
+    <p style="margin:4px 0">• Onset 0–4.5 ชม. + ได้ rt-PA + สงสัย LVO → พิจารณา Refer</p>
+    <p style="margin:4px 0">• Onset 4.5–24 ชม. + NIHSS ≥6 + ASPECT ≥6 + สงสัย LVO → พิจารณา Refer</p>
+  </div>
+  <div class="sec" style="margin-top:16px">Thrombectomy checklist (รพ.สงฆ์)</div>
+  <div class="sec-sub">Inclusion criteria (เกณฑ์เข้า)</div>
+  ${[
+    {k:'mrs01',l:'prestroke mRS 0–1'},
+    {k:'rtpa45',l:'ได้รับ IV rt-PA ภายใน 4.5 ชม. หลัง onset'},
+    {k:'icam1',l:'ICA หรือ MCA (M1) occlusion/ severe stenosis'},
+    {k:'age18',l:'อายุ >18 ปี'},
+    {k:'nihss6',l:'NIHSS ≥6'},
+    {k:'aspect6',l:'ASPECTS ≥6'},
+    {k:'groin6',l:'ทำ groin puncture ได้ภายใน 6 ชม. หลัง onset'},
+    {k:'noContra',l:'ไม่มีข้อห้าม IV rt-PA (หรือมีแต่ยังพิจารณา thrombectomy ได้)'},
+  ].map(x=>{ const v=!!(x.k==='nihss6'?nihss6:x.k==='aspect6'?aspectOk:D.thromboIncl?.[x.k]); return `<div class="ck-row ${v?'ok':''}"><label class="ckbox ${v?'ok':''}"><input type="checkbox" ${v?'checked':''} onchange="D.thromboIncl=D.thromboIncl||{};D.thromboIncl['${x.k}']=this.checked;render()" ${x.k==='nihss6'||x.k==='aspect6'?'disabled':''}> ${x.l}</label>${x.k==='nihss6'?`<span style="font-size:11px;color:var(--tx2)">NIHSS=${n}</span>`:x.k==='aspect6'?`<span style="font-size:11px;color:var(--tx2)">ASPECT=${aspect!==undefined?aspect:'–'}</span>`:''}</div>`; }).join('')}
+  <div class="sec-sub" style="margin-top:10px">Relative exclusion criteria (เกณฑ์ออกเชิงเปรียบเทียบ)</div>
+  ${[
+    {k:'m2etc',l:'MCA (M2,M3), ACA, VA, PCA, BA occlusion'},
+    {k:'mrs2',l:'mRS &lt;2'},
+    {k:'nihss6ex',l:'NIHSS &lt;6'},
+    {k:'age18ex',l:'อายุ &lt;18 ปี'},
+    {k:'groin24',l:'ทำ groin puncture ได้ภายใน 24 ชม. หลัง onset'},
+  ].map(x=>{ const v=!!(x.k==='nihss6ex'?n<6:D.thromboExcl?.[x.k]); return `<div class="ck-row ${v?'bad':''}"><label class="ckbox ${v?'bad':''}"><input type="checkbox" ${v?'checked':''} onchange="D.thromboExcl=D.thromboExcl||{};D.thromboExcl['${x.k}']=this.checked;render()" ${x.k==='nihss6ex'?'disabled':''}> ${x.l}</label>${x.k==='nihss6ex'?`<span style="font-size:11px;color:var(--tx2)">NIHSS=${n}</span>`:''}</div>`; }).join('')}
+  <div class="thrombo-notes">
+    <div class="sec-sub" style="margin-top:12px">หมายเหตุ 1</div>
+    <p style="font-size:12px;color:var(--tx2);line-height:1.5;margin:4px 0">นอกเหนือจากเกณฑ์ 8 ข้อแล้ว ยังสามารถทำ endovascular therapy ได้ โดยพิจารณาเป็นรายกรณี เช่น หลอดเลือด ACA, VA, BA, PCA หรือระยะเวลาหลัง onset มากกว่า 6 ชม.</p>
+    <div class="sec-sub" style="margin-top:10px">หมายเหตุ 2 — วิธีคำนวณ ASPECT</div>
+    <p style="font-size:12px;color:var(--tx2);line-height:1.5;margin:4px 0">แบ่งเป็น anterior และ posterior circulation คะแนนเต็ม 10 หัก 1 คะแนนต่อตำแหน่งที่พบ hypodensity หรือ swelling บน CT Brain</p>
+  </div>
+</div>`;
+}
 
 // ── rt-PA ──
 function rRtPA(){
