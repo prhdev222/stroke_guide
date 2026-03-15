@@ -106,7 +106,7 @@ button{font-family:inherit;cursor:pointer}
   </div>
   <div style="display:flex;align-items:center;gap:8px">
     <div id="clockEl" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--tx2)"></div>
-    <button onclick="showSettings()" style="padding:5px 8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:12px">⚙️</button>
+
   </div>
 </div>
 
@@ -115,6 +115,7 @@ button{font-family:inherit;cursor:pointer}
   <button class="tab-btn active" onclick="switchTab('home',this)">🏠 หน้าหลัก</button>
   <button class="tab-btn" onclick="switchTab('guidelines',this)">📋 Guideline</button>
   <button class="tab-btn" onclick="switchTab('videos',this)">🎬 วิดีโอ</button>
+  <button class="tab-btn" onclick="switchTab('admin',this)">⚙️ จัดการ</button>
 </div>
 
 <div class="content" id="content"></div>
@@ -159,12 +160,16 @@ function switchTab(t,btn){
   currentTab=t;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
+  if(t==='admin'){requirePin(()=>render());return;}
   render();
 }
 
 function render(){
-  const fns={home:rHome,guidelines:rGuidelines,videos:rVideos};
+  const fns={home:rHome,guidelines:rGuidelines,videos:rVideos,admin:rAdmin};
   document.getElementById('content').innerHTML=(fns[currentTab]||rHome)();
+  if(currentTab==='guidelines')setTimeout(loadAndShowGl,0);
+  if(currentTab==='videos')setTimeout(loadAndShowVid,0);
+  if(currentTab==='admin')setTimeout(loadAdminLists,0);
 }
 
 // ── HOME ──
@@ -174,7 +179,7 @@ function rHome(){
   <div style="font-size:13px;color:var(--tx2);margin-bottom:18px">เลือกโหมดการใช้งาน</div>
   </div>
 
-  <a class="launch-card" href="${STAFF_FILE}" style="border-color:var(--dbd)">
+  <a class="launch-card" href="/stroke_staff_wizard.html" style="border-color:var(--dbd)">
     <div class="launch-icon" style="background:var(--dbg)">🔐</div>
     <div>
       <div class="launch-title">Staff Mode</div>
@@ -183,7 +188,7 @@ function rHome(){
     <div class="launch-arrow">›</div>
   </a>
 
-  <a class="launch-card" href="${GUEST_FILE}" style="border-color:var(--sbd)">
+  <a class="launch-card" href="/stroke_guest.html" style="border-color:var(--sbd)">
     <div class="launch-icon" style="background:var(--sbg)">⚡</div>
     <div>
       <div class="launch-title">Guest Mode</div>
@@ -216,21 +221,20 @@ function rHome(){
 }
 
 // ── TURSO API ──
+const TURSO_TIMEOUT_MS = 12000;
 async function tursoQuery(sql,args=[]){
-  const cfg=getCfg();
-  if(!cfg.tursoUrl||!cfg.tursoToken)return{error:'no_config'};
   try{
-    const r=await fetch(`${cfg.tursoUrl}/v2/pipeline`,{
-      method:'POST',
-      headers:{'Authorization':`Bearer ${cfg.tursoToken}`,'Content-Type':'application/json'},
-      body:JSON.stringify({requests:[{type:'execute',stmt:{sql,args:args.map(a=>({type:typeof a==='number'?'integer':'text',value:String(a)}))}}]})
-    });
+    const ctrl=new AbortController();
+    const t=setTimeout(()=>ctrl.abort(),TURSO_TIMEOUT_MS);
+    const r=await fetch('/turso',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sql,args}),signal:ctrl.signal});
+    clearTimeout(t);
     const d=await r.json();
+    if(d.error)return{error:typeof d.error==='string'?d.error:JSON.stringify(d.error)};
     if(d.results?.[0]?.type==='error')return{error:d.results[0].error.message};
     const rows=d.results?.[0]?.response?.result?.rows||[];
     const cols=d.results?.[0]?.response?.result?.cols||[];
     return{rows:rows.map(row=>Object.fromEntries(cols.map((c,i)=>([c.name,row[i].value]))))};
-  }catch(e){return{error:e.message};}
+  }catch(e){return{error:e.name==='AbortError'?'การเชื่อมต่อเกินเวลา — ตรวจสอบอินเทอร์เน็ตหรือการตั้งค่า Turso':e.message};}
 }
 
 async function ensureTable(){
@@ -257,29 +261,19 @@ async function loadGuidelines(){
 }
 
 function rGuidelines(){
-  const cfg=getCfg();
-  if(!cfg.tursoUrl){
-    return `<div class="setup-box">
-      <div style="font-size:14px;font-weight:700;margin-bottom:4px">⚙️ ต้องการตั้งค่า Turso Database ก่อน</div>
-      <div style="font-size:12px;color:var(--wtx);line-height:1.7;margin-bottom:12px">กด ⚙️ มุมบนขวา → ใส่ Turso Database URL และ Token เพื่อเปิดใช้ฟีเจอร์นี้</div>
-      <button onclick="showSettings()" class="btn-red" style="font-size:13px;padding:9px 18px">ตั้งค่า Turso →</button>
-      <div style="margin-top:12px;font-size:11px;color:var(--wtx)">Turso: สมัครฟรีที่ turso.tech — ไม่มีค่าใช้จ่ายสำหรับโปรเจกต์ขนาดเล็ก</div>
-    </div>
-    ${rGlPlaceholder()}`;
-  }
-  return `<div id="glContent"><div class="empty-state"><div class="spin"></div><div style="margin-top:10px;font-size:12px">กำลังโหลด...</div></div></div>
-  <script>loadAndShowGl();<\/script>`;
+  return `<div id="glContent"><div class="empty-state"><div class="spin"></div><div style="margin-top:10px;font-size:12px">กำลังโหลด...</div></div></div>`;
 }
 
 async function loadAndShowGl(){
-  const rows=await loadGuidelines();
   const el=document.getElementById('glContent');
   if(!el)return;
-  if(!rows){el.innerHTML=`<div class="empty-state"><div style="font-size:28px;margin-bottom:8px">⚠️</div><div style="font-size:13px">ไม่สามารถเชื่อมต่อ Turso ได้<br><span style="font-size:11px;color:var(--tx2)">ตรวจสอบ URL/Token ในการตั้งค่า</span></div></div>`;return;}
+  let rows;
+  try{ rows=await loadGuidelines(); }catch(e){ el.innerHTML=`<div class="empty-state"><div style="font-size:28px;margin-bottom:8px">⚠️</div><div style="font-size:13px;font-weight:600">โหลดไม่สำเร็จ</div><div style="font-size:12px;color:var(--tx2);margin-top:6px">${escHtml(e.message||'Unknown error')}</div></div>`;return; }
+  if(!rows){el.innerHTML=`<div class="empty-state"><div style="font-size:28px;margin-bottom:8px">⚠️</div><div style="font-size:13px;font-weight:600">ไม่สามารถเชื่อมต่อ Turso ได้</div><div style="font-size:12px;color:var(--tx2);margin-top:6px">ตรวจสอบ .dev.vars (รัน local) หรือ Environment Variables ( deploy ) — ต้องมี TURSO_URL และ TURSO_TOKEN</div><div style="font-size:12px;color:var(--tx2);margin-top:8px">หรือ Admin เพิ่ม Guideline ได้ที่ tab จัดการ</div></div>`;return;}
   if(rows.length===0){el.innerHTML=glEmptyWithAdd();return;}
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div style="font-size:12px;color:var(--tx2)">${rows.length} รายการ</div>
-    <button onclick="showAddGl()" style="padding:6px 14px;border:0.5px solid var(--red);border-radius:var(--rm);background:var(--dbg);color:var(--red);font-size:12px;font-weight:600;font-family:inherit">+ เพิ่มรายการ</button>
+<span style="font-size:11px;color:var(--tx2)">แก้ไขได้ที่ ⚙️ จัดการ</span>
   </div>
   ${rows.map(r=>glCard(r)).join('')}`;
 }
@@ -295,10 +289,7 @@ function glCard(r){
     <div class="gl-title">${r.title||''}</div>
     ${r.body?`<div class="gl-body">${r.body}</div>`:''}
     ${r.link_url?`<a href="${r.link_url}" target="_blank" class="link-btn ${linkClass(r.link_type)}">${linkTypeIcon(r.link_type)}${r.link_label?' — '+r.link_label:''}</a>`:''}
-    <div style="margin-top:10px;display:flex;gap:6px">
-      <button onclick="showEditGl(${JSON.stringify(r).replace(/"/g,'&quot;')})" style="padding:4px 10px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);font-size:11px;color:var(--tx2);font-family:inherit">แก้ไข</button>
-      <button onclick="deleteGl(${r.id})" style="padding:4px 10px;border:0.5px solid var(--dbd);border-radius:var(--rm);background:var(--dbg);font-size:11px;color:var(--dtx);font-family:inherit">ลบ</button>
-    </div>
+
   </div>`;}
 
 function glEmptyWithAdd(){
@@ -407,14 +398,6 @@ window.deleteGl=function(id){
 
 // ── VIDEOS TAB ──
 function rVideos(){
-  const cfg=getCfg();
-  if(!cfg.tursoUrl){
-    return `<div class="setup-box">
-      <div style="font-size:14px;font-weight:700;margin-bottom:4px">⚙️ ตั้งค่า Turso ก่อนใช้งาน</div>
-      <button onclick="showSettings()" class="btn-red" style="font-size:13px;padding:9px 18px;margin-top:8px">ตั้งค่า →</button>
-    </div>
-    ${rVideoPlaceholder()}`;
-  }
   return `<div id="vidContent"><div class="empty-state"><div class="spin"></div><div style="margin-top:10px;font-size:12px">กำลังโหลด...</div></div></div>
   <script>loadAndShowVid();<\/script>`;
 }
@@ -424,14 +407,14 @@ async function loadAndShowVid(){
   const r=await tursoQuery("SELECT * FROM guidelines WHERE link_type='youtube' OR link_type='gdrive' ORDER BY sort_order ASC, created_at DESC");
   const el=document.getElementById('vidContent');
   if(!el)return;
-  if(r.error){el.innerHTML=`<div class="empty-state">⚠️ ไม่สามารถเชื่อมต่อได้</div>`;return;}
+  if(r.error){el.innerHTML=`<div class="empty-state"><div style="font-size:36px;margin-bottom:10px">🎬</div><div style="font-size:14px;font-weight:600;margin-bottom:4px">ยังไม่มีวิดีโอ</div><div style="font-size:12px;color:var(--tx2)">Admin เพิ่มได้ที่ tab ⚙️ จัดการ</div></div>`;return;}
   const rows=r.rows||[];
   const ytRows=rows.filter(x=>x.link_type==='youtube');
   const otherRows=rows.filter(x=>x.link_type!=='youtube');
 
   let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div style="font-size:12px;color:var(--tx2)">${rows.length} รายการ</div>
-    <button onclick="showAddVid()" style="padding:6px 14px;border:0.5px solid var(--red);border-radius:var(--rm);background:var(--dbg);color:var(--red);font-size:12px;font-weight:600;font-family:inherit">+ เพิ่มวิดีโอ/ลิงก์</button>
+<span style="font-size:11px;color:var(--tx2)">แก้ไขได้ที่ ⚙️ จัดการ</span>
   </div>`;
 
   if(rows.length===0){
@@ -439,7 +422,7 @@ async function loadAndShowVid(){
       <div style="font-size:36px;margin-bottom:10px">🎬</div>
       <div style="font-size:14px;font-weight:600;margin-bottom:4px">ยังไม่มีวิดีโอ</div>
       <div style="font-size:12px;color:var(--tx2);margin-bottom:14px">เพิ่ม YouTube หรือ Google Drive link</div>
-      <button onclick="showAddVid()" class="btn-red">+ เพิ่มวิดีโอแรก</button>
+<div style="font-size:12px;color:var(--tx2)">Admin เพิ่มได้ที่ tab ⚙️ จัดการ</div>
     </div>`;
   } else {
     ytRows.forEach(r=>{html+=vidCard(r);});
@@ -463,9 +446,7 @@ function vidCard(r){
     ${r.body?`<div class="gl-body">${r.body}</div>`:''}
     ${ytId?`<div class="yt-embed"><iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen loading="lazy"></iframe></div>`:
     `<a href="${r.link_url}" target="_blank" class="link-btn link-yt">▶ เปิด YouTube</a>`}
-    <div style="margin-top:10px;display:flex;gap:6px">
-      <button onclick="deleteGl(${r.id})" style="padding:4px 10px;border:0.5px solid var(--dbd);border-radius:var(--rm);background:var(--dbg);font-size:11px;color:var(--dtx);font-family:inherit">ลบ</button>
-    </div>
+
   </div>`;}
 
 function vidLinkCard(r){
@@ -477,7 +458,7 @@ function vidLinkCard(r){
       ${r.body?`<div style="font-size:12px;color:var(--tx2)">${r.body}</div>`:''}
       <a href="${r.link_url}" target="_blank" class="link-btn ${linkClass(r.link_type)}" style="margin-top:6px">${linkTypeIcon(r.link_type)}${r.link_label?' — '+r.link_label:''}</a>
     </div>
-    <button onclick="deleteGl(${r.id})" style="padding:4px 8px;border:0.5px solid var(--dbd);border-radius:var(--rm);background:var(--dbg);font-size:11px;color:var(--dtx);font-family:inherit">ลบ</button>
+
   </div>`;}
 
 function rVideoPlaceholder(){
@@ -561,70 +542,228 @@ window.saveVid=async function(){
 };
 
 // ── SETTINGS MODAL (shown via topbar ⚙️) ──
-function showSettings(){
-  const cfg=getCfg();
-  document.getElementById('content').innerHTML=`
+
+// ── ADMIN TAB (PIN required) ──────────────────────────────────────────────
+function rAdmin(){
+  return `<div class="card" style="border-color:var(--red);background:var(--dbg)">
+    <div style="font-size:14px;font-weight:700;color:var(--dtx);margin-bottom:2px">⚙️ Admin Panel</div>
+    <div style="font-size:12px;color:var(--dtx)">เฉพาะผู้ดูแลระบบ — ต้องใส่ PIN ก่อนเข้า</div>
+  </div>
+
   <div class="card">
-    <div style="font-size:16px;font-weight:700;margin-bottom:4px">⚙️ การตั้งค่า</div>
-    <div style="font-size:12px;color:var(--tx2);margin-bottom:14px">กำหนดค่าระบบและ Turso Database</div>
+    <div class="sec">จัดการ Guideline</div>
+    <button onclick="requirePin(()=>{editingGlId=null;showGlForm({})})" class="btn-red" style="width:100%;margin-bottom:8px">+ เพิ่ม Guideline ใหม่</button>
+    <div id="adminGlList"><div class="empty-state" style="padding:14px"><div class="spin"></div></div></div>
+  </div>
 
-    <div class="card" style="background:var(--ibg);border-color:var(--ibd)">
-      <div style="font-size:13px;font-weight:600;color:var(--itx);margin-bottom:8px">📦 วิธีเปิดใช้ Turso (ฟรี)</div>
-      <div style="font-size:12px;color:var(--itx);line-height:1.8">
-        1. ไปที่ <strong>turso.tech</strong> → Sign up (ฟรี GitHub login)<br>
-        2. Create database → ตั้งชื่อ เช่น <code style="background:#B5D4F4;padding:1px 5px;border-radius:3px">stroke-db</code><br>
-        3. Copy <strong>Database URL</strong> (https://...) และ <strong>Auth Token</strong><br>
-        4. วางด้านล่างนี้แล้วกด Save
-      </div>
-    </div>
+  <div class="card">
+    <div class="sec">จัดการ วิดีโอ / ลิงก์</div>
+    <button onclick="requirePin(()=>showAddVidForm())" class="btn-red" style="width:100%;margin-bottom:8px">+ เพิ่มวิดีโอ/ลิงก์ใหม่</button>
+    <div id="adminVidList"><div class="empty-state" style="padding:14px"><div class="spin"></div></div></div>
+  </div>
 
-    <div class="form-row" style="margin-top:10px"><div class="lbl">Turso Database URL</div>
-    <input id="s_url" value="${cfg.tursoUrl||''}" placeholder="https://stroke-db-xxx.turso.io"></div>
-
-    <div class="form-row"><div class="lbl">Turso Auth Token</div>
-    <input type="password" id="s_token" value="${cfg.tursoToken||''}" placeholder="eyJhbGci..."></div>
-
-    <div class="form-row"><div class="lbl">ไฟล์ Staff Wizard</div>
-    <input id="s_staff" value="${cfg.staffFile||STAFF_FILE}" placeholder="stroke_staff_wizard.html"></div>
-
-    <div class="form-row"><div class="lbl">ไฟล์ Guest Mode</div>
-    <input id="s_guest" value="${cfg.guestFile||GUEST_FILE}" placeholder="stroke_guest.html"></div>
-
-    <div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px">เปลี่ยน PIN</div>
+  <div class="card">
+    <div class="sec">เปลี่ยน PIN เมนู</div>
     <div class="form-row"><div class="lbl">PIN ปัจจุบัน</div>
     <input type="password" id="s_oldpin" maxlength="4" placeholder="PIN ปัจจุบัน"></div>
     <div class="form-row"><div class="lbl">PIN ใหม่ (4 หลัก)</div>
     <input type="password" id="s_newpin" maxlength="4" placeholder="PIN ใหม่"></div>
+    <button onclick="saveSettings()" class="btn-red" style="width:100%">บันทึก PIN ใหม่</button>
+  </div>
 
-    <div style="display:flex;gap:8px;margin-top:4px">
-      <button onclick="switchTab('home',document.querySelectorAll('.tab-btn')[0])" class="btn-gray">ยกเลิก</button>
-      <button onclick="saveSettings()" class="btn-red" style="flex:2">บันทึกการตั้งค่า</button>
+  <div class="card" style="border-color:#AFA9EC">
+    <div class="sec" style="color:#3C3489">🤖 ถามข้อมูล — Guideline + Case Log เท่านั้น</div>
+    <div style="font-size:11px;color:#633806;line-height:1.6;margin-bottom:10px;padding:6px 10px;background:#FAEEDA;border-radius:var(--rm);border:0.5px solid #EF9F27">
+      ⚠️ AI ตอบได้เฉพาะ Guideline ที่บันทึกไว้ และสรุป Case Log สถิติ — ไม่ใช่การวินิจฉัย
     </div>
-  </div>`;
+    <div id="aiChatHistory" style="max-height:300px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:8px"></div>
+    <div style="display:flex;gap:8px">
+      <input id="aiChatInput" placeholder="ถาม guideline หรือ case stats..." style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter'){event.preventDefault();sendAdminChat();}">
+      <button onclick="sendAdminChat()" style="padding:8px 14px;border:0.5px solid #AFA9EC;border-radius:var(--rm);background:#EEEDFE;color:#3C3489;font-size:13px;font-weight:600;font-family:inherit;flex-shrink:0">ถาม</button>
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px">
+      <button onclick="quickQ('สรุป case log ทั้งหมด')" style="padding:4px 9px;border:0.5px solid var(--bm);border-radius:10px;background:var(--bg2);font-size:11px;font-family:inherit">📊 Case summary</button>
+      <button onclick="quickQ('DTN เฉลี่ยและ target ≤60 นาที')" style="padding:4px 9px;border:0.5px solid var(--bm);border-radius:10px;background:var(--bg2);font-size:11px;font-family:inherit">⏱ DTN</button>
+      <button onclick="quickQ('rt-PA ให้กี่เคส ไม่ให้กี่เคส')" style="padding:4px 9px;border:0.5px solid var(--bm);border-radius:10px;background:var(--bg2);font-size:11px;font-family:inherit">💉 rt-PA</button>
+      <button onclick="quickQ('refer กี่เคส ICH กี่เคส')" style="padding:4px 9px;border:0.5px solid var(--bm);border-radius:10px;background:var(--bg2);font-size:11px;font-family:inherit">🚑 Refer</button>
+      <button onclick="quickQ('สรุป guideline ทั้งหมดที่บันทึกไว้')" style="padding:4px 9px;border:0.5px solid var(--bm);border-radius:10px;background:var(--bg2);font-size:11px;font-family:inherit">📋 Guideline</button>
+    </div>
+  </div>
+
+  <script>loadAdminLists();<\/script>`;
+}
+
+async function loadAdminLists(){
+  // Guideline list
+  const gr = await tursoQuery("SELECT * FROM guidelines WHERE link_type != 'youtube' OR link_type IS NULL ORDER BY sort_order ASC, created_at DESC");
+  const glEl = document.getElementById('adminGlList');
+  if(glEl){
+    if(!gr.rows||gr.rows.length===0){glEl.innerHTML='<div style="font-size:12px;color:var(--tx2);padding:8px">ยังไม่มี guideline</div>';}
+    else{glEl.innerHTML=gr.rows.map(r=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--bl)">
+      <div style="flex:1"><div class="gl-cat ${catClass(r.category)}">${catLabel(r.category)}</div><div style="font-size:13px;font-weight:500">${r.title}</div></div>
+      <button onclick="requirePin(()=>showEditGl(${JSON.stringify(r).replace(/"/g,'&quot;')}))" style="padding:4px 10px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);font-size:11px;font-family:inherit">แก้ไข</button>
+      <button onclick="requirePin(async()=>{if(confirm('ลบ?')){await tursoQuery('DELETE FROM guidelines WHERE id=?',[${r.id}]);loadAdminLists();}})" style="padding:4px 10px;border:0.5px solid var(--dbd);border-radius:var(--rm);background:var(--dbg);font-size:11px;color:var(--dtx);font-family:inherit">ลบ</button>
+    </div>`).join('');}
+  }
+  // Video list
+  const vr = await tursoQuery("SELECT * FROM guidelines WHERE link_type='youtube' OR link_type='gdrive' ORDER BY sort_order ASC, created_at DESC");
+  const vEl = document.getElementById('adminVidList');
+  if(vEl){
+    if(!vr.rows||vr.rows.length===0){vEl.innerHTML='<div style="font-size:12px;color:var(--tx2);padding:8px">ยังไม่มีวิดีโอ</div>';}
+    else{vEl.innerHTML=vr.rows.map(r=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--bl)">
+      <div style="flex:1"><div style="font-size:13px;font-weight:500">${r.link_type==='youtube'?'▶':'📂'} ${r.title}</div></div>
+      <button onclick="requirePin(async()=>{if(confirm('ลบ?')){await tursoQuery('DELETE FROM guidelines WHERE id=?',[${r.id}]);loadAdminLists();}})" style="padding:4px 10px;border:0.5px solid var(--dbd);border-radius:var(--rm);background:var(--dbg);font-size:11px;color:var(--dtx);font-family:inherit">ลบ</button>
+    </div>`).join('');}
+  }
+}
+
+
+// ── Admin AI Chat ────────────────────────────────────────────────────────
+let adminChatHistory = [];
+
+window.quickQ = function(q){
+  document.getElementById('aiChatInput').value = q;
+  sendAdminChat();
+};
+
+window.sendAdminChat = async function(){
+  const input = document.getElementById('aiChatInput');
+  const q = input?.value?.trim();
+  if(!q) return;
+  input.value = '';
+
+  // Show user bubble
+  appendChatBubble('user', q);
+
+  // Show typing
+  const typingId = 'typing-' + Date.now();
+  appendChatBubble('typing', '', typingId);
+
+  // Fetch case log summary for context
+  const caseData = await fetchCaseLogSummary();
+
+  adminChatHistory.push({ role: 'user', content: q });
+
+  try{
+    const r = await fetch('/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: adminChatHistory,
+        system: buildAdminSystemPrompt(caseData),
+        max_tokens: 800
+      })
+    });
+    const d = await r.json();
+    const answer = d.content?.[0]?.text || d.choices?.[0]?.message?.content || d.error || 'ไม่ได้รับคำตอบ';
+
+    // Remove typing bubble
+    document.getElementById(typingId)?.remove();
+
+    // Show answer
+    appendChatBubble('ai', answer);
+    adminChatHistory.push({ role: 'assistant', content: answer });
+
+    // Keep history max 10 turns
+    if(adminChatHistory.length > 20) adminChatHistory = adminChatHistory.slice(-20);
+
+  } catch(e) {
+    document.getElementById(typingId)?.remove();
+    appendChatBubble('ai', `ไม่สามารถเชื่อมต่อได้: ${e.message}`);
+  }
+};
+
+function appendChatBubble(role, text, id=''){
+  const box = document.getElementById('aiChatHistory');
+  if(!box) return;
+  const div = document.createElement('div');
+  if(id) div.id = id;
+  if(role === 'user'){
+    div.style.cssText = 'align-self:flex-end;background:var(--red);color:white;padding:8px 12px;border-radius:12px 12px 2px 12px;font-size:13px;max-width:80%;line-height:1.5';
+    div.textContent = text;
+  } else if(role === 'typing'){
+    div.style.cssText = 'align-self:flex-start;background:var(--bg2);border:0.5px solid var(--bl);padding:10px 14px;border-radius:12px 12px 12px 2px;display:flex;gap:5px;align-items:center';
+    div.innerHTML = '<div class="ai-dot" style="width:7px;height:7px;border-radius:50%;background:var(--bm);animation:bo 1.2s infinite"></div><div class="ai-dot" style="width:7px;height:7px;border-radius:50%;background:var(--bm);animation:bo 1.2s .2s infinite"></div><div class="ai-dot" style="width:7px;height:7px;border-radius:50%;background:var(--bm);animation:bo 1.2s .4s infinite"></div>';
+  } else {
+    div.style.cssText = 'align-self:flex-start;background:var(--bg2);border:0.5px solid var(--bl);padding:10px 14px;border-radius:12px 12px 12px 2px;font-size:13px;max-width:92%;line-height:1.7;white-space:pre-wrap';
+    div.textContent = text;
+  }
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function fetchCaseLogSummary(){
+  try{
+    const r = await tursoQuery(`
+      SELECT
+        COUNT(*) as total,
+        SUM(rtpa_given) as rtpa_n,
+        SUM(referred) as refer_n,
+        ROUND(AVG(nihss_score),1) as avg_nihss,
+        ROUND(AVG(CASE WHEN dtn_min > 0 THEN dtn_min END),0) as avg_dtn,
+        SUM(CASE WHEN dtn_min <= 60 THEN 1 ELSE 0 END) as dtn_ok,
+        SUM(CASE WHEN ct_result='ich' THEN 1 ELSE 0 END) as ich_n,
+        MIN(logged_at) as first_case,
+        MAX(logged_at) as last_case
+      FROM case_log`);
+    if(r.error || !r.rows?.length) return null;
+    const s = r.rows[0];
+    return `ข้อมูล Case Log รพ.สงฆ์:
+- รวมทั้งหมด: ${s.total} เคส (${s.first_case?.substring(0,10)||'?'} ถึง ${s.last_case?.substring(0,10)||'?'})
+- ให้ rt-PA: ${s.rtpa_n} เคส (${s.total>0?Math.round(s.rtpa_n/s.total*100):0}%)
+- Refer: ${s.refer_n} เคส (${s.total>0?Math.round(s.refer_n/s.total*100):0}%)
+- Hemorrhagic stroke: ${s.ich_n} เคส
+- NIHSS เฉลี่ย: ${s.avg_nihss}
+- DTN เฉลี่ย: ${s.avg_dtn} นาที
+- DTN ≤60 นาที: ${s.dtn_ok} จาก ${s.rtpa_n} เคส rt-PA`;
+  } catch{ return null; }
+}
+
+function buildAdminSystemPrompt(caseData){
+  const caseSection = caseData
+    ? `
+
+──────────────────────────────────
+สรุปข้อมูล Case Log:
+${caseData}
+──────────────────────────────────`
+    : `(ยังไม่มีข้อมูล Case Log หรือเชื่อมต่อ Turso ไม่ได้)`;
+
+  return `คุณคือผู้ช่วยข้อมูลของทีมแพทย์โรงพยาบาลสงฆ์ สำหรับ Admin เท่านั้น
+
+กฎเคร่งครัด:
+1. ตอบได้เฉพาะ 2 เรื่องนี้เท่านั้น:
+   ก) Guideline และ Protocol ที่บันทึกไว้ใน Turso (จะถูก inject อัตโนมัติ)
+   ข) ข้อมูลสรุป Case Log ที่ให้ไว้ด้านล่าง
+2. ถ้าถามเรื่องนอกขอบเขตนี้ ให้ตอบว่า "ข้อมูลส่วนนี้ไม่ได้อยู่ใน Guideline หรือ Case Log ที่บันทึกไว้"
+3. ห้ามวินิจฉัยโรค ห้ามแนะนำการรักษาเฉพาะผู้ป่วย
+4. ห้ามอ้างอิงความรู้นอกเหนือจากที่ให้ไว้ ถ้าไม่มีใน Guideline ให้บอกตรงๆ
+5. ตอบเป็นภาษาไทย กระชับ อ้างอิงชื่อหัวข้อ Guideline ที่ใช้${caseSection}`;
+}
+
+// bounce animation for typing dots
+const styleEl = document.createElement('style');
+styleEl.textContent = '@keyframes bo{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}';
+document.head.appendChild(styleEl);
+
+function showAddVidForm(){
+  document.getElementById('content').innerHTML = document.getElementById('content').innerHTML; // keep
+  showAddVid();
+}
+
+function showSettings(){
+  // redirect to admin tab (PIN required)
+  switchTab('admin', document.querySelectorAll('.tab-btn')[3]);
 }
 window.saveSettings=function(){
-  const url=document.getElementById('s_url')?.value?.trim();
-  const token=document.getElementById('s_token')?.value?.trim();
-  const staffFile=document.getElementById('s_staff')?.value?.trim();
-  const guestFile=document.getElementById('s_guest')?.value?.trim();
   const oldPin=document.getElementById('s_oldpin')?.value;
   const newPin=document.getElementById('s_newpin')?.value;
-
-  const cfg=getCfg();
-  if(url)cfg.tursoUrl=url;
-  if(token)cfg.tursoToken=token;
-  if(staffFile)cfg.staffFile=staffFile;
-  if(guestFile)cfg.guestFile=guestFile;
-  saveCfg(cfg);
-
-  if(newPin){
-    if(oldPin!==getPin()){alert('PIN ปัจจุบันไม่ถูกต้อง');return;}
-    if(newPin.length!==4||!/^\d+$/.test(newPin)){alert('PIN ต้องเป็นตัวเลข 4 หลัก');return;}
-    localStorage.setItem('menu_pin',newPin);
-    alert('บันทึกการตั้งค่าและเปลี่ยน PIN สำเร็จ');
-  } else {
-    alert('บันทึกการตั้งค่าสำเร็จ');
-  }
+  const menuPin=localStorage.getItem('menu_pin')||'2567';
+  if(!newPin){alert('กรุณาใส่ PIN ใหม่');return;}
+  if(oldPin!==menuPin){alert('PIN ปัจจุบันไม่ถูกต้อง');return;}
+  if(newPin.length!==4||!/^\d+$/.test(newPin)){alert('PIN ต้องเป็นตัวเลข 4 หลัก');return;}
+  localStorage.setItem('menu_pin',newPin);
+  alert('เปลี่ยน PIN สำเร็จ');
   switchTab('home',document.querySelectorAll('.tab-btn')[0]);
 };
 

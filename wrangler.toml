@@ -2,5 +2,36 @@ name = "stroke-fast-tract"
 compatibility_date = "2024-12-01"
 pages_build_output_dir = "public"
 
+# ============================================================
+# Environment Variables — ตั้งใน Cloudflare Pages Dashboard
+# Settings → Environment Variables → Add variable
+# ============================================================
+#
+# [Turso Database — จำเป็น]
+#   TURSO_URL     = https://stroke-db-xxxxxx.turso.io
+#   TURSO_TOKEN   = eyJhbGci...
+#
+# ── AI: แนะนำ Fallback Chain ─────────────────────────────
+# ใส่ key ของ provider ที่มี → ระบบลอง Groq ก่อน
+# ถ้า rate limit → ลอง SambaNova → ลอง OpenAI → ลอง Claude
+#
+#   GROQ_API_KEY       = gsk_...     (console.groq.com — ฟรี)
+#   SAMBANOVA_API_KEY  = sn-...      (cloud.sambanova.ai — ฟรี)
+#   OPENAI_API_KEY     = sk-...      (platform.openai.com — มีค่าใช้จ่าย)
+#   ANTHROPIC_API_KEY  = sk-ant-...  (anthropic.com — มีค่าใช้จ่าย)
+#
+# [optional: เปลี่ยน model แต่ละ provider]
+#   GROQ_MODEL         = llama-3.3-70b-versatile
+#   SAMBANOVA_MODEL    = Meta-Llama-3.1-70B-Instruct
+#   OPENAI_MODEL       = gpt-4o-mini
+#   CLAUDE_MODEL       = claude-haiku-4-5-20251001
+#
+# ── AI: Single Provider (ถ้าไม่ใช้ fallback chain) ───────
+#   AI_PROVIDER   = groq | sambanova | claude | openai | openai_compat
+#   AI_MODEL      = llama-3.3-70b-versatile
+#   AI_API_KEY    = your-api-key
+#   AI_BASE_URL   = (เฉพาะ openai_compat)
+# ============================================================
+
 [vars]
 ENVIRONMENT = "production"

@@ -219,8 +219,6 @@ function updDots(id,len,err=false){
 
 // Turso: fetch PIN from settings table
 async function getPinRemote(){
-  const cfg=getTursoCfg();
-  if(!cfg.url||!cfg.token)return null;
   try{
     const r=await tursoExec("SELECT value FROM settings WHERE key='staff_pin' LIMIT 1");
     if(r.error||!r.rows||r.rows.length===0)return null;
@@ -305,8 +303,7 @@ async function checkPin(){
 
 function showSetup(){
   // ถ้า Turso configured → แจ้งว่าต้องเปลี่ยนผ่าน admin (menu.html)
-  const cfg=getTursoCfg();
-  if(cfg.url&&cfg.token&&pinSource==='turso'){
+  const cfg={url:true,token:true};if(cfg.url&&cfg.token){
     alert('PIN ถูกจัดการโดย Admin ผ่าน Turso\nกรุณาเปลี่ยน PIN ที่ menu.html → ⚙️ ตั้งค่า → เปลี่ยน PIN (Admin)');
     return;
   }
@@ -411,7 +408,6 @@ const STEPS=[
   {id:'ct',label:'CT Brain'},
   {id:'nihss',label:'NIHSS'},
   {id:'checklist',label:'Checklist rt-PA'},
-  {id:'ai',label:'AI ประเมิน'},
   {id:'plan',label:'แผนการรักษา'},
 ];
 
@@ -451,12 +447,11 @@ function renderProgress(){
   document.getElementById('stepProgress').innerHTML=h;
   document.getElementById('stepLabel').textContent=`ขั้นตอนที่ ${step+1}/${STEPS.length} — ${STEPS[step].label}`;
   document.getElementById('btnBack').style.display=step===0?'none':'block';
-  const isAI=step===6;
-  document.getElementById('btnNext').textContent=step===7?'📋 สร้าง PDF ส่งต่อ':step===6?'ดูแผนการรักษา →':'ถัดไป →';
+  document.getElementById('btnNext').textContent=step===6?'📋 สร้าง PDF ส่งต่อ':'ถัดไป →';
 }
 
 function renderStep(){
-  const fn=[rPatient,rTimeline,rSymptoms,rCT,rNIHSS,rChecklist,rAI,rPlan];
+  const fn=[rPatient,rTimeline,rSymptoms,rCT,rNIHSS,rChecklist,rPlan];
   document.getElementById('wizardContent').innerHTML=fn[step]();
   renderProgress();
   window.scrollTo(0,0);
@@ -700,194 +695,7 @@ window.updateCKResult=function(){
 };
 
 // ---- STEP 7: AI DECISION ----
-const AI_PROVIDERS=[
-  {id:'claude',name:'Claude (Anthropic)',icon:'🟣',
-   models:['claude-sonnet-4-20250514','claude-haiku-4-5-20251001','claude-opus-4-5'],
-   needKey:false,note:'ใช้ได้เลย ไม่ต้อง API key (ผ่าน claude.ai)'},
-  {id:'groq',name:'Groq (LLaMA / Mistral)',icon:'⚡',
-   models:['llama-3.3-70b-versatile','llama-3.1-8b-instant','mixtral-8x7b-32768','gemma2-9b-it'],
-   needKey:true,baseUrl:'https://api.groq.com/openai/v1',note:'ฟรี — สมัคร API key ที่ console.groq.com'},
-  {id:'openai',name:'OpenAI (GPT)',icon:'🟢',
-   models:['gpt-4o','gpt-4o-mini','gpt-4-turbo'],
-   needKey:true,baseUrl:'https://api.openai.com/v1',note:'ต้องมี OpenAI API key'},
-  {id:'openai_compat',name:'Custom / OpenAI-compatible',icon:'⚙️',
-   models:[],needKey:true,baseUrl:'',note:'Ollama, LM Studio, Together, SambaNova, Cerebras ฯลฯ'},
-];
-
-function rAI(){
-  if(D.aiSkipped){
-    return `<div class="card">
-    <div class="step-title">AI ประเมิน — ข้ามแล้ว</div>
-    <div style="padding:16px;background:var(--bg2);border-radius:var(--rl);text-align:center;margin-bottom:12px">
-      <div style="font-size:28px;margin-bottom:8px">🩺</div>
-      <div style="font-size:14px;font-weight:600;margin-bottom:4px">ตัดสินใจเองโดยไม่ใช้ AI</div>
-      <div style="font-size:12px;color:var(--tx2)">ข้ามขั้นตอนนี้ — ดูแผนการรักษาในขั้นถัดไป</div>
-    </div>
-    <button onclick="D.aiSkipped=false;renderStep()" style="width:100%;padding:10px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:13px;font-family:inherit">← กลับมาใช้ AI</button>
-    </div>`;
-  }
-  if(D.aiDone&&D.aiDecision){
-    const prov=AI_PROVIDERS.find(p=>p.id===D.aiProvider)||AI_PROVIDERS[0];
-    return `<div class="card">
-    <div class="step-title">ผล AI ประเมิน</div>
-    <div style="font-size:11px;color:var(--tx2);margin-bottom:10px">${prov.icon} ${prov.name} — ${D.aiModel}</div>
-    <div id="aiBox" class="ai-bubble">${D.aiDecision}</div>
-    <div style="margin-top:10px;padding:8px 12px;background:var(--wbg);border-radius:var(--rm);font-size:11px;color:var(--wtx)">
-      ⚠ AI ช่วยสนับสนุนการตัดสินใจทางคลินิกเท่านั้น — แพทย์เป็นผู้ตัดสินใจสุดท้าย
-    </div>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button onclick="D.aiDone=false;D.aiDecision='';renderStep()" style="flex:1;padding:9px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:12px;font-family:inherit">วิเคราะห์ใหม่</button>
-      <button onclick="D.aiSkipped=true;D.aiDone=false;D.aiDecision='';renderStep()" style="flex:1;padding:9px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:12px;font-family:inherit">ข้ามขั้นตอนนี้</button>
-    </div>
-    </div>`;
-  }
-
-  // Not done yet — show provider selector
-  const prov=AI_PROVIDERS.find(p=>p.id===D.aiProvider)||AI_PROVIDERS[0];
-  const isCustom=D.aiProvider==='openai_compat';
-  return `<div class="card">
-  <div class="step-title">AI ช่วยประเมิน</div>
-  <div class="step-sub">เลือกใช้ AI หรือตัดสินใจเอง</div>
-
-  <!-- CHOICE BUTTONS -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
-    <button onclick="showAIConfig()" style="padding:14px 10px;border:1.5px solid var(--red);border-radius:var(--rl);background:var(--bg);color:var(--red);font-size:13px;font-weight:700;font-family:inherit;text-align:center">
-      🤖 ใช้ AI ช่วย
-    </button>
-    <button onclick="D.aiSkipped=true;renderStep()" style="padding:14px 10px;border:0.5px solid var(--bm);border-radius:var(--rl);background:var(--bg2);color:var(--tx);font-size:13px;font-weight:600;font-family:inherit;text-align:center">
-      🩺 ตัดสินใจเอง
-    </button>
-  </div>
-
-  <!-- AI CONFIG PANEL (hidden by default) -->
-  <div id="aiConfigPanel" style="display:none">
-    <div class="sec">เลือก AI Provider</div>
-    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
-    ${AI_PROVIDERS.map(p=>`<div onclick="D.aiProvider='${p.id}';updAIConfig()" style="padding:10px 12px;border-radius:var(--rm);border:1.5px solid ${D.aiProvider===p.id?'var(--red)':'var(--bl)'};background:${D.aiProvider===p.id?'var(--dbg)':'var(--bg2)'};cursor:pointer;display:flex;align-items:center;gap:10px">
-      <span style="font-size:18px">${p.icon}</span>
-      <div style="flex:1"><div style="font-size:13px;font-weight:600">${p.name}</div><div style="font-size:11px;color:var(--tx2)">${p.note}</div></div>
-      ${D.aiProvider===p.id?`<span style="color:var(--red);font-size:16px">✓</span>`:''}
-    </div>`).join('')}
-    </div>
-
-    <div id="aiModelWrap">
-      <div class="sec">เลือก Model</div>
-      ${prov.models.length>0?`<select onchange="D.aiModel=this.value" style="margin-bottom:12px">
-        ${prov.models.map(m=>`<option value="${m}" ${D.aiModel===m?'selected':''}>${m}</option>`).join('')}
-      </select>`:`<div style="margin-bottom:8px"><div class="lbl">Model name</div><input value="${D.aiModel}" oninput="D.aiModel=this.value" placeholder="เช่น llama3, gemma2, mistral"></div>`}
-    </div>
-
-    ${prov.needKey?`<div id="aiKeyWrap">
-      <div class="sec">API Settings</div>
-      <div class="lbl">API Key</div>
-      <input type="password" value="${D.aiApiKey}" oninput="D.aiApiKey=this.value" placeholder="sk-..." style="margin-bottom:8px">
-      ${isCustom?`<div class="lbl">Base URL</div>
-      <input value="${D.aiBaseUrl||prov.baseUrl||''}" oninput="D.aiBaseUrl=this.value" placeholder="http://localhost:11434/v1" style="margin-bottom:8px">
-      <div style="font-size:11px;color:var(--tx2);margin-bottom:10px">Ollama: http://localhost:11434/v1 | LM Studio: http://localhost:1234/v1</div>`:
-      `<div style="font-size:11px;color:var(--tx2);margin-bottom:10px">Base URL: ${prov.baseUrl}</div>`}
-    </div>`:''}
-
-    <button onclick="runAI()" style="width:100%;padding:13px;border:none;border-radius:var(--rl);background:var(--red);color:white;font-size:14px;font-weight:700;font-family:inherit">
-      วิเคราะห์ →
-    </button>
-    <div style="margin-top:8px;font-size:11px;color:var(--tx2);text-align:center">⚠ AI ช่วยสนับสนุนการตัดสินใจเท่านั้น — แพทย์ตัดสินใจสุดท้าย</div>
-  </div>
-  </div>`;
-}
-
-window.showAIConfig=function(){
-  const p=document.getElementById('aiConfigPanel');
-  if(p)p.style.display=p.style.display==='none'?'block':'none';
-};
-window.updAIConfig=function(){
-  const prov=AI_PROVIDERS.find(p=>p.id===D.aiProvider)||AI_PROVIDERS[0];
-  D.aiModel=prov.models[0]||D.aiModel;
-  renderStep();
-  setTimeout(()=>{const p=document.getElementById('aiConfigPanel');if(p)p.style.display='block';},50);
-};
-
-window.runAI=async function(){
-  document.getElementById('wizardContent').innerHTML=`<div class="card">
-    <div class="step-title">AI กำลังวิเคราะห์...</div>
-    <div class="step-sub">กรุณารอสักครู่</div>
-    <div class="ai-bubble"><div class="ai-typing"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div></div>
-  </div>`;
-
-  const tot=getNIHSS();const sev=getSev(tot);
-  const oh=getOnsetHours();const dn=diffMin(D.erArrival,D.ivRtPA);
-  const lvo=suspectLVO();const el=eligible();const ab=hasAbs();
-  const absChecked=ABS.filter(i=>D.absExcl[i.id]).map(i=>i.th);
-  const relChecked=REL.filter(i=>D.relExcl[i.id]).map(i=>i.th);
-  const nihssDetail=NIHSS.map(i=>`${i.id}=${D.nihss[i.id]??'?'}`).join(', ');
-  const ctMap={ich:'Hemorrhagic stroke',ais:'Ischemic/No acute',neg:'Normal/No acute',pend:'Pending'};
-
-  const prompt=`คุณคือผู้ช่วยแพทย์ Stroke ที่โรงพยาบาลสงฆ์ (Priest Hospital) ประเทศไทย
-
-ข้อมูลผู้ป่วย:
-- อายุ ${D.age||'?'} ปี น้ำหนัก ${D.weight||'?'} kg
-- Onset: ${oh!==null?oh.toFixed(1)+' ชม.':'ไม่ทราบ'} (ER arrival: ${D.erArrival||'?'})
-- CT: ${ctMap[D.ctResult]||'ไม่ระบุ'}
-- NIHSS: ${tot}/42 — ${sev.label} | LVO: ${lvo?'สงสัย':'ไม่สงสัย'}
-- rt-PA: ${el?'เข้าเกณฑ์':ab?'ห้ามให้ ('+absChecked.join(', ')+')':'ยังไม่ชัด'}
-- NIHSS detail: ${nihssDetail}
-- Relative exclusion: ${relChecked.join(', ')||'ไม่มี'}
-
-แนวทาง รพ.สงฆ์:
-- Onset ≤4.5h + NIHSS≥4 + เข้าเกณฑ์ → rt-PA ที่ ER → ถ้า LVO → Refer Thrombectomy
-- Onset ≤4.5h + NIHSS<4 → Ward stroke MAP
-- Onset ≤4.5h + ข้อห้าม → ICU stroke MAP
-- Onset 4.5–24h + NIHSS≥6 + LVO → Refer Thrombectomy
-- Onset 4.5–24h + NIHSS<6 → Ward
-- ICH → Refer Neurosurgeon ทันที
-- Onset >24h → Ward conservative
-
-ตอบภาษาไทย 6 หัวข้อ:
-1. สรุปสถานการณ์
-2. คำแนะนำหลัก (rt-PA/Thrombectomy/Conservative/Refer)
-3. ขนาด rt-PA (ถ้าให้)
-4. การ Refer (ควรหรือไม่ ทำไม)
-5. การดูแลต่อ
-6. ข้อควรระวังเฉพาะเคส`;
-
-  const sysMsg='ผู้ช่วยแพทย์ Stroke ที่โรงพยาบาลสงฆ์ ตอบกระชับ ชัดเจน เป็นประโยชน์ต่อแพทย์หน้างาน';
-
-  try{
-    let result='';
-    if(D.aiProvider==='claude'){
-      // Anthropic API
-      const r=await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:D.aiModel,max_tokens:1000,
-          system:sysMsg,messages:[{role:'user',content:prompt}]})
-      });
-      const d=await r.json();
-      if(d.error)throw new Error(d.error.message);
-      result=d.content?.[0]?.text||'ไม่ได้รับผลการวิเคราะห์';
-
-    } else {
-      // OpenAI-compatible (Groq, OpenAI, custom)
-      const prov=AI_PROVIDERS.find(p=>p.id===D.aiProvider);
-      const baseUrl=(D.aiProvider==='openai_compat'?D.aiBaseUrl:prov?.baseUrl)||'';
-      if(!baseUrl)throw new Error('กรุณาระบุ Base URL');
-      if(!D.aiApiKey)throw new Error('กรุณาใส่ API Key');
-      const r=await fetch(`${baseUrl}/chat/completions`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':`Bearer ${D.aiApiKey}`},
-        body:JSON.stringify({model:D.aiModel,max_tokens:1000,
-          messages:[{role:'system',content:sysMsg},{role:'user',content:prompt}]})
-      });
-      const d=await r.json();
-      if(d.error)throw new Error(d.error.message||JSON.stringify(d.error));
-      result=d.choices?.[0]?.message?.content||'ไม่ได้รับผลการวิเคราะห์';
-    }
-    D.aiDecision=result;
-    D.aiDone=true;
-  }catch(e){
-    D.aiDecision=`เกิดข้อผิดพลาด: ${e.message}\n\nตรวจสอบ:\n• การเชื่อมต่ออินเทอร์เน็ต\n• API Key (ถ้าใช้ Groq/OpenAI/Custom)\n• Base URL (ถ้าใช้ Custom)`;
-    D.aiDone=true;
-  }
-  renderStep();
-};
+// AI removed — rule-based system only
 
 // ---- STEP 8: PLAN + PDF ----
 function rPlan(){
@@ -968,10 +776,18 @@ function rPlan(){
     </div>
   </div>`:''}
 
-  ${D.aiDone&&D.aiDecision?`<div class="card">
-    <div class="sec">AI Decision Support</div>
-    <div style="font-size:13px;line-height:1.8;white-space:pre-wrap">${D.aiDecision}</div>
-  </div>`:''}
+  <div class="card" style="background:var(--ibg);border-color:var(--ibd)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <span style="font-size:18px">📚</span>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--itx)">ค้นหาข้อมูล Guideline</div>
+        <div style="font-size:11px;color:var(--itx);opacity:.8">ไม่ใช่การวินิจฉัย — เพื่อค้นข้อมูลอ้างอิงเท่านั้น</div>
+      </div>
+    </div>
+    <button onclick="openGuidelineSearch()" style="width:100%;padding:9px;border:0.5px solid var(--ibd);border-radius:var(--rm);background:white;color:var(--itx);font-size:13px;font-weight:600;font-family:inherit">
+      เปิด Guideline Reference →
+    </button>
+  </div>
 
   <div class="card">
   <div class="sec">แนบรูปภาพ CT / EKG</div>
@@ -992,7 +808,7 @@ function rPlan(){
   <input id="docIn" type="file" accept=".pdf" multiple style="display:none" onchange="addDocs(this.files)">
   ${D.attachDocs.length?`<div style="margin-top:8px">${docList}</div>`:''}</div>
 
-  ${(()=>{const cfg=getTursoCfg();return cfg.url?
+  ${(()=>{const cfg={url:true};return cfg.url?
   `<div style="padding:10px 14px;background:var(--sbg);border-radius:var(--rl);border:0.5px solid var(--sbd);font-size:12px;color:var(--stx);display:flex;align-items:center;gap:8px">
     <span>📦</span>
     <span><strong>Turso Case Log เปิดอยู่</strong> — เมื่อสร้าง PDF จะบันทึก clinical data โดยอัตโนมัติ (ไม่มีชื่อ/HN — PDPA safe)</span>
@@ -1116,7 +932,6 @@ function validate(){
   if(step===0)return D.name&&D.hn&&D.age&&D.weight;
   if(step===1)return D.strokeOnset||D.lastSeen;
   if(step===3)return !!D.ctResult;
-  if(step===6)return D.aiDone||D.aiSkipped;
   return true;
 }
 
@@ -1124,7 +939,7 @@ function goNext(){
   if(!validate()){
     alert('กรุณากรอกข้อมูลที่จำเป็น (★) ก่อนดำเนินการต่อ');return;
   }
-  if(step===7){generatePDF();return;}
+  if(step===6){generatePDF();return;}
   if(step===5){D.incl.onset45=getOnsetHours()!==null&&getOnsetHours()<=4.5;D.incl.age18=parseInt(D.age)>=18;D.incl.ais=D.ctResult==='ais'||D.ctResult==='neg';}
   step=Math.min(step+1,7);renderStep();
 }
@@ -1135,14 +950,19 @@ function clearAll(){
     befast:{B:false,E:false,F:false,A:false,S:false},symptoms:{hemi:false,numb:false,comm:false,dysarthria:false,vis:false,drow:false,ataxia:false},
     ctResult:'',nihss:{},incl:{ais:false,onset45:false,age18:false},absExcl:{},relExcl:{},
     excl45:{nihss25:false,inr17:false},relExcl45:{age80:false,strokeDM:false},
-    aiDecision:'',aiDone:false,aiSkipped:false,
-    aiProvider:'claude',aiModel:'claude-sonnet-4-20250514',aiApiKey:'',aiBaseUrl:'',
     attachImages:[],attachDocs:[]};
   step=0;
   document.getElementById('app').style.display='none';
   document.getElementById('lockWrap').style.display='flex';
   pinBuf='';updDots('pinDots',0);
 }
+
+// ── Guideline Reference (opens menu guideline tab) ───────────────────────
+window.openGuidelineSearch=function(){
+  if(confirm('เปิด Guideline Reference หน้าใหม่?\n\nหมายเหตุ: เป็นข้อมูลอ้างอิงเท่านั้น ไม่ใช่การวินิจฉัยหรือคำแนะนำการรักษา')){
+    window.open('/','_blank');
+  }
+};
 
 // ==================== CLOCK ====================
 function updateClock(){const d=new Date();const el=document.getElementById('clockEl');if(el)el.textContent=d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
@@ -1152,22 +972,10 @@ setInterval(updateClock,1000);
 // เก็บเฉพาะ clinical metadata — ไม่มีชื่อ นามสกุล HN
 // PDPA-safe: ข้อมูลที่เก็บเป็น aggregate/statistical data ไม่ใช่ข้อมูลส่วนบุคคล
 
-function getTursoCfg(){
-  try{return JSON.parse(localStorage.getItem('turso_cfg')||'{}');}catch{return {};}
-}
-function saveTursoCfg(c){localStorage.setItem('turso_cfg',JSON.stringify(c));}
-
+// ── Turso via Cloudflare Pages Function (/turso) ──
 async function tursoExec(sql,args=[]){
-  const cfg=getTursoCfg();
-  if(!cfg.url||!cfg.token)return{error:'no_config'};
   try{
-    const r=await fetch(`${cfg.url}/v2/pipeline`,{
-      method:'POST',
-      headers:{'Authorization':`Bearer ${cfg.token}`,'Content-Type':'application/json'},
-      body:JSON.stringify({requests:[{type:'execute',stmt:{sql,args:args.map(a=>({
-        type:typeof a==='number'?'integer':'text',value:String(a??'')
-      }))}}]})
-    });
+    const r=await fetch('/turso',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sql,args})});
     const d=await r.json();
     if(d.results?.[0]?.type==='error')return{error:d.results[0].error.message};
     const rows=d.results?.[0]?.response?.result?.rows||[];
@@ -1176,7 +984,7 @@ async function tursoExec(sql,args=[]){
   }catch(e){return{error:e.message};}
 }
 
-async function ensureSettingsTable(){
+async function ensureSettingsTable(){{
   await tursoExec(`CREATE TABLE IF NOT EXISTS settings (
     key   TEXT PRIMARY KEY,
     value TEXT
@@ -1217,8 +1025,7 @@ function onsetBucket(h){
 }
 
 async function logCase(rec){
-  const cfg=getTursoCfg();
-  if(!cfg.url||!cfg.token){console.log('Turso: not configured — case not logged');return 'no_config';}
+  // Turso configured via Cloudflare env
   const tot=getNIHSS();const sev=getSev(tot);
   const oh=getOnsetHours();const dn=diffMin(D.erArrival,D.ivRtPA);
   const absN=Object.values(D.absExcl).filter(Boolean).length;
@@ -1235,69 +1042,25 @@ async function logCase(rec){
 
 // Settings panel (called from topbar)
 window.showTursoSettings=function(){
-  const cfg=getTursoCfg();
   const existing=document.getElementById('tursoPanel');
   if(existing){existing.remove();return;}
   const panel=document.createElement('div');
   panel.id='tursoPanel';
-  panel.style.cssText='position:fixed;top:57px;left:0;right:0;background:var(--bg);border-bottom:0.5px solid var(--bl);padding:14px 16px;z-index:200;max-width:680px;margin:0 auto;box-shadow:0 4px 12px rgba(0,0,0,.08)';
-  panel.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:10px">📦 Turso Case Log — PDPA Safe</div>
-  <div style="font-size:11px;color:var(--tx2);margin-bottom:10px;line-height:1.6">บันทึกเฉพาะ clinical metadata — ไม่เก็บชื่อ นามสกุล HN อายุจริง</div>
-  <div style="margin-bottom:8px"><div style="font-size:11px;color:var(--tx2);margin-bottom:4px">Turso Database URL</div>
-  <input id="ts_url" value="${cfg.url||''}" placeholder="https://stroke-db-xxx.turso.io" style="font-size:13px"></div>
-  <div style="margin-bottom:10px"><div style="font-size:11px;color:var(--tx2);margin-bottom:4px">Auth Token</div>
-  <input type="password" id="ts_tok" value="${cfg.token||''}" placeholder="eyJhbGci..." style="font-size:13px"></div>
-  <div style="display:flex;gap:8px">
-    <button onclick="saveTursoSettings()" style="flex:2;padding:9px;border:none;border-radius:var(--rm);background:var(--red);color:white;font-size:13px;font-weight:600;font-family:inherit">บันทึก</button>
-    <button onclick="testTurso()" style="flex:1;padding:9px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);font-size:13px;font-family:inherit;color:var(--tx)">Test</button>
-    <button onclick="closeSettings()" style="flex:1;padding:9px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);font-size:13px;font-family:inherit;color:var(--tx2)">ปิด</button>
+  panel.style.cssText='position:fixed;top:57px;left:0;right:0;background:var(--bg);border-bottom:0.5px solid var(--bl);padding:14px 16px;z-index:200;max-width:680px;margin:0 auto';
+  panel.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:8px">📦 Turso Case Log</div>
+  <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;line-height:1.6">Turso URL และ Token ถูกตั้งค่าใน Cloudflare Environment Variables แล้ว<br>บันทึก metadata case อัตโนมัติเมื่อสร้าง PDF — ไม่มีชื่อ/HN (PDPA safe)</div>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <button onclick="testTurso()" style="flex:2;padding:9px;border:none;border-radius:var(--rm);background:var(--red);color:white;font-size:13px;font-weight:600;font-family:inherit">Test Connection</button>
+    <button onclick="document.getElementById('tursoPanel').remove()" style="flex:1;padding:9px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);font-size:13px;font-family:inherit;color:var(--tx2)">ปิด</button>
   </div>
-  <button onclick="showAdminPinChange()" style="margin-top:10px;width:100%;padding:8px;border:0.5px solid var(--red);border-radius:var(--rm);background:var(--dbg);color:var(--red);font-size:12px;font-weight:600;font-family:inherit">🔑 เปลี่ยน PIN Staff (Admin)</button>
-  <div id="ts_status" style="font-size:11px;margin-top:8px;min-height:14px;color:var(--tx2)"></div>
-  <div style="margin-top:10px;padding:8px 10px;background:var(--ibg);border-radius:var(--rm);font-size:11px;color:var(--itx);line-height:1.6">
-    สมัครฟรีที่ <strong>turso.tech</strong> → Create database → Copy URL + Token<br>
-    ข้อมูลที่บันทึก: ward · กลุ่มอายุ · CT result · onset window · NIHSS · action · refer/ไม่ refer · DTN
-  </div>`;
+  <button onclick="showAdminPinChange()" style="width:100%;padding:8px;border:0.5px solid var(--red);border-radius:var(--rm);background:var(--dbg);color:var(--red);font-size:12px;font-weight:600;font-family:inherit">🔑 เปลี่ยน PIN Staff (Admin)</button>
+  <div id="ts_status" style="font-size:11px;margin-top:8px;min-height:14px;color:var(--tx2)"></div>`;
   document.getElementById('app').insertBefore(panel,document.getElementById('app').children[1]);
 };
-window.saveTursoSettings=function(){
-  const url=document.getElementById('ts_url')?.value?.trim();
-  const token=document.getElementById('ts_tok')?.value?.trim();
-  saveTursoCfg({url,token});
-  document.getElementById('ts_status').textContent='✓ บันทึกแล้ว';
-  setTimeout(()=>{closeSettings();},800);
-};
+window.saveTursoSettings=function(){const p=document.getElementById('tursoPanel');if(p)p.remove();};
 window.closeSettings=function(){const p=document.getElementById('tursoPanel');if(p)p.remove();};
-window.testTurso=async function(){
-  const el=document.getElementById('ts_status');
-  el.textContent='กำลังทดสอบ...';el.style.color='var(--wtx)';
-  saveTursoCfg({url:document.getElementById('ts_url')?.value?.trim(),token:document.getElementById('ts_tok')?.value?.trim()});
-  await ensureCaseTable();
-  const r=await tursoExec('SELECT COUNT(*) as n FROM case_log');
-  if(r.error){el.textContent='❌ เชื่อมต่อไม่ได้: '+r.error;el.style.color='var(--dtx)';}
-  else{el.textContent=`✓ เชื่อมต่อสำเร็จ — มี ${r.rows?.[0]?.n||0} case ในฐานข้อมูล`;el.style.color='var(--stx)';}
-};
-
-// Admin PIN change from Turso settings panel
-window.showAdminPinChange=function(){
-  const panel=document.getElementById('tursoPanel');
-  if(!panel)return;
-  const existing=document.getElementById('adminPinForm');
-  if(existing){existing.remove();return;}
-  const form=document.createElement('div');
-  form.id='adminPinForm';
-  form.style.cssText='margin-top:12px;padding-top:12px;border-top:0.5px solid var(--bl)';
-  form.innerHTML=`<div style="font-size:12px;font-weight:600;margin-bottom:8px">🔑 เปลี่ยน PIN Staff (Admin)</div>
-  <div style="font-size:11px;color:var(--itx);background:var(--ibg);padding:6px 10px;border-radius:var(--rm);margin-bottom:8px;line-height:1.6">PIN จะอัปเดตใน Turso — staff ทุกคนจะต้องใช้ PIN ใหม่ทันที</div>
-  <input type="password" id="ap_new" maxlength="4" placeholder="PIN ใหม่ (4 หลัก)" style="margin-bottom:6px;font-size:14px;letter-spacing:4px;text-align:center">
-  <input type="password" id="ap_conf" maxlength="4" placeholder="ยืนยัน PIN ใหม่" style="margin-bottom:8px;font-size:14px;letter-spacing:4px;text-align:center">
-  <div style="display:flex;gap:8px">
-    <button onclick="saveAdminPin()" style="flex:2;padding:9px;border:none;border-radius:var(--rm);background:var(--red);color:white;font-size:13px;font-weight:600;font-family:inherit">บันทึก PIN ใหม่</button>
-    <button onclick="document.getElementById('adminPinForm').remove()" style="flex:1;padding:9px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);font-size:13px;font-family:inherit">ยกเลิก</button>
-  </div>
-  <div id="ap_status" style="font-size:11px;margin-top:6px;min-height:14px"></div>`;
-  panel.appendChild(form);
-};
+window.saveAdminPin=window.saveAdminPin||function(){};
+window.showAdminPinChange=window.showAdminPinChange||function(){};
 window.saveAdminPin=async function(){
   const np=document.getElementById('ap_new')?.value;
   const cp=document.getElementById('ap_conf')?.value;
@@ -1323,12 +1086,9 @@ function startApp(){step=0;clearAll();document.getElementById('app').style.displ
 // ==================== INIT ====================
 // Auto-detect PIN source on load (non-blocking)
 (async()=>{
-  const cfg=getTursoCfg();
-  if(cfg.url&&cfg.token){
-    const remotePin=await getPinRemote();
-    if(remotePin){pinSource='turso';}
-    updatePinSourceBadge(pinSource);
-  }
+  const remotePin=await getPinRemote();
+  if(remotePin){pinSource='turso';}
+  updatePinSourceBadge(pinSource);
 })();
 if(!localStorage.getItem('sp')){showSetup();}
 </script>

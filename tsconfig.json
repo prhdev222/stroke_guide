@@ -6,7 +6,10 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": false,
     "types": ["@cloudflare/workers-types"]
   },
-  "include": ["public/functions/**/*.ts"]
+  "include": ["functions/**/*.js", "functions/**/*.ts", "*.d.ts", "functions/*.d.ts"]
 }

@@ -1,0 +1,10 @@
+# .dev.vars — ใช้สำหรับทดสอบ local ด้วย wrangler pages dev
+# ไฟล์นี้ไม่ถูก commit ขึ้น GitHub (อยู่ใน .gitignore แล้ว)
+
+# Turso Database (ใส่ค่าจริงจาก app.turso.tech)
+TURSO_URL=https://stroke-db-xxxxxx.turso.io
+TURSO_TOKEN=eyJhbGci...your-token-here
+
+# AI — ใส่อย่างน้อย 1 key
+GROQ_API_KEY=gsk_...
+SAMBANOVA_API_KEY=sn-...
