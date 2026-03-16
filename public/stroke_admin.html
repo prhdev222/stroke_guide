@@ -32,7 +32,7 @@ a{color:var(--itx)}
 /* LAYOUT */
 .top-bar{background:var(--bg);border-bottom:0.5px solid var(--bl);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .content{max-width:640px;margin:0 auto;padding:16px}
-.card{background:var(--bg);border:0.5px solid var(--bl);border-radius:var(--rl);padding:16px;margin-bottom:14px}
+.card{background:var(--bg);border:0.5px solid var(--bl);border-radius:var(--rl);padding:20px;margin-bottom:14px;box-shadow:0 10px 30px rgba(15,23,42,.06)}
 .sec{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx2);margin-bottom:10px}
 .lbl{font-size:12px;color:var(--tx2);margin-bottom:4px}
 .form-row{margin-bottom:12px}
@@ -90,13 +90,18 @@ a{color:var(--itx)}
 
 <!-- LOGIN -->
 <div id="loginWrap" class="content">
-  <div class="card">
-    <div class="sec">เข้าสู่ระบบ Admin</div>
+  <div class="card" style="max-width:420px;margin:32px auto 0">
+    <div style="font-size:18px;font-weight:700;margin-bottom:4px;text-align:center">เข้าสู่ระบบ ADMIN</div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:18px;text-align:center">ใส่รหัส ADMIN_SECRET</div>
     <div class="form-row">
-      <div class="lbl">รหัส Admin (ADMIN_SECRET)</div>
-      <input type="password" id="adminSecretInput" placeholder="ใส่รหัสที่ตั้งใน Cloudflare Environment Variables" autocomplete="off" onkeydown="if(event.key==='Enter')adminLogin()">
+      <input type="password"
+             id="adminSecretInput"
+             placeholder="Admin secret"
+             autocomplete="off"
+             style="text-align:center;font-size:14px;padding:11px 12px"
+             onkeydown="if(event.key==='Enter')adminLogin()">
     </div>
-    <button type="button" class="btn-red" style="width:100%" onclick="adminLogin()">เข้าสู่ระบบ Admin</button>
+    <button type="button" class="btn-red" style="width:100%;margin-top:4px" onclick="adminLogin()">เข้าสู่ระบบ Admin</button>
     <div id="loginMsg" class="msg" style="display:none"></div>
   </div>
 </div>
