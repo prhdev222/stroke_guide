@@ -1,22 +1,47 @@
-// functions/line.js — LINE Messaging API (Broadcast only)
-// POST /line  → ส่ง alert จาก Staff Wizard → Broadcast หาทุกคนที่ Follow OA
-// GET  /line  → status check
+// functions/line.js ? LINE Messaging API (Broadcast only)
+// POST /line  ? ??? alert ??? Staff Wizard ? Broadcast ?????????? Follow OA
+// GET  /line  ? status check
 //
-// ENV (Cloudflare Pages → Settings → Environment Variables):
-//   LINE_CHANNEL_ACCESS_TOKEN  = จาก LINE Developers → Messaging API
+// ENV (Cloudflare Pages ? Settings ? Environment Variables):
+//   LINE_CHANNEL_ACCESS_TOKEN  = ??? LINE Developers ? Messaging API
 //   WEBAPP_URL                 = https://stroke-prh.pages.dev
+//   TURSO_URL / TURSO_TOKEN    = ?????????? template ??????? LINE ???????? settings
 //
-// วิธีใช้:
-//   1. สร้าง LINE OA → บอกหมอระบบประสาท + ทีม refer ให้ Add OA เป็นเพื่อน
-//   2. ทุกคนที่ Follow จะได้รับ alert อัตโนมัติเมื่อ Staff กดแจ้งเตือน
-//   3. เสีย 1 token ต่อ 1 ครั้งที่กด ไม่ว่าจะมีคน follow กี่คน
+// ???????:
+//   1. ????? LINE OA ? ???????????????? + ??? refer ??? Add OA ??????????
+//   2. ???????? Follow ???????? alert ?????????????? Staff ???????????
+//   3. ???? 1 token ??? 1 ?????????? ???????????? follow ?????
+
+import { runTurso } from './_turso-shared.js';
+
+const DEFAULT_STROKE_TEMPLATE = `Stroke Alert — รพ.สงฆ์
+-------------------------
+Ward: {{ward}}
+Onset: {{onset}} ชม.
+NIHSS: {{nihss}} — {{nihss_sev}}
+CT: {{ct}}
+{{dtn_line}}
+-------------------------
+รายละเอียด: {{web_url}}`;
+
+const DEFAULT_REFER_TEMPLATE = `REFER — Stroke Fast Tract
+-------------------------
+Ward: {{ward}}
+Onset: {{onset}} ชม.
+NIHSS: {{nihss}} — {{nihss_sev}}
+CT: {{ct}}
+Refer — ไม่ได้ให้ที่รพ.สงฆ์
+{{dtn_line}}
+-------------------------
+รายละเอียด: {{web_url}}
+กรุณาติดต่อกลับโดยด่วน`;
 
 export async function onRequestPost(context) {
   const { LINE_CHANNEL_ACCESS_TOKEN, WEBAPP_URL } = context.env;
 
   if (!LINE_CHANNEL_ACCESS_TOKEN) {
     return Response.json({
-      error: 'LINE_CHANNEL_ACCESS_TOKEN ยังไม่ได้ตั้งค่า — ไปที่ Cloudflare Pages → Settings → Environment Variables'
+      error: 'LINE_CHANNEL_ACCESS_TOKEN ???????????????? ? ????? Cloudflare Pages ? Settings ? Environment Variables'
     }, { status: 503 });
   }
 
@@ -26,7 +51,7 @@ export async function onRequestPost(context) {
 
   const { type, data } = body;
   const webUrl = (WEBAPP_URL || 'https://stroke-prh.pages.dev').replace(/\/$/, '');
-  const messages = buildMessage(type, data, webUrl);
+  const messages = await buildMessage(context.env, type, data, webUrl);
 
   const result = await sendBroadcast(LINE_CHANNEL_ACCESS_TOKEN, messages);
   return Response.json({ ok: result.ok, method: 'broadcast', ...result });
@@ -41,25 +66,59 @@ export async function onRequestGet(context) {
   });
 }
 
-function buildMessage(type, data = {}, webUrl) {
-  const d = data;
-  const icon   = type === 'refer_alert' ? '🚨' : '⚡';
-  const header = type === 'refer_alert'
-    ? `${icon} REFER — Stroke Fast Tract`
-    : `${icon} Stroke Alert — รพ.สงฆ์`;
+async function getTemplate(env, key, fallback) {
+  try {
+    await runTurso(env, [{
+      sql: `CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT
+      )`
+    }]);
+    const res = await runTurso(env, [{
+      sql: 'SELECT value FROM settings WHERE key = ? LIMIT 1',
+      args: [key]
+    }]);
+    const rows = res?.results?.[0]?.response?.result?.rows || [];
+    const cols = res?.results?.[0]?.response?.result?.cols || [];
+    if (!rows.length || !cols.length) return fallback;
+    const row = Object.fromEntries(cols.map((c, i) => [c.name, rows[0][i]?.value ?? rows[0][i]]));
+    return row.value || fallback;
+  } catch {
+    return fallback;
+  }
+}
 
-  const lines = [header, '─────────────────────'];
-  if (d.ward)   lines.push(`🏥 Ward: ${d.ward}`);
-  if (d.onset)  lines.push(`⏱ Onset: ${d.onset} ชม.`);
-  if (d.nihss !== undefined) lines.push(`📊 NIHSS: ${d.nihss} — ${d.nihss_sev || ''}`);
-  if (d.ct)     lines.push(`🧠 CT: ${d.ct}`);
-  if (d.action) lines.push(`✅ Action: ${d.action}`);
-  if (d.dtn)    lines.push(`⏰ DTN: ${d.dtn} นาที`);
-  lines.push('─────────────────────');
-  lines.push('🔗 รายละเอียด: ' + webUrl);
-  if (type === 'refer_alert') lines.push('\nกรุณาติดต่อกลับโดยด่วน');
+function applyTemplate(tpl, data) {
+  let out = tpl;
+  Object.keys(data).forEach(k => {
+    const re = new RegExp(`{{\\s*${k}\\s*}}`, 'g');
+    out = out.replace(re, data[k] == null ? '' : String(data[k]));
+  });
+  return out;
+}
 
-  return [{ type: 'text', text: lines.join('\n') }];
+async function buildMessage(env, type, data = {}, webUrl) {
+  const d = data || {};
+  const isRefer = type === 'refer_alert';
+  const key = isRefer ? 'line_template_refer' : 'line_template_stroke';
+  const fallback = isRefer ? DEFAULT_REFER_TEMPLATE : DEFAULT_STROKE_TEMPLATE;
+  const tpl = await getTemplate(env, key, fallback);
+
+  const dtnLine = d.dtn ? `? DTN: ${d.dtn} ????` : '';
+
+  const text = applyTemplate(tpl, {
+    ward: d.ward || '',
+    onset: d.onset != null ? d.onset : '',
+    nihss: d.nihss != null ? d.nihss : '',
+    nihss_sev: d.nihss_sev || '',
+    ct: d.ct || '',
+    action: d.action || '',
+    dtn: d.dtn != null ? d.dtn : '',
+    dtn_line: dtnLine,
+    web_url: webUrl,
+  });
+
+  return [{ type: 'text', text }];
 }
 
 async function sendBroadcast(token, messages) {

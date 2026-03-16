@@ -145,7 +145,6 @@ function getCfg(){
   try{return JSON.parse(localStorage.getItem('stroke_menu_cfg')||'{}');}catch{return {};}
 }
 function saveCfg(c){localStorage.setItem('stroke_menu_cfg',JSON.stringify(c));}
-function getPin(){return localStorage.getItem('menu_pin')||'2567';}
 
 // Staff file paths (same folder assumed)
 const STAFF_FILE='stroke_staff_wizard.html';
@@ -160,7 +159,13 @@ function switchTab(t,btn){
   currentTab=t;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  if(t==='admin'){requirePin(()=>render());return;}
+  // แท็บ Admin ตอนนี้ใช้หน้า stroke_admin.html แยกต่างหากแล้ว
+  if(t==='admin'){
+    window.open('/stroke_admin.html','_blank','noopener');
+    currentTab='home';
+    const homeBtn=document.querySelectorAll('.tab-btn')[0];
+    if(homeBtn)homeBtn.classList.add('active');
+  }
   render();
 }
 
@@ -558,80 +563,13 @@ window.saveVid=async function(){
 
 // ── SETTINGS MODAL (shown via topbar ⚙️) ──
 
-// ── ADMIN TAB (PIN required) ──────────────────────────────────────────────
+// ── ADMIN TAB (ตอนนี้ใช้หน้า stroke_admin.html แยกต่างหาก) ─────────────
 function rAdmin(){
   return `<div class="card" style="border-color:var(--red);background:var(--dbg)">
-    <div style="font-size:14px;font-weight:700;color:var(--dtx);margin-bottom:2px">⚙️ Admin Panel</div>
-    <div style="font-size:12px;color:var(--dtx)">เฉพาะผู้ดูแลระบบ — ต้องใส่ PIN ก่อนเข้า</div>
-  </div>
-
-  <div class="card">
-    <div class="sec">จัดการ Guideline</div>
-    <button onclick="requirePin(()=>{editingGlId=null;showGlForm({})})" class="btn-red" style="width:100%;margin-bottom:8px">+ เพิ่ม Guideline ใหม่</button>
-    <div id="adminGlList"><div class="empty-state" style="padding:14px"><div style="font-size:12px;color:var(--tx2)">ไม่มีข้อมูล — กำลังตรวจสอบ Turso...</div></div></div>
-  </div>
-
-  <div class="card">
-    <div class="sec">จัดการ วิดีโอ / ลิงก์</div>
-    <button onclick="requirePin(()=>showAddVidForm())" class="btn-red" style="width:100%;margin-bottom:8px">+ เพิ่มวิดีโอ/ลิงก์ใหม่</button>
-    <div id="adminVidList"><div class="empty-state" style="padding:14px"><div style="font-size:12px;color:var(--tx2)">ไม่มีข้อมูล — กำลังตรวจสอบ Turso...</div></div></div>
-  </div>
-
-  <div class="card">
-    <div class="sec">เปลี่ยน PIN เมนู</div>
-    <form autocomplete="off" onsubmit="saveSettings();return false;" style="margin:0">
-      <div class="form-row"><div class="lbl">PIN ปัจจุบัน</div>
-      <input type="password" id="s_oldpin" maxlength="4" placeholder="PIN ปัจจุบัน" autocomplete="off"></div>
-      <div class="form-row"><div class="lbl">PIN ใหม่ (4 หลัก)</div>
-      <input type="password" id="s_newpin" maxlength="4" placeholder="PIN ใหม่" autocomplete="new-password"></div>
-      <button type="submit" class="btn-red" style="width:100%">บันทึก PIN ใหม่</button>
-    </form>
-  </div>
-
-  <div class="card" style="border-color:#06C755">
-    <div class="sec" style="color:#06C755">📲 LINE OA — การตั้งค่า</div>
-    <div style="font-size:12px;color:var(--tx2);line-height:1.8;margin-bottom:10px">
-      ระบบส่งแบบ <strong>Broadcast</strong> — ทุกคนที่ Add OA จะได้รับแจ้งเตือน
-    </div>
-    <div style="padding:10px 12px;background:var(--ibg);border-radius:var(--rm);font-size:12px;color:var(--itx);line-height:1.8">
-      <strong>วิธีใช้:</strong><br>
-      1. สร้าง LINE OA ที่ <a href="https://business.line.me" target="_blank" style="color:var(--itx)">business.line.me</a><br>
-      2. ตั้งค่า <code style="background:rgba(0,0,0,.07);padding:1px 5px;border-radius:3px">LINE_CHANNEL_ACCESS_TOKEN</code> ใน Cloudflare ENV<br>
-      3. บอกหมอระบบประสาท + ทีม Refer ให้ <strong>Add OA เป็นเพื่อน</strong><br>
-      4. Staff กดปุ่มแจ้งเตือนใน wizard → ทุกคนได้รับทันที
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="sec">🔗 ลิงก์ ASPECT Score Calculator</div>
-    <div style="font-size:11px;color:var(--tx2);margin-bottom:10px;line-height:1.6">
-      ลิงก์เหล่านี้จะแสดงใน Staff Wizard ขั้น CT Brain — Admin เปลี่ยนได้ที่นี่
-    </div>
-    <div id="aspectLinkList"><div style="font-size:12px;color:var(--tx2)">กำลังโหลด...</div></div>
-    <button onclick="addAspectLink()" style="width:100%;padding:8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);font-size:12px;font-family:inherit;margin-top:8px">+ เพิ่มลิงก์</button>
-    <div id="aspectSaveStatus" style="font-size:11px;min-height:14px;margin-top:6px;text-align:center"></div>
-  </div>
-
-  <div class="card" style="border-color:#AFA9EC">
-    <div class="sec" style="color:#3C3489">🤖 ถามข้อมูล — Guideline + Case Log เท่านั้น</div>
-    <div style="font-size:11px;color:#633806;line-height:1.6;margin-bottom:10px;padding:6px 10px;background:#FAEEDA;border-radius:var(--rm);border:0.5px solid #EF9F27">
-      ⚠️ AI ตอบได้เฉพาะ Guideline ที่บันทึกไว้ และสรุป Case Log สถิติ — ไม่ใช่การวินิจฉัย
-    </div>
-    <div id="aiChatHistory" style="max-height:300px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:8px"></div>
-    <div style="display:flex;gap:8px">
-      <input id="aiChatInput" placeholder="ถาม guideline หรือ case stats..." style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter'){event.preventDefault();sendAdminChat();}">
-      <button onclick="sendAdminChat()" style="padding:8px 14px;border:0.5px solid #AFA9EC;border-radius:var(--rm);background:#EEEDFE;color:#3C3489;font-size:13px;font-weight:600;font-family:inherit;flex-shrink:0">ถาม</button>
-    </div>
-    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px">
-      <button onclick="quickQ('สรุป case log ทั้งหมด')" style="padding:4px 9px;border:0.5px solid var(--bm);border-radius:10px;background:var(--bg2);font-size:11px;font-family:inherit">📊 Case summary</button>
-      <button onclick="quickQ('DTN เฉลี่ยและ target ≤60 นาที')" style="padding:4px 9px;border:0.5px solid var(--bm);border-radius:10px;background:var(--bg2);font-size:11px;font-family:inherit">⏱ DTN</button>
-      <button onclick="quickQ('rt-PA ให้กี่เคส ไม่ให้กี่เคส')" style="padding:4px 9px;border:0.5px solid var(--bm);border-radius:10px;background:var(--bg2);font-size:11px;font-family:inherit">💉 rt-PA</button>
-      <button onclick="quickQ('refer กี่เคส ICH กี่เคส')" style="padding:4px 9px;border:0.5px solid var(--bm);border-radius:10px;background:var(--bg2);font-size:11px;font-family:inherit">🚑 Refer</button>
-      <button onclick="quickQ('สรุป guideline ทั้งหมดที่บันทึกไว้')" style="padding:4px 9px;border:0.5px solid var(--bm);border-radius:10px;background:var(--bg2);font-size:11px;font-family:inherit">📋 Guideline</button>
-    </div>
-  </div>
-
-  <script>loadAdminLists();loadAspectAdmin();<\/script>`;
+    <div style="font-size:14px;font-weight:700;color:var(--dtx);margin-bottom:6px">⚙️ Admin Panel</div>
+    <div style="font-size:12px;color:var(--dtx);margin-bottom:10px">ตอนนี้ย้ายไปหน้า Admin แยกแล้ว — ใช้รหัส ADMIN_SECRET เดียวกับที่ตั้งใน Cloudflare</div>
+    <a href="/stroke_admin.html" target="_blank" rel="noopener" style="display:inline-block;padding:9px 16px;border-radius:var(--rm);background:var(--red);color:#fff;font-size:13px;font-weight:600;text-decoration:none">เปิดหน้า Admin (stroke_admin.html) →</a>
+  </div>`;
 }
 
 function setAdminGlList(html){const el=document.getElementById('adminGlList');if(el)el.innerHTML=html;}
@@ -953,45 +891,8 @@ function showAddVidForm(){
 }
 
 function showSettings(){
-  // redirect to admin tab (PIN required)
-  switchTab('admin', document.querySelectorAll('.tab-btn')[3]);
-}
-window.saveSettings=function(){
-  const oldPin=document.getElementById('s_oldpin')?.value;
-  const newPin=document.getElementById('s_newpin')?.value;
-  const menuPin=localStorage.getItem('menu_pin')||'2567';
-  if(!newPin){alert('กรุณาใส่ PIN ใหม่');return;}
-  if(oldPin!==menuPin){alert('PIN ปัจจุบันไม่ถูกต้อง');return;}
-  if(newPin.length!==4||!/^\d+$/.test(newPin)){alert('PIN ต้องเป็นตัวเลข 4 หลัก');return;}
-  localStorage.setItem('menu_pin',newPin);
-  alert('เปลี่ยน PIN สำเร็จ');
-  switchTab('home',document.querySelectorAll('.tab-btn')[0]);
-};
-
-// ── PIN MODAL ──
-let pinBuf='';
-function requirePin(cb){
-  pinCallback=cb;pinBuf='';
-  updPD(0);
-  document.getElementById('pinErr').textContent='';
-  document.getElementById('pinModal').classList.add('show');
-}
-function closePinModal(){document.getElementById('pinModal').classList.remove('show');pinBuf='';pinCallback=null;}
-function updPD(len,err=false){
-  const d=document.getElementById('pinDots').children;
-  for(let i=0;i<4;i++)d[i].className='pd'+(i<len?(err?' e':' f'):'');
-}
-window.pk=function(k){if(pinBuf.length>=4)return;pinBuf+=k;updPD(pinBuf.length);if(pinBuf.length===4)setTimeout(chkPin,150);};
-window.pdel=function(){if(pinBuf.length){pinBuf=pinBuf.slice(0,-1);updPD(pinBuf.length);document.getElementById('pinErr').textContent='';}};
-function chkPin(){
-  if(pinBuf===getPin()){
-    document.getElementById('pinModal').classList.remove('show');
-    pinBuf='';
-    if(pinCallback){const cb=pinCallback;pinCallback=null;cb();}
-  } else {
-    updPD(4,true);document.getElementById('pinErr').textContent='รหัสไม่ถูกต้อง';
-    setTimeout(()=>{pinBuf='';updPD(0);},800);
-  }
+  // เปิดหน้า Admin แยก (ใช้ ADMIN_SECRET เดียวกัน)
+  window.open('/stroke_admin.html','_blank','noopener');
 }
 
 // ── INIT ──

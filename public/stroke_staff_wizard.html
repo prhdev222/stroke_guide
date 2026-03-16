@@ -80,6 +80,9 @@ button{font-family:inherit;cursor:pointer}
 .now-btn{padding:8px 11px;font-size:12px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);white-space:nowrap;cursor:pointer}
 input.datetime-input{min-width:180px}
 input[type=datetime-local]{cursor:pointer}
+.quick-time-wrap{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px}
+input.quick-time-input{width:72px;padding:6px 8px;font-size:13px;font-variant-numeric:tabular-nums;border:0.5px solid var(--bl);border-radius:var(--rm);background:var(--bg2)}
+input.quick-time-input::placeholder{color:var(--tx2);font-size:11px}
 
 /* SYMPTOM CHIPS */
 .sym-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -171,7 +174,7 @@ input[type=datetime-local]{cursor:pointer}
     <div style="font-size:40px;margin-bottom:12px">🏥</div>
     <div style="font-size:17px;font-weight:700;margin-bottom:2px">Stroke Fast Tract</div>
     <div style="font-size:12px;color:var(--tx2);margin-bottom:6px">Staff Mode — โรงพยาบาลสงฆ์</div>
-    <div id="pinSourceBadge" style="font-size:10px;padding:3px 10px;border-radius:10px;margin-bottom:14px;display:inline-block">💾 PIN จากเครื่องนี้ (local)</div>
+    <div id="pinSourceBadge" style="font-size:10px;padding:3px 10px;border-radius:10px;margin-bottom:14px;display:inline-block">🔐 รหัสหน่วย (ตั้งโดย Admin ใน Turso)</div>
     <div class="pin-dots" id="pinDots">
       <div class="pin-dot"></div><div class="pin-dot"></div>
       <div class="pin-dot"></div><div class="pin-dot"></div>
@@ -184,7 +187,7 @@ input[type=datetime-local]{cursor:pointer}
       <button class="pin-btn" onclick="pdel()" style="font-size:16px;color:var(--tx2)">⌫</button>
     </div>
     <div class="pin-err" id="pinErr"></div>
-    <button id="changePinBtn" onclick="showSetup()" style="padding:8px 20px;border:0.5px solid var(--bm);border-radius:var(--rm);background:transparent;color:var(--tx2);font-size:12px;margin-top:10px;font-family:inherit">เปลี่ยน PIN</button>
+    <div style="font-size:11px;color:var(--tx2);margin-top:8px">Admin ตั้งรหัสหน่วยได้ที่ <a href="/stroke_admin.html" target="_blank" rel="noopener" style="color:var(--itx)">stroke_admin.html</a> หรือ 📦 → เปิดหน้า Admin</div>
     <div style="margin-top:10px;padding:10px;background:var(--bg2);border-radius:var(--rm);font-size:11px;color:var(--tx2);line-height:1.6">🔒 ข้อมูลผู้ป่วยจะถูกเคลียร์ทุกครั้งที่ล็อก — ปฏิบัติตาม พ.ร.บ. PDPA</div>
   </div>
 </div>
@@ -212,11 +215,19 @@ input[type=datetime-local]{cursor:pointer}
   <div class="top-bar">
     <div>
       <div style="font-size:13px;font-weight:700">Stroke Fast Tract</div>
-      <div id="stepLabel" style="font-size:11px;color:var(--tx2)">ขั้น 1/7</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span id="stepLabel" style="font-size:11px;color:var(--tx2)">ขั้น 1/7</span>
+        <span id="wardBadge" style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--sbg);color:var(--stx);font-weight:600;display:none" title="หน่วยที่เข้าระบบด้วยรหัสนี้">หน่วย: <span id="wardBadgeCode">—</span></span>
+      </div>
     </div>
     <div class="step-progress" id="stepProgress"></div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <div id="clockEl" style="font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;text-align:right"></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+      <div id="timerWrap" style="display:flex;align-items:center;gap:6px">
+        <span id="timerEl" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--tx2)">⏱ —</span>
+        <button type="button" id="btnTimerStart" onclick="startTimerNow()" style="padding:4px 8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:11px;font-family:inherit;cursor:pointer" title="เริ่มจับเวลาตั้งแต่ตอนนี้">เริ่มจับเวลา</button>
+        <button type="button" id="btnTimerSet" onclick="setTimerStart()" style="padding:4px 8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:11px;font-family:inherit;cursor:pointer" title="กำหนดเวลาเริ่มต้น (เช่น เวลาเข้า ER)">กำหนดเวลา</button>
+      </div>
+      <div id="clockEl" style="font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;text-align:right;min-width:70px"></div>
       <button onclick="showTursoSettings()" style="padding:5px 9px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:12px;font-family:inherit" title="Turso Case Log">📦</button>
       <button onclick="confirmExit()" style="padding:5px 9px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:12px;font-family:inherit">🔒</button>
     </div>
@@ -237,57 +248,12 @@ input[type=datetime-local]{cursor:pointer}
 </div>
 
 <script>
-// ==================== PIN ====================
-let pinBuf='',setupBuf='',setupStep='first',setupFirst='';
-let pinChecking=false;
-
-// PIN source: 'turso' | 'local'
-let pinSource='local';
+// ==================== PIN (รหัสหน่วยจาก Turso — Admin ตั้งรหัสประจำหน่วย เช่น ER 1234, MED1 2417) ====================
+let pinBuf='',pinChecking=false;
 
 function updDots(id,len,err=false){
   const d=document.getElementById(id).children;
   for(let i=0;i<4;i++)d[i].className='pin-dot'+(i<len?(err?' e':' f'):'');
-}
-
-// Turso: fetch PIN from settings table
-async function getPinRemote(){
-  try{
-    const r=await tursoExec("SELECT value FROM settings WHERE key='staff_pin' LIMIT 1");
-    if(r.error||!r.rows||r.rows.length===0)return null;
-    return r.rows[0].value||null;
-  }catch{return null;}
-}
-
-// Turso: save PIN to settings table
-async function savePinRemote(pin){
-  await ensureSettingsTable();
-  const r=await tursoExec(
-    "INSERT INTO settings(key,value) VALUES('staff_pin',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-    [pin]
-  );
-  return!r.error;
-}
-
-// localStorage fallback
-function savePinLocal(p){localStorage.setItem('sp',p);}
-function getPinLocal(){return localStorage.getItem('sp')||'2569';}
-
-// Update lock screen PIN source badge
-function updatePinSourceBadge(src){
-  const el=document.getElementById('pinSourceBadge');
-  if(!el)return;
-  if(src==='turso'){
-    el.textContent='🔐 PIN จาก Turso — Admin เป็นผู้ตั้งรหัส';
-    el.style.color='var(--stx)';
-    el.style.background='var(--sbg)';
-  } else {
-    el.textContent='💾 PIN จากเครื่องนี้ (local)';
-    el.style.color='var(--wtx)';
-    el.style.background='var(--wbg)';
-  }
-  // ซ่อนปุ่ม "เปลี่ยน PIN" ถ้า Turso configured (ให้ admin เปลี่ยนผ่าน menu แทน)
-  const chBtn=document.getElementById('changePinBtn');
-  if(chBtn)chBtn.style.display=src==='turso'?'none':'inline-block';
 }
 
 function pk(k){
@@ -306,78 +272,40 @@ async function checkPin(){
   const errEl=document.getElementById('pinErr');
   errEl.textContent='กำลังตรวจสอบ...';
   errEl.style.color='var(--tx2)';
-
-  // ลองดึง PIN จาก Turso ก่อน
-  let correctPin=await getPinRemote();
-  if(correctPin){
-    pinSource='turso';
-  } else {
-    // Fallback: ใช้ PIN จาก localStorage
-    correctPin=getPinLocal();
-    pinSource='local';
-  }
-  updatePinSourceBadge(pinSource);
-
-  if(pinBuf===correctPin){
-    pinBuf='';updDots('pinDots',0);
-    errEl.textContent='';
-    document.getElementById('lockWrap').style.display='none';
-    document.getElementById('app').style.display='block';
-    startApp();
-  } else {
+  try {
+    const r=await fetch('/check-staff-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:pinBuf})});
+    const data=await r.json();
+    if(data.ok&&data.ward_code){
+      D.ward=data.ward_code;
+      D.wardLabel=data.label||data.ward_code;
+      pinBuf='';updDots('pinDots',0);
+      errEl.textContent='';
+      document.getElementById('lockWrap').style.display='none';
+      document.getElementById('app').style.display='block';
+      startApp();
+    } else {
+      updDots('pinDots',4,true);
+      errEl.textContent='รหัสไม่ถูกต้อง หรือยังไม่มีรหัสหน่วย — ให้ Admin ตั้งที่ 📦 → ตั้งรหัสหน่วย';
+      errEl.style.color='var(--dtx)';
+      setTimeout(()=>{pinBuf='';updDots('pinDots',0);},800);
+    }
+  } catch(e) {
     updDots('pinDots',4,true);
-    errEl.textContent='รหัสไม่ถูกต้อง';
+    errEl.textContent='ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
     errEl.style.color='var(--dtx)';
     setTimeout(()=>{pinBuf='';updDots('pinDots',0);},800);
   }
   pinChecking=false;
 }
 
-function showSetup(){
-  // ถ้า Turso configured → แจ้งว่าต้องเปลี่ยนผ่าน admin (menu.html)
-  const cfg={url:true,token:true};if(cfg.url&&cfg.token){
-    alert('PIN ถูกจัดการโดย Admin ผ่าน Turso\nกรุณาเปลี่ยน PIN ที่ menu.html → ⚙️ ตั้งค่า → เปลี่ยน PIN (Admin)');
-    return;
-  }
-  document.getElementById('setupWrap').style.display='flex';
-  setupBuf='';setupStep='first';setupFirst='';
-  document.getElementById('setupTitle').textContent='ตั้งรหัส PIN ใหม่';
-  document.getElementById('setupSub').textContent='ป้อน PIN 4 หลัก';
-  updDots('setupDots',0);
-}
-function closeSetup(){document.getElementById('setupWrap').style.display='none';}
-function sk(k){if(setupBuf.length>=4)return;setupBuf+=k;updDots('setupDots',setupBuf.length);if(setupBuf.length===4)setTimeout(handleSetup,150);}
-function sdel(){if(setupBuf.length){setupBuf=setupBuf.slice(0,-1);updDots('setupDots',setupBuf.length);}}
-async function handleSetup(){
-  if(setupStep==='first'){
-    setupFirst=setupBuf;setupBuf='';setupStep='confirm';
-    document.getElementById('setupTitle').textContent='ยืนยัน PIN';
-    document.getElementById('setupSub').textContent='ป้อน PIN อีกครั้ง';
-    updDots('setupDots',0);
-  } else {
-    if(setupBuf===setupFirst){
-      // บันทึก PIN ทั้ง Turso และ localStorage
-      savePinLocal(setupBuf);
-      const savedRemote=await savePinRemote(setupBuf);
-      closeSetup();
-      const msg=savedRemote?'บันทึก PIN ไปยัง Turso สำเร็จ (ทุก device อัปเดตอัตโนมัติ)':'บันทึก PIN ในเครื่องนี้เท่านั้น (Turso ยังไม่ได้ตั้งค่า)';
-      document.getElementById('pinErr').textContent=msg;
-      document.getElementById('pinErr').style.color=savedRemote?'var(--stx)':'var(--wtx)';
-    } else {
-      updDots('setupDots',4,true);
-      document.getElementById('setupErr').textContent='ไม่ตรงกัน';
-      setTimeout(()=>{setupBuf='';setupStep='first';setupFirst='';document.getElementById('setupTitle').textContent='ตั้งรหัส PIN ใหม่';document.getElementById('setupSub').textContent='ป้อน PIN 4 หลัก';document.getElementById('setupErr').textContent='';updDots('setupDots',0);},900);
-    }
-  }
-}
-
 // ==================== STATE ====================
 let step=0;
 let D={ // all clinical data
-  name:'',hn:'',age:'',weight:'',ward:'',
+  name:'',hn:'',age:'',weight:'',ward:'',wardLabel:'',
   lastSeen:'',strokeOnset:'',erArrival:'',bloodDrawn:'',ctTime:'',activateFT:'',ivRtPA:'',
   rtpaGiven:null, // true=ให้ rt-PA, false=ไม่ให้ (Refer)
   referTime:'',   // วันเวลา Refer (เมื่อไม่ให้ rt-PA หรือ refer)
+  timerStartedAt:null, // ISO string — เริ่มจับเวลาเมื่อกดเริ่ม หรือกำหนดเวลาเริ่มต้น
   befast:{B:false,E:false,F:false,A:false,S:false},
   gcs:{E:'',V:'',M:''},
   symptoms:{hemi:false,numb:false,comm:false,dysarthria:false,vis:false,drow:false,ataxia:false},
@@ -486,6 +414,32 @@ function renderAssessmentBases(){
 // ==================== HELPERS ====================
 function getNow(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 function getNowDatetime(){const d=new Date();const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'),h=String(d.getHours()).padStart(2,'0'),min=String(d.getMinutes()).padStart(2,'0');return `${y}-${m}-${day}T${h}:${min}`;}
+/** พาร์สเวลาแบบสั้น 24h เช่น 18.45, 18:45, 8.30, 0845 → "HH:mm" หรือ null */
+function parseQuickTime(s){
+  if(!s||typeof s!=='string')return null;
+  const t=s.trim().replace(/\s/g,'');
+  if(/^\d{1,2}[.:]\d{1,2}$/.test(t)){const p=t.split(/[.:]/);const h=parseInt(p[0],10);const m=parseInt(p[1],10);if(h>=0&&h<=23&&m>=0&&m<=59)return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}
+  if(/^\d{3,4}$/.test(t)){const h=Math.floor(parseInt(t,10)/100);const m=parseInt(t,10)%100;if(h>=0&&h<=23&&m>=0&&m<=59)return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}
+  return null;
+}
+/** ใช้ค่าจากช่อง "เวลา 18.45" อัปเดต datetime ของฟิลด์นั้น (ใช้วันจากฟิลด์หรือวันนี้) */
+window.applyQuickTime=function(inputEl){
+  if(!inputEl||!inputEl.dataset.timekey)return;
+  const key=inputEl.dataset.timekey;
+  const timeStr=parseQuickTime(inputEl.value);
+  if(!timeStr){inputEl.value='';return;}
+  const now=new Date();
+  let y=now.getFullYear(),mo=now.getMonth(),day=now.getDate();
+  const cur=D[key];
+  if(cur&&cur.indexOf('T')>=0){const d=new Date(cur);if(!isNaN(d.getTime())){y=d.getFullYear();mo=d.getMonth();day=d.getDate();}}
+  const datetime=`${y}-${String(mo+1).padStart(2,'0')}-${String(day).padStart(2,'0')}T${timeStr}`;
+  D[key]=datetime;
+  const row=inputEl.closest('.time-row');
+  const dtInp=row?row.querySelector('input[type=datetime-local]'):null;
+  if(dtInp){dtInp.value=datetime;dtInp.dispatchEvent(new Event('input',{bubbles:true}));}
+  inputEl.value='';
+  if(typeof reRenderOnset==='function')reRenderOnset();
+};
 function parseForDate(s){if(!s)return null;if(s.indexOf('T')>=0){const d=new Date(s);return isNaN(d.getTime())?null:d;}const [h,m]=s.split(':').map(Number);if(isNaN(h)||isNaN(m))return null;const d=new Date();d.setHours(h,m,0,0);return d;}
 function diffMin(a,b){const da=parseForDate(a),db=parseForDate(b);if(!da||!db)return null;return Math.round((db-da)/60000);}
 function formatDisplayDatetime(s){if(!s)return '—';if(s.indexOf('T')>=0){const d=new Date(s);if(isNaN(d.getTime()))return s;return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'})+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}return s;}
@@ -623,10 +577,14 @@ function rTimeline(){
   ${required.map(f=>`<div class="time-row">
     <div style="flex:1">
       <div class="lbl">${f.th} ${D[f.k]?`<span style="color:var(--stx);font-size:10px">✓ ${formatDisplayDatetime(D[f.k])}</span>`:''}</div>
-      <div style="font-size:10px;color:var(--tx2);margin-bottom:4px">${f.hint} (วัน-เดือน-ปี ชม.:นาที)</div>
-      <input type="datetime-local" value="${toDatetimeLocalValue(D[f.k])}" oninput="D['${f.k}']=this.value;reRenderOnset()" class="datetime-input" step="60">
+      <div style="font-size:10px;color:var(--tx2);margin-bottom:4px">${f.hint} (วัน-เดือน-ปี หรือพิมพ์เวลา 24h เช่น 18.45)</div>
+      <div class="quick-time-wrap">
+        <input type="datetime-local" value="${toDatetimeLocalValue(D[f.k])}" oninput="D['${f.k}']=this.value;reRenderOnset()" class="datetime-input" step="60">
+        <span style="font-size:11px;color:var(--tx2)">หรือ</span>
+        <input type="text" class="quick-time-input" placeholder="18.45" data-timekey="${f.k}" onblur="applyQuickTime(this)" onkeydown="if(event.key==='Enter'){applyQuickTime(this);event.preventDefault()}" title="พิมพ์เวลา 24 ชม. เช่น 18.45 หรือ 8.30">
+      </div>
     </div>
-    <button type="button" class="now-btn" onclick="var v=getNowDatetime();D['${f.k}']=v;var i=this.previousElementSibling.querySelector('input');if(i)i.value=v.slice(0,16);reRenderOnset()" title="ใช้วันเวลาปัจจุบัน">📅 Now</button>
+    <button type="button" class="now-btn" onclick="var v=getNowDatetime();D['${f.k}']=v;var i=this.previousElementSibling.querySelector('input[type=datetime-local]');if(i)i.value=v.slice(0,16);reRenderOnset()" title="ใช้วันเวลาปัจจุบัน">📅 Now</button>
   </div>`).join('')}
   <div id="onsetResult">${onsetBox}${dnBox}</div>
   </div>
@@ -640,9 +598,13 @@ function rTimeline(){
     <div style="flex:1">
       <div class="lbl">${f.th} ${D[f.k]?`<span style="color:var(--stx);font-size:10px">✓ ${formatDisplayDatetime(D[f.k])}</span>`:''}</div>
       <div style="font-size:10px;color:var(--tx2);margin-bottom:4px">${f.hint}</div>
-      <input type="datetime-local" value="${toDatetimeLocalValue(D[f.k])}" oninput="D['${f.k}']=this.value;reRenderOnset()" class="datetime-input" step="60">
+      <div class="quick-time-wrap">
+        <input type="datetime-local" value="${toDatetimeLocalValue(D[f.k])}" oninput="D['${f.k}']=this.value;reRenderOnset()" class="datetime-input" step="60">
+        <span style="font-size:11px;color:var(--tx2)">หรือ</span>
+        <input type="text" class="quick-time-input" placeholder="18.45" data-timekey="${f.k}" onblur="applyQuickTime(this)" onkeydown="if(event.key==='Enter'){applyQuickTime(this);event.preventDefault()}" title="พิมพ์เวลา 24 ชม. เช่น 18.45">
+      </div>
     </div>
-    <button type="button" class="now-btn" onclick="var v=getNowDatetime();D['${f.k}']=v;var i=this.previousElementSibling.querySelector('input');if(i)i.value=v.slice(0,16);reRenderOnset()" title="ใช้วันเวลาปัจจุบัน">📅 Now</button>
+    <button type="button" class="now-btn" onclick="var v=getNowDatetime();D['${f.k}']=v;var i=this.previousElementSibling.querySelector('input[type=datetime-local]');if(i)i.value=v.slice(0,16);reRenderOnset()" title="ใช้วันเวลาปัจจุบัน">📅 Now</button>
   </div>`).join('')}
   </div>`;
 }
@@ -845,7 +807,11 @@ function rCT(){
   <div class="time-row">
     <div style="flex:1">
       <div class="lbl">วันและเวลาที่ทำ CT ${D.ctTime?`<span style="color:var(--stx);font-size:10px">✓ ${formatDisplayDatetime(D.ctTime)}</span>`:''}</div>
-      <input type="datetime-local" id="ctTimeInp" value="${toDatetimeLocalValue(D.ctTime)}" oninput="D.ctTime=this.value" class="datetime-input" step="60">
+      <div class="quick-time-wrap">
+        <input type="datetime-local" id="ctTimeInp" value="${toDatetimeLocalValue(D.ctTime)}" oninput="D.ctTime=this.value" class="datetime-input" step="60">
+        <span style="font-size:11px;color:var(--tx2)">หรือ</span>
+        <input type="text" class="quick-time-input" placeholder="18.45" data-timekey="ctTime" onblur="applyQuickTime(this)" onkeydown="if(event.key==='Enter'){applyQuickTime(this);event.preventDefault()}" title="พิมพ์เวลา 24 ชม. เช่น 18.45">
+      </div>
     </div>
     <button type="button" class="now-btn" onclick="var v=getNowDatetime();D.ctTime=v;var i=document.getElementById('ctTimeInp');if(i)i.value=v.slice(0,16)" title="บันทึกเวลาปัจจุบัน">📅 Now</button>
   </div>
@@ -971,10 +937,10 @@ window.updLabFlags=function(){
   el.innerHTML=flags.length
     ?flags.map(f=>`<div style="padding:8px 12px;background:${f.bg};border-radius:var(--rm);font-size:13px;font-weight:600;color:${f.co};margin-bottom:6px">⚠ ${f.l}</div>`).join('')
     :(glu!==null&&plt!==null&&inr!==null?`<div style="padding:8px 12px;background:var(--sbg);border-radius:var(--rm);font-size:13px;font-weight:600;color:var(--stx)">✓ Lab ที่กรอกไม่มีข้อห้าม rt-PA</div>`:'');
-  // อัปเดตข้อห้ามจาก Lab — ตั้งเมื่อผิดปกติ, ล้างเมื่อค่าปกติ
-  if(glu!==null&&glu<50) D.absExcl['gl']=true; else delete D.absExcl['gl'];
-  if(plt!==null&&plt<100) D.absExcl['plt']=true; else delete D.absExcl['plt'];
-  if((inr!==null&&inr>1.7)||(pt!==null&&pt>15)) D.absExcl['ac']=true; else delete D.absExcl['ac'];
+  // อัปเดตข้อห้ามจาก Lab — ใช้ key เดียวกับ ABS (glucose, platelet, anticoag) เพื่อให้ Checklist ติ๊กให้อัตโนมัติ
+  if(glu!==null&&glu<50) D.absExcl['glucose']=true; else delete D.absExcl['glucose'];
+  if(plt!==null&&plt<100) D.absExcl['platelet']=true; else delete D.absExcl['platelet'];
+  if((inr!==null&&inr>1.7)||(pt!==null&&pt>15)) D.absExcl['anticoag']=true; else delete D.absExcl['anticoag'];
   if(typeof updateCKResult==='function'&&step===7) updateCKResult();
 };
 
@@ -1049,6 +1015,21 @@ function ckRow(checked,label,onclick,danger=false){
     <div class="ck-row-text" style="line-height:1.5">${label}</div>
   </div>`;
 }
+// Sync ข้อห้ามจาก Lab เข้า absExcl / excl45 — ให้ Checklist ติ๊กให้อัตโนมัติเมื่อกรอก Lab มาแล้ว
+function syncChecklistFromLab(){
+  const lab=D.lab||{};
+  const val=(k)=>lab[k]!==null&&lab[k]!==''?Number(lab[k]):null;
+  const plateletNorm=(v)=>{if(v==null)return null;const n=Number(v);return n>=1000?n/1000:n;};
+  const glu=val('glucose');
+  const pltRaw=val('plt');
+  const plt=plateletNorm(pltRaw);
+  const inr=val('inr'),pt=val('pt');
+  if(glu!==null&&glu<50) D.absExcl['glucose']=true; else delete D.absExcl['glucose'];
+  if(plt!==null&&plt<100) D.absExcl['platelet']=true; else delete D.absExcl['platelet'];
+  if((inr!==null&&inr>1.7)||(pt!==null&&pt>15)){ D.absExcl['anticoag']=true; D.excl45.inr17=true; }
+  else { delete D.absExcl['anticoag']; D.excl45.inr17=false; }
+}
+
 // Auto-fill checklist from previously collected data
 function autoFillChecklist(){
   const oh=getOnsetHours();
@@ -1065,6 +1046,9 @@ function autoFillChecklist(){
   if(tot>25) D.excl45.nihss25=true;
   // age >80 relative
   if(age>80) D.relExcl45.age80=true;
+
+  // ติ๊กข้อห้ามจาก Lab อัตโนมัติ (Blood sugar, Platelet, INR/PT และ ONSET 3–4.5 ชม. INR >1.7)
+  syncChecklistFromLab();
 }
 
 function rChecklist(){
@@ -1079,9 +1063,7 @@ function rChecklist(){
   const decBd=el?'var(--sbd)':ab?'var(--dbd)':'var(--wbd)';
   const decTx=el?'เข้าเกณฑ์การให้ rt-PA':ab?'ห้ามให้ rt-PA — มีข้อห้ามเด็ดขาด':'ยังประเมินไม่ครบ';
   const absLabels=ABS.filter(i=>D.absExcl[i.id]).map(i=>i.th);
-  const labKeyLabels={gl:'Blood sugar <50 mg/dL (จาก Lab)',plt:'Platelet <100,000 (จาก Lab)',ac:'Anticoagulant INR >1.7 หรือ PT >15 (จาก Lab)'};
-  const otherAbs=Object.keys(D.absExcl||{}).filter(k=>D.absExcl[k]&&labKeyLabels[k]).map(k=>labKeyLabels[k]);
-  const allAbsReasons=[...absLabels,...otherAbs];
+  const allAbsReasons=absLabels;
   const decReason=el?'Inclusion ครบ 3 ข้อ · ไม่มีข้อห้ามเด็ดขาด':ab?(allAbsReasons.length?'ข้อห้ามเด็ดขาดที่พบ: '+allAbsReasons.join('; '):'มีรายการข้อห้ามเด็ดขาดถูกเลือกอยู่ด้านบน'):(inc?'กรุณาตรวจ Absolute Exclusion ด้านบน — ทำเครื่องหมายเฉพาะรายการที่พบจริง': 'กรุณาตรวจ Inclusion 3 ข้อให้ครบ');
 
   // Helper: badge showing source of auto-fill
@@ -1142,9 +1124,7 @@ window.updateCKResult=function(){
   const decBd=el2?'var(--sbd)':ab?'var(--dbd)':'var(--wbd)';
   const decTx=el2?'เข้าเกณฑ์การให้ rt-PA':ab?'ห้ามให้ rt-PA — มีข้อห้ามเด็ดขาด':'ยังประเมินไม่ครบ';
   const absLabels=ABS.filter(i=>D.absExcl[i.id]).map(i=>i.th);
-  const labKeyLabels={gl:'Blood sugar <50 mg/dL (จาก Lab)',plt:'Platelet <100,000 (จาก Lab)',ac:'Anticoagulant INR >1.7 หรือ PT >15 (จาก Lab)'};
-  const otherAbs=Object.keys(D.absExcl||{}).filter(k=>D.absExcl[k]&&labKeyLabels[k]).map(k=>labKeyLabels[k]);
-  const allAbsReasons=[...absLabels,...otherAbs];
+  const allAbsReasons=absLabels;
   const decReason=el2?'Inclusion ครบ 3 ข้อ · ไม่มีข้อห้ามเด็ดขาด':ab?(allAbsReasons.length?'ข้อห้ามเด็ดขาดที่พบ: '+allAbsReasons.join('; '):'มีรายการข้อห้ามเด็ดขาดถูกเลือกอยู่ด้านบน'):(inc?'กรุณาตรวจ Absolute Exclusion ด้านบน — ทำเครื่องหมายเฉพาะรายการที่พบจริง': 'กรุณาตรวจ Inclusion 3 ข้อให้ครบ');
   const el3=document.getElementById('ckResult');
   const reasonEl=document.getElementById('ckReason');
@@ -1250,12 +1230,12 @@ function rPlan(){
       <button type="button" onclick="D.rtpaGiven=true;renderStep()" style="padding:10px 16px;border-radius:var(--rm);border:1.5px solid ${D.rtpaGiven===true?'var(--sbd)':'var(--bl)'};background:${D.rtpaGiven===true?'var(--sbg)':'var(--bg2)'};color:var(--stx);font-weight:600;font-size:13px;font-family:inherit;cursor:pointer">✓ ให้ rt-PA</button>
       <button type="button" onclick="D.rtpaGiven=false;renderStep()" style="padding:10px 16px;border-radius:var(--rm);border:1.5px solid ${D.rtpaGiven===false?'var(--wbd)':'var(--bl)'};background:${D.rtpaGiven===false?'var(--wbg)':'var(--bg2)'};color:var(--wtx);font-weight:600;font-size:13px;font-family:inherit;cursor:pointer">ไม่ให้ rt-PA (Refer)</button>
     </div>
-    ${D.rtpaGiven===true?`<div class="time-row"><div style="flex:1"><div class="lbl">เวลาเริ่มให้ IV rt-PA ${D.ivRtPA?`<span style="color:var(--stx)">✓ ${formatDisplayDatetime(D.ivRtPA)}</span>`:''}</div><input type="datetime-local" id="planIvRtPA" value="${toDatetimeLocalValue(D.ivRtPA)}" oninput="D.ivRtPA=this.value" class="datetime-input" step="60"></div><button type="button" class="now-btn" onclick="var v=getNowDatetime();D.ivRtPA=v;var i=document.getElementById('planIvRtPA');if(i)i.value=v.slice(0,16)">📅 Now</button></div>`:''}
-    ${D.rtpaGiven===false?`<div class="time-row"><div style="flex:1"><div class="lbl">เวลา Refer / ตัดสินใจไม่ให้ ${D.referTime?`<span style="color:var(--stx)">✓ ${formatDisplayDatetime(D.referTime)}</span>`:''}</div><input type="datetime-local" id="planReferTime" value="${toDatetimeLocalValue(D.referTime)}" oninput="D.referTime=this.value" class="datetime-input" step="60"></div><button type="button" class="now-btn" onclick="var v=getNowDatetime();D.referTime=v;var i=document.getElementById('planReferTime');if(i)i.value=v.slice(0,16)">📅 Now</button></div>`:''}
+    ${D.rtpaGiven===true?`<div class="time-row"><div style="flex:1"><div class="lbl">เวลาเริ่มให้ IV rt-PA ${D.ivRtPA?`<span style="color:var(--stx)">✓ ${formatDisplayDatetime(D.ivRtPA)}</span>`:''}</div><div class="quick-time-wrap"><input type="datetime-local" id="planIvRtPA" value="${toDatetimeLocalValue(D.ivRtPA)}" oninput="D.ivRtPA=this.value" class="datetime-input" step="60"><span style="font-size:11px;color:var(--tx2)">หรือ</span><input type="text" class="quick-time-input" placeholder="18.45" data-timekey="ivRtPA" onblur="applyQuickTime(this)" onkeydown="if(event.key==='Enter'){applyQuickTime(this);event.preventDefault()}" title="เวลา 24 ชม. เช่น 18.45"></div></div><button type="button" class="now-btn" onclick="var v=getNowDatetime();D.ivRtPA=v;var i=document.getElementById('planIvRtPA');if(i)i.value=v.slice(0,16)">📅 Now</button></div>`:''}
+    ${D.rtpaGiven===false?`<div class="time-row"><div style="flex:1"><div class="lbl">เวลา Refer / ตัดสินใจไม่ให้ ${D.referTime?`<span style="color:var(--stx)">✓ ${formatDisplayDatetime(D.referTime)}</span>`:''}</div><div class="quick-time-wrap"><input type="datetime-local" id="planReferTime" value="${toDatetimeLocalValue(D.referTime)}" oninput="D.referTime=this.value" class="datetime-input" step="60"><span style="font-size:11px;color:var(--tx2)">หรือ</span><input type="text" class="quick-time-input" placeholder="18.45" data-timekey="referTime" onblur="applyQuickTime(this)" onkeydown="if(event.key==='Enter'){applyQuickTime(this);event.preventDefault()}" title="เวลา 24 ชม. เช่น 18.45"></div></div><button type="button" class="now-btn" onclick="var v=getNowDatetime();D.referTime=v;var i=document.getElementById('planReferTime');if(i)i.value=v.slice(0,16)">📅 Now</button></div>`:''}
   </div>`:''}
   ${(rec==='refer-ich'||rec==='refer-thr')?`<div class="card" style="background:var(--wbg);border-color:var(--wbd)">
     <div class="sec" style="color:var(--wtx)">⏱ เวลา Refer</div>
-    <div class="time-row"><div style="flex:1"><div class="lbl">วันและเวลาที่ตัดสินใจ Refer ${D.referTime?`<span style="color:var(--stx)">✓ ${formatDisplayDatetime(D.referTime)}</span>`:''}</div><input type="datetime-local" id="planReferTime2" value="${toDatetimeLocalValue(D.referTime)}" oninput="D.referTime=this.value" class="datetime-input" step="60"></div><button type="button" class="now-btn" onclick="var v=getNowDatetime();D.referTime=v;var i=document.getElementById('planReferTime2');if(i)i.value=v.slice(0,16)">📅 Now</button></div>
+    <div class="time-row"><div style="flex:1"><div class="lbl">วันและเวลาที่ตัดสินใจ Refer ${D.referTime?`<span style="color:var(--stx)">✓ ${formatDisplayDatetime(D.referTime)}</span>`:''}</div><div class="quick-time-wrap"><input type="datetime-local" id="planReferTime2" value="${toDatetimeLocalValue(D.referTime)}" oninput="D.referTime=this.value" class="datetime-input" step="60"><span style="font-size:11px;color:var(--tx2)">หรือ</span><input type="text" class="quick-time-input" placeholder="18.45" data-timekey="referTime" onblur="applyQuickTime(this)" onkeydown="if(event.key==='Enter'){applyQuickTime(this);event.preventDefault()}" title="เวลา 24 ชม. เช่น 18.45"></div></div><button type="button" class="now-btn" onclick="var v=getNowDatetime();D.referTime=v;var i=document.getElementById('planReferTime2');if(i)i.value=v.slice(0,16)">📅 Now</button></div>
   </div>`:''}
 
   <div class="card" style="background:var(--ibg);border-color:var(--ibd)">
@@ -1468,7 +1448,9 @@ async function generatePDF(){
     const url=URL.createObjectURL(blob);const a=document.createElement('a');
     a.href=url;a.download=`stroke_refer_${D.hn||'case'}_${new Date().toISOString().slice(0,10)}.pdf`;a.click();URL.revokeObjectURL(url);
 
-    // Log anonymized case to Turso (silent — ไม่แสดง error ถ้าไม่ได้ตั้งค่า)
+    // Log anonymized case to Turso รวมข้อมูลจับเวลา (silent — ไม่แสดง error ถ้าไม่ได้ตั้งค่า)
+    const completedAt=new Date().toISOString();
+    const timerData=D.timerStartedAt?{startedAt:D.timerStartedAt,completedAt,durationSec:Math.round((new Date(completedAt).getTime()-new Date(D.timerStartedAt).getTime())/1000)}:null;
     const recKey=(()=>{
       const oh=getOnsetHours();const tot=getNIHSS();const lvo=suspectLVO();const el=eligible();const ab=hasAbs();
       if(D.ctResult==='ich')return'refer-ich';
@@ -1480,7 +1462,7 @@ async function generatePDF(){
       if(ab)return'icu';
       return'conservative';
     })();
-    logCase(recKey).catch(()=>{});
+    logCase(recKey,timerData).catch(()=>{});
 
     setP('เสร็จแล้ว 🎉',100);await new Promise(r=>setTimeout(r,1200));
   }catch(e){alert('Error: '+e.message);}finally{ol.style.display='none';}
@@ -1510,7 +1492,8 @@ function goNext(){
 function goBack(){step=Math.max(step-1,0);renderStep();}
 function confirmExit(){if(confirm('ออกจากระบบและเคลียร์ข้อมูลทั้งหมด?')){clearAll();}}
 function clearAll(){
-  D={name:'',hn:'',age:'',weight:'',ward:'',lastSeen:'',strokeOnset:'',erArrival:'',bloodDrawn:'',ctTime:'',activateFT:'',ivRtPA:'',rtpaGiven:null,referTime:'',
+  const keepWard=D.ward;const keepWardLabel=D.wardLabel;
+  D={name:'',hn:'',age:'',weight:'',ward:keepWard||'',wardLabel:keepWardLabel||'',lastSeen:'',strokeOnset:'',erArrival:'',bloodDrawn:'',ctTime:'',activateFT:'',ivRtPA:'',rtpaGiven:null,referTime:'',timerStartedAt:null,
     befast:{B:false,E:false,F:false,A:false,S:false},gcs:{E:'',V:'',M:''},symptoms:{hemi:false,numb:false,comm:false,dysarthria:false,vis:false,drow:false,ataxia:false},
     ctResult:'',nihss:{},incl:{ais:false,onset45:false,age18:false},absExcl:{},relExcl:{},
     excl45:{nihss25:false,inr17:false},relExcl45:{age80:false,strokeDM:false},
@@ -1519,12 +1502,16 @@ function clearAll(){
   document.getElementById('app').style.display='none';
   document.getElementById('lockWrap').style.display='flex';
   pinBuf='';updDots('pinDots',0);
+  updateTimerUI();
 }
 
-// ── Guideline Reference (opens menu guideline tab) ───────────────────────
+// ── Guideline Reference (เปิดในแท็บใหม่เท่านั้น — ไม่นำทางแท็บปัจจุบัน เพื่อไม่ให้ข้อมูล Staff หาย)
 window.openGuidelineSearch=function(){
-  if(confirm('เปิด Guideline Reference หน้าใหม่?\n\nหมายเหตุ: เป็นข้อมูลอ้างอิงเท่านั้น ไม่ใช่การวินิจฉัยหรือคำแนะนำการรักษา')){
-    window.open('/','_blank');
+  if(!confirm('เปิด Guideline Reference หน้าใหม่?\n\nหมายเหตุ: เป็นข้อมูลอ้างอิงเท่านั้น ไม่ใช่การวินิจฉัยหรือคำแนะนำการรักษา'))return;
+  const url=window.location.origin+'/';
+  const w=window.open(url,'_blank','noopener,noreferrer');
+  if(!w){
+    alert('เบราว์เซอร์บล็อก pop-up กรุณากดอนุญาตแล้วลองอีกครั้ง หรือเปิดลิงก์นี้ในแท็บใหม่เอง:\n\n'+url+'\n\n(ไม่ต้องกดจากที่นี่ — คัดลอกไปเปิดในแท็บใหม่ได้)');
   }
 };
 
@@ -1658,8 +1645,58 @@ window.showLineMessageSummary=function(){
   st.style.color='';
 };
 
-// ==================== CLOCK ====================
-function updateClock(){const d=new Date();const el=document.getElementById('clockEl');if(el)el.textContent=d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+// ==================== CLOCK & TIMER ====================
+function formatElapsed(isoStart){
+  if(!isoStart)return'00:00:00';
+  const s=Math.max(0,Math.floor((Date.now()-new Date(isoStart).getTime())/1000));
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  return[h,m,sec].map(v=>String(v).padStart(2,'0')).join(':');
+}
+function updateTimerDisplay(){
+  const te=document.getElementById('timerEl');
+  if(!te||typeof D==='undefined')return;
+  if(D.timerStartedAt){te.textContent='⏱ '+formatElapsed(D.timerStartedAt);te.title='เริ่มจับเวลา: '+new Date(D.timerStartedAt).toLocaleString('th-TH');}
+}
+function updateTimerUI(){
+  const te=document.getElementById('timerEl');
+  const bStart=document.getElementById('btnTimerStart');
+  const bSet=document.getElementById('btnTimerSet');
+  if(!te)return;
+  if(D.timerStartedAt){
+    te.textContent='⏱ '+formatElapsed(D.timerStartedAt);
+    te.title='เริ่มจับเวลา: '+new Date(D.timerStartedAt).toLocaleString('th-TH');
+    if(bStart)bStart.style.display='none';if(bSet)bSet.style.display='none';
+  }else{
+    te.textContent='⏱ —';
+    te.title='';
+    if(bStart)bStart.style.display='';if(bSet)bSet.style.display='';
+  }
+}
+window.startTimerNow=function(){
+  D.timerStartedAt=new Date().toISOString();
+  updateTimerUI();
+};
+window.setTimerStart=function(){
+  const now=new Date();
+  const y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0'),d=String(now.getDate()).padStart(2,'0');
+  const h=String(now.getHours()).padStart(2,'0'),min=String(now.getMinutes()).padStart(2,'0');
+  const def=`${y}-${m}-${d}T${h}:${min}`;
+  const raw=prompt('กำหนดเวลาเริ่มต้น (YYYY-MM-DDTHH:MM หรือ HH:MM)\nเช่น '+def,def);
+  if(raw==null||raw.trim()==='')return;
+  let t;
+  if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(raw.trim()))t=new Date(raw.trim());
+  else if(/^\d{1,2}:\d{2}/.test(raw.trim())){const [hh,mm]=raw.trim().split(':');t=new Date(y,m-1,d,parseInt(hh,10),parseInt(mm,10),0);}
+  else t=new Date(raw.trim());
+  if(isNaN(t.getTime())){alert('รูปแบบเวลาไม่ถูกต้อง');return;}
+  D.timerStartedAt=t.toISOString();
+  updateTimerUI();
+};
+function updateClock(){
+  const d=new Date();
+  const el=document.getElementById('clockEl');
+  if(el)el.textContent=d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  if(typeof D!=='undefined'&&D.timerStartedAt)updateTimerDisplay();
+}
 setInterval(updateClock,1000);
 
 // ==================== TURSO CASE LOG ====================
@@ -1705,10 +1742,15 @@ async function ensureCaseTable(){
     referred    INTEGER,
     dtn_min     INTEGER,
     note        TEXT,
-    decision_summary TEXT
+    decision_summary TEXT,
+    timer_started_at  TEXT,
+    timer_completed_at TEXT,
+    timer_duration_sec INTEGER
   )`);
-  const alt=await tursoExec(`ALTER TABLE case_log ADD COLUMN decision_summary TEXT`);
-  if(alt&&alt.error&&!alt.error.includes('duplicate')){}
+  for(const col of['decision_summary','timer_started_at','timer_completed_at','timer_duration_sec']){
+    const alt=await tursoExec(`ALTER TABLE case_log ADD COLUMN ${col} ${col==='timer_duration_sec'?'INTEGER':'TEXT'}`);
+    if(alt&&alt.error&&!alt.error.includes('duplicate')){}
+  }
 }
 
 function ageGroup(a){
@@ -1721,7 +1763,7 @@ function onsetBucket(h){
   if(h<=4.5)return'0-4.5h';if(h<=24)return'4.5-24h';return'>24h';
 }
 
-async function logCase(rec){
+async function logCase(rec,timerData){
   const tot=getNIHSS();const sev=getSev(tot);
   const oh=getOnsetHours();const dn=diffMin(D.erArrival,D.ivRtPA);
   const absN=Object.values(D.absExcl).filter(Boolean).length;
@@ -1733,8 +1775,8 @@ async function logCase(rec){
   else if(isReferred) decisionSummary = 'เลือก refer ไป ไม่ได้ให้ที่รพ.สงฆ์';
   await ensureCaseTable();
   const r=await tursoExec(
-    `INSERT INTO case_log(ward,age_group,ct_result,onset_bucket,nihss_score,nihss_sev,lvo_suspect,rtpa_elig,abs_excl_n,rel_excl_n,action,rtpa_given,referred,dtn_min,note,decision_summary) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    [D.ward||'',ageGroup(D.age),D.ctResult||'',onsetBucket(oh),tot,sev.label,suspectLVO()?1:0,eligible()?1:0,absN,relN,rec,rtpaGiven,isReferred?1:0,dn??-1,'',decisionSummary]
+    `INSERT INTO case_log(ward,age_group,ct_result,onset_bucket,nihss_score,nihss_sev,lvo_suspect,rtpa_elig,abs_excl_n,rel_excl_n,action,rtpa_given,referred,dtn_min,note,decision_summary,timer_started_at,timer_completed_at,timer_duration_sec) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [D.ward||'',ageGroup(D.age),D.ctResult||'',onsetBucket(oh),tot,sev.label,suspectLVO()?1:0,eligible()?1:0,absN,relN,rec,rtpaGiven,isReferred?1:0,dn??-1,'',decisionSummary,timerData?.startedAt??null,timerData?.completedAt??null,timerData?.durationSec??null]
   );
   return r.error?'error':'ok';
 }
@@ -1747,49 +1789,32 @@ window.showTursoSettings=function(){
   panel.id='tursoPanel';
   panel.style.cssText='position:fixed;top:57px;left:0;right:0;background:var(--bg);border-bottom:0.5px solid var(--bl);padding:14px 16px;z-index:200;max-width:680px;margin:0 auto';
   panel.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:8px">📦 Turso Case Log</div>
-  <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;line-height:1.6">Turso URL และ Token ถูกตั้งค่าใน Cloudflare Environment Variables แล้ว<br>บันทึก metadata case อัตโนมัติเมื่อสร้าง PDF — ไม่มีชื่อ/HN (PDPA safe)</div>
+  <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;line-height:1.6">Turso URL และ Token ถูกตั้งค่าใน Cloudflare Environment Variables แล้ว<br>บันทึก metadata case อัตโนมัติเมื่อสร้าง PDF — ไม่มีชื่อ/HN (PDPA safe)<br>การเข้า Staff แต่ละครั้งบันทึกหน่วยที่ใช้รหัสในตาราง <code>staff_login_log</code> (ward_code, logged_at)</div>
   <div style="display:flex;gap:8px;margin-bottom:8px">
     <button onclick="testTurso()" style="flex:2;padding:9px;border:none;border-radius:var(--rm);background:var(--red);color:white;font-size:13px;font-weight:600;font-family:inherit">Test Connection</button>
     <button onclick="document.getElementById('tursoPanel').remove()" style="flex:1;padding:9px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);font-size:13px;font-family:inherit;color:var(--tx2)">ปิด</button>
   </div>
-  <button onclick="showAdminPinChange()" style="width:100%;padding:8px;border:0.5px solid var(--red);border-radius:var(--rm);background:var(--dbg);color:var(--red);font-size:12px;font-weight:600;font-family:inherit">🔑 เปลี่ยน PIN Staff (Admin)</button>
+  <a href="/stroke_admin.html" target="_blank" rel="noopener" style="display:block;text-align:center;padding:8px;border:0.5px solid var(--red);border-radius:var(--rm);background:var(--dbg);color:var(--red);font-size:12px;font-weight:600;font-family:inherit;text-decoration:none">🔑 ตั้งรหัสหน่วย (Admin) → เปิดหน้า Admin</a>
   <div id="ts_status" style="font-size:11px;margin-top:8px;min-height:14px;color:var(--tx2)"></div>`;
   document.getElementById('app').insertBefore(panel,document.getElementById('app').children[1]);
 };
 window.saveTursoSettings=function(){const p=document.getElementById('tursoPanel');if(p)p.remove();};
 window.closeSettings=function(){const p=document.getElementById('tursoPanel');if(p)p.remove();};
-window.saveAdminPin=window.saveAdminPin||function(){};
-window.showAdminPinChange=window.showAdminPinChange||function(){};
-window.saveAdminPin=async function(){
-  const np=document.getElementById('ap_new')?.value;
-  const cp=document.getElementById('ap_conf')?.value;
-  const st=document.getElementById('ap_status');
-  if(!np||np.length!==4||!/^\d+$/.test(np)){st.textContent='❌ PIN ต้องเป็นตัวเลข 4 หลัก';st.style.color='var(--dtx)';return;}
-  if(np!==cp){st.textContent='❌ PIN ไม่ตรงกัน';st.style.color='var(--dtx)';return;}
-  st.textContent='กำลังบันทึก...';st.style.color='var(--wtx)';
-  savePinLocal(np);
-  const ok=await savePinRemote(np);
-  if(ok){
-    st.textContent='✓ บันทึก PIN ใหม่ไปยัง Turso สำเร็จ — staff ทุก device จะได้ PIN ใหม่';
-    st.style.color='var(--stx)';
-    document.getElementById('ap_new').value='';
-    document.getElementById('ap_conf').value='';
-  } else {
-    st.textContent='❌ บันทึก Turso ไม่สำเร็จ — ตรวจสอบ URL/Token';
-    st.style.color='var(--dtx)';
-  }
-};
 
-function startApp(){step=0;clearAll();document.getElementById('app').style.display='block';document.getElementById('lockWrap').style.display='none';renderStep();}
+function startApp(){
+  step=0;
+  clearAll();
+  document.getElementById('app').style.display='block';
+  document.getElementById('lockWrap').style.display='none';
+  const wb=document.getElementById('wardBadge');
+  const wbc=document.getElementById('wardBadgeCode');
+  if(wb&&wbc){wb.style.display=D.ward?'inline-block':'none';wbc.textContent=D.wardLabel||D.ward||'—';}
+  updateTimerUI();
+  renderStep();
+}
 
 // ==================== INIT ====================
-// Auto-detect PIN source on load (non-blocking)
-(async()=>{
-  const remotePin=await getPinRemote();
-  if(remotePin){pinSource='turso';}
-  updatePinSourceBadge(pinSource);
-})();
-if(!localStorage.getItem('sp')){showSetup();}
+// รหัสหน่วยตรวจผ่าน /check-staff-pin เท่านั้น — Admin ตั้งรหัสที่ 📦 → ตั้งรหัสหน่วย
 </script>
 </body>
 </html>

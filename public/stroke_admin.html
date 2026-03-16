@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel | Stroke Fast Tract</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f5f5f4;--bg3:#eeece8;--tx:#1a1a18;--tx2:#6b6b67;
+  --bl:#e5e3dc;--bm:#c8c6be;--rm:8px;--rl:12px;
+  --sbg:#EAF3DE;--stx:#27500A;--sbd:#97C459;
+  --wbg:#FAEEDA;--wtx:#633806;--wbd:#EF9F27;
+  --dbg:#FCEBEB;--dtx:#791F1F;--dbd:#F09595;
+  --ibg:#E6F1FB;--itx:#185FA5;--ibd:#85B7EB;
+  --red:#C41E3A;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1e1e1c;--bg2:#2a2a27;--bg3:#111110;
+  --tx:#f0ede6;--tx2:#9a9893;--bl:#2e2e2b;--bm:#3a3a36;
+  --sbg:#173404;--stx:#C0DD97;--sbd:#3B6D11;
+  --wbg:#412402;--wtx:#FAC775;--wbd:#854F0B;
+  --dbg:#501313;--dtx:#F7C1C1;--dbd:#A32D2D;
+  --ibg:#042C53;--itx:#B5D4F4;--ibd:#185FA5;
+}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sans-serif;background:var(--bg3);color:var(--tx);font-size:14px;min-height:100vh}
+input,select,textarea{font-family:inherit;font-size:13px;padding:8px 10px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg);color:var(--tx);width:100%;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#378ADD;box-shadow:0 0 0 2px rgba(55,138,221,.15)}
+button{font-family:inherit;cursor:pointer}
+a{color:var(--itx)}
+
+/* LAYOUT */
+.top-bar{background:var(--bg);border-bottom:0.5px solid var(--bl);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.content{max-width:640px;margin:0 auto;padding:16px}
+.card{background:var(--bg);border:0.5px solid var(--bl);border-radius:var(--rl);padding:16px;margin-bottom:14px}
+.sec{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx2);margin-bottom:10px}
+.lbl{font-size:12px;color:var(--tx2);margin-bottom:4px}
+.form-row{margin-bottom:12px}
+.msg{font-size:13px;padding:10px 12px;border-radius:var(--rm);margin-top:8px}
+.msg.ok{background:var(--sbg);color:var(--stx)}
+.msg.err{background:var(--dbg);color:var(--dtx)}
+.msg.info{background:var(--ibg);color:var(--itx)}
+
+/* TABS */
+.tabs{display:flex;gap:0;border-bottom:0.5px solid var(--bl);margin-bottom:16px;overflow-x:auto}
+.tab-btn{padding:10px 14px;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--tx2);white-space:nowrap;border-bottom:2px solid transparent;font-family:inherit;cursor:pointer}
+.tab-btn.active{color:var(--red);border-bottom-color:var(--red);font-weight:700}
+
+/* BUTTONS */
+.btn-red{background:var(--red);color:#fff;border:none;border-radius:var(--rm);padding:9px 16px;font-size:13px;font-weight:600}
+.btn-red:disabled{opacity:.5}
+.btn-gray{background:var(--bg2);color:var(--tx);border:0.5px solid var(--bm);border-radius:var(--rm);padding:9px 16px;font-size:13px}
+.btn-danger{background:var(--dbg);color:var(--dtx);border:0.5px solid var(--dbd);border-radius:var(--rm);padding:5px 11px;font-size:12px}
+.btn-sm{padding:5px 11px;font-size:12px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);color:var(--tx)}
+
+/* GL CARDS */
+.gl-card{background:var(--bg);border:0.5px solid var(--bl);border-radius:var(--rm);padding:14px;margin-bottom:10px}
+.gl-title{font-size:14px;font-weight:600;margin-bottom:4px}
+.gl-body{font-size:12px;color:var(--tx2);line-height:1.6;margin-bottom:8px;white-space:pre-wrap}
+.gl-cat{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.cat-nihss{background:#E6F1FB;color:#185FA5}.cat-rtpa{background:#EAF3DE;color:#27500A}
+.cat-refer{background:#FAEEDA;color:#633806}.cat-protocol{background:#F0EDFC;color:#4A35A0}
+.cat-general{background:var(--bg2);color:var(--tx2)}
+.link-btn{display:inline-block;padding:5px 12px;border-radius:20px;font-size:12px;text-decoration:none;margin-top:6px;font-weight:600}
+.link-yt{background:#fff0f0;color:#c00}.link-gdrive{background:#e8f4e8;color:#1a6b1a}.link-url{background:var(--ibg);color:var(--itx)}
+
+/* CHIP */
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.chip-sel{padding:5px 12px;border:0.5px solid var(--bm);border-radius:20px;font-size:12px;background:var(--bg2);color:var(--tx2);font-family:inherit;cursor:pointer}
+.chip-sel.on{background:var(--red);color:#fff;border-color:var(--red)}
+
+/* YT EMBED */
+.yt-embed{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:var(--rm);margin-top:8px}
+.yt-embed iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+
+/* ROW GRID */
+.ward-row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px}
+@media(max-width:560px){.ward-row{grid-template-columns:1fr 1fr}.ward-row button{grid-column:span 2}}
+
+/* AI CHAT */
+.chat-box{max-height:280px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;padding:4px 0}
+@keyframes bo{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <div style="font-weight:700;font-size:15px">⚙️ Admin Panel — Stroke Fast Tract</div>
+  <a href="/" style="font-size:12px;color:var(--tx2);text-decoration:none">← กลับหน้าหลัก</a>
+</div>
+
+<!-- LOGIN -->
+<div id="loginWrap" class="content">
+  <div class="card">
+    <div class="sec">เข้าสู่ระบบ Admin</div>
+    <div class="form-row">
+      <div class="lbl">รหัส Admin (ADMIN_SECRET)</div>
+      <input type="password" id="adminSecretInput" placeholder="ใส่รหัสที่ตั้งใน Cloudflare Environment Variables" autocomplete="off" onkeydown="if(event.key==='Enter')adminLogin()">
+    </div>
+    <button type="button" class="btn-red" style="width:100%" onclick="adminLogin()">เข้าสู่ระบบ Admin</button>
+    <div id="loginMsg" class="msg" style="display:none"></div>
+  </div>
+</div>
+
+<!-- MAIN (hidden until logged in) -->
+<div id="mainWrap" style="display:none">
+  <div class="content">
+    <div class="tabs" id="adminTabs">
+      <button class="tab-btn active" onclick="showTab('ward',this)">🔑 รหัสหน่วย</button>
+      <button class="tab-btn" onclick="showTab('gl',this)">📋 Guideline</button>
+      <button class="tab-btn" onclick="showTab('vid',this)">🎬 วิดีโอ</button>
+      <button class="tab-btn" onclick="showTab('aspect',this)">🔗 ASPECT Links</button>
+      <button class="tab-btn" onclick="showTab('line',this)">📲 LINE</button>
+      <button class="tab-btn" onclick="showTab('ai',this)">🤖 AI</button>
+    </div>
+    <div id="tabContent"></div>
+  </div>
+</div>
+
+<script>
+let adminSecret = '';
+let editingGlId = null;
+let adminChatHistory = [];
+const ASPECT_KEY = 'aspect_links';
+const ASPECT_DEFAULTS = [
+  {label:'MDCalc ASPECT', url:'https://www.mdcalc.com/calc/3164/alberta-stroke-program-early-ct-score-aspects'},
+  {label:'RadAtHand Calculator', url:'https://radathand.com/radiology-calculators/neuroradiology/aspects-score-calculator/'},
+];
+
+// ── TURSO ──
+async function tursoQuery(sql, args=[]){
+  try{
+    const r=await fetch('/turso',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sql,args})});
+    if(!r.ok&&r.status===503)return{error:'Turso ยังไม่ได้ตั้งค่า'};
+    const d=await r.json();
+    if(d.error)return{error:d.error};
+    if(d.results?.[0]?.type==='error')return{error:d.results[0].error.message};
+    const rows=d.results?.[0]?.response?.result?.rows||[];
+    const cols=d.results?.[0]?.response?.result?.cols||[];
+    return{rows:rows.map(row=>Object.fromEntries(cols.map((c,i)=>[c.name,row[i].value])))};
+  }catch(e){return{error:e.message};}
+}
+
+async function ensureTable(){
+  await tursoQuery(`CREATE TABLE IF NOT EXISTS guidelines(id INTEGER PRIMARY KEY AUTOINCREMENT,category TEXT NOT NULL DEFAULT 'general',title TEXT NOT NULL,body TEXT,link_url TEXT,link_type TEXT,link_label TEXT,sort_order INTEGER DEFAULT 0,created_at TEXT DEFAULT (datetime('now')))`);
+}
+async function ensureSettingsTable(){
+  await tursoQuery(`CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT)`);
+}
+
+// ── ADMIN-WARD-PINS API ──
+async function wardApi(body){
+  const r=await fetch('/admin-ward-pins',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_secret:adminSecret,...body})});
+  return await r.json();
+}
+
+// ── LOGIN ──
+async function adminLogin(){
+  const input=document.getElementById('adminSecretInput');
+  const msgEl=document.getElementById('loginMsg');
+  const secret=(input.value||'').trim();
+  if(!secret){msgEl.style.display='block';msgEl.className='msg err';msgEl.textContent='กรุณาใส่รหัส Admin';return;}
+  msgEl.textContent='กำลังตรวจสอบ...';msgEl.className='msg info';msgEl.style.display='block';
+  try{
+    adminSecret=secret;
+    const data=await wardApi({action:'list'});
+    if(data.error&&(data.error==='Unauthorized'||data.error==='รหัสไม่ถูกต้อง')){adminSecret='';msgEl.className='msg err';msgEl.textContent='รหัสไม่ถูกต้อง';return;}
+    if(data.error){adminSecret='';msgEl.className='msg err';msgEl.textContent=data.error||'เชื่อมต่อไม่ได้';return;}
+    document.getElementById('loginWrap').style.display='none';
+    document.getElementById('mainWrap').style.display='block';
+    showTab('ward',document.querySelector('.tab-btn'));
+  }catch(e){msgEl.className='msg err';msgEl.textContent='ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';}
+}
+
+// ── TABS ──
+function showTab(name,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  const el=document.getElementById('tabContent');
+  if(name==='ward')el.innerHTML=renderWard();
+  else if(name==='gl'){el.innerHTML=renderGl();loadGlList();}
+  else if(name==='vid'){el.innerHTML=renderVid();loadVidList();}
+  else if(name==='aspect'){el.innerHTML=renderAspect();loadAspectLinks();}
+  else if(name==='line')el.innerHTML=renderLine();
+  else if(name==='ai')el.innerHTML=renderAI();
+}
+
+// ═══════════════════════════════════════════════
+// 1. WARD PIN
+// ═══════════════════════════════════════════════
+function renderWard(){
+  return `
+  <div class="card">
+    <div class="sec">รายการหน่วยที่มีรหัสแล้ว</div>
+    <div id="wardList">กำลังโหลด...</div>
+    <table id="wardTable" style="display:none;width:100%;border-collapse:collapse;margin-top:8px">
+      <thead><tr>
+        <th style="text-align:left;font-size:12px;color:var(--tx2);padding:6px 8px;border-bottom:0.5px solid var(--bl)">รหัสหน่วย</th>
+        <th style="text-align:left;font-size:12px;color:var(--tx2);padding:6px 8px;border-bottom:0.5px solid var(--bl)">ชื่อ</th>
+        <th style="padding:6px 8px;border-bottom:0.5px solid var(--bl)"></th>
+      </tr></thead>
+      <tbody id="wardTbody"></tbody>
+    </table>
+    <button type="button" class="btn-sm" onclick="loadWardList()" style="margin-top:10px">↺ รีเฟรช</button>
+  </div>
+  <div class="card">
+    <div class="sec">เพิ่มหน่วยใหม่ / เปลี่ยนรหัส</div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:10px">ถ้ารหัสหน่วยมีอยู่แล้ว จะเปลี่ยนรหัส 4 หลักและชื่อ</div>
+    <div class="ward-row">
+      <div><div class="lbl">รหัสหน่วย (เช่น ER, MED1)</div>
+        <input type="text" id="wCode" placeholder="ER" maxlength="20" style="text-transform:uppercase">
+      </div>
+      <div><div class="lbl">รหัส 4 หลัก</div>
+        <input type="password" id="wPin" placeholder="1234" maxlength="4" inputmode="numeric" autocomplete="off">
+      </div>
+      <div><div class="lbl">ชื่อหน่วย (ไม่บังคับ)</div>
+        <input type="text" id="wLabel" placeholder="ห้องฉุกเฉิน">
+      </div>
+      <div><button type="button" class="btn-red" onclick="saveWard()">บันทึก</button></div>
+    </div>
+    <div id="wardSaveMsg" class="msg" style="display:none"></div>
+  </div>
+  <div class="card">
+    <div class="sec">📊 Log การเข้าระบบ Staff (ล่าสุด 20 ครั้ง)</div>
+    <div id="loginLogList">กำลังโหลด...</div>
+    <button type="button" class="btn-sm" onclick="loadLoginLog()" style="margin-top:10px">↺ รีเฟรช</button>
+  </div>`;
+}
+
+async function loadWardList(){
+  const tbody=document.getElementById('wardTbody');
+  const listEl=document.getElementById('wardList');
+  const tableEl=document.getElementById('wardTable');
+  if(!listEl)return;
+  listEl.textContent='กำลังโหลด...';tableEl.style.display='none';
+  const data=await wardApi({action:'list'});
+  if(data.error){listEl.innerHTML=`<span style="color:var(--dtx)">${data.error}</span>`;return;}
+  const wards=data.wards||[];
+  if(wards.length===0){listEl.textContent='ยังไม่มีหน่วย';return;}
+  listEl.style.display='none';tableEl.style.display='table';
+  tbody.innerHTML=wards.map(w=>`
+    <tr>
+      <td style="padding:8px;border-bottom:0.5px solid var(--bl);font-weight:600">${esc(w.ward_code)}</td>
+      <td style="padding:8px;border-bottom:0.5px solid var(--bl)">${esc(w.label||'—')}</td>
+      <td style="padding:8px;border-bottom:0.5px solid var(--bl)">
+        <button type="button" class="btn-danger" onclick="deleteWard('${esc(w.ward_code)}')">ลบ</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function loadLoginLog(){
+  const el=document.getElementById('loginLogList');
+  if(!el)return;
+  el.textContent='กำลังโหลด...';
+  const r=await tursoQuery('SELECT ward_code,logged_at FROM staff_login_log ORDER BY logged_at DESC LIMIT 20');
+  if(r.error){el.innerHTML=`<span style="color:var(--dtx)">${r.error}</span>`;return;}
+  if(!r.rows||r.rows.length===0){el.textContent='ยังไม่มี log การเข้าระบบ';return;}
+  el.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr>
+      <th style="text-align:left;padding:6px 8px;border-bottom:0.5px solid var(--bl);color:var(--tx2)">หน่วย</th>
+      <th style="text-align:left;padding:6px 8px;border-bottom:0.5px solid var(--bl);color:var(--tx2)">เวลาเข้า</th>
+    </tr></thead>
+    <tbody>${r.rows.map(row=>`
+      <tr>
+        <td style="padding:6px 8px;border-bottom:0.5px solid var(--bl);font-weight:600">${esc(row.ward_code)}</td>
+        <td style="padding:6px 8px;border-bottom:0.5px solid var(--bl)">${esc(row.logged_at)}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function saveWard(){
+  const wardCode=(document.getElementById('wCode').value||'').trim().toUpperCase();
+  const pin=(document.getElementById('wPin').value||'').trim();
+  const label=(document.getElementById('wLabel').value||'').trim();
+  const msgEl=document.getElementById('wardSaveMsg');
+  if(!wardCode){msgEl.style.display='block';msgEl.className='msg err';msgEl.textContent='กรุณาใส่รหัสหน่วย';return;}
+  if(!pin||pin.length!==4||!/^\d+$/.test(pin)){msgEl.style.display='block';msgEl.className='msg err';msgEl.textContent='รหัสต้องเป็นตัวเลข 4 หลัก';return;}
+  msgEl.textContent='กำลังบันทึก...';msgEl.className='msg info';msgEl.style.display='block';
+  const data=await wardApi({action:'set',ward_code:wardCode,pin,label:label||wardCode});
+  if(data.ok){
+    msgEl.className='msg ok';msgEl.textContent='บันทึกรหัสหน่วย "'+wardCode+'" สำเร็จ';
+    document.getElementById('wCode').value='';document.getElementById('wPin').value='';document.getElementById('wLabel').value='';
+    loadWardList();
+  } else {msgEl.className='msg err';msgEl.textContent=data.error||'บันทึกไม่สำเร็จ';}
+}
+
+async function deleteWard(wardCode){
+  if(!confirm('ลบรหัสหน่วย "'+wardCode+'" ใช่หรือไม่?'))return;
+  const data=await wardApi({action:'delete',ward_code:wardCode});
+  if(data.ok)loadWardList();
+  else alert(data.error||'ลบไม่สำเร็จ');
+}
+
+// ═══════════════════════════════════════════════
+// 2. GUIDELINE
+// ═══════════════════════════════════════════════
+function catLabel(c){return{nihss:'NIHSS',rtpa:'rt-PA',refer:'Refer',protocol:'Protocol',general:'ทั่วไป'}[c]||c;}
+function catClass(c){return{nihss:'cat-nihss',rtpa:'cat-rtpa',refer:'cat-refer',protocol:'cat-protocol',general:'cat-general'}[c]||'cat-general';}
+function linkTypeIcon(t){return t==='youtube'?'▶ YouTube':t==='gdrive'?'📂 Google Drive':'🔗 เปิดลิงก์';}
+function linkClass(t){return t==='youtube'?'link-yt':t==='gdrive'?'link-gdrive':'link-url';}
+function esc(s){if(s==null)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+function renderGl(){
+  return `
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <button class="btn-red" onclick="showGlForm()">+ เพิ่ม Guideline ใหม่</button>
+    <button class="btn-sm" onclick="loadGlList()">↺ รีเฟรช</button>
+  </div>
+  <div id="glList"><div style="font-size:12px;color:var(--tx2);padding:10px">กำลังโหลด...</div></div>`;
+}
+
+async function loadGlList(){
+  const el=document.getElementById('glList');
+  if(!el)return;
+  el.innerHTML='<div style="font-size:12px;color:var(--tx2);padding:10px">กำลังโหลด...</div>';
+  await ensureTable();
+  const r=await tursoQuery("SELECT * FROM guidelines WHERE link_type != 'youtube' OR link_type IS NULL ORDER BY sort_order ASC,created_at DESC");
+  if(r.error){el.innerHTML=`<div style="color:var(--dtx);font-size:12px;padding:10px">${r.error}</div>`;return;}
+  if(!r.rows||r.rows.length===0){el.innerHTML='<div style="font-size:12px;color:var(--tx2);padding:10px">ยังไม่มี Guideline — กดปุ่ม + เพิ่มรายการแรก</div>';return;}
+  el.innerHTML=r.rows.map(row=>`
+    <div class="gl-card">
+      <div class="gl-cat ${catClass(row.category)}">${catLabel(row.category)}</div>
+      <div class="gl-title">${esc(row.title)}</div>
+      ${row.body?`<div class="gl-body">${esc(row.body)}</div>`:''}
+      ${row.link_url?`<a href="${esc(row.link_url)}" target="_blank" class="link-btn ${linkClass(row.link_type)}">${linkTypeIcon(row.link_type)}${row.link_label?' — '+esc(row.link_label):''}</a>`:''}
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button class="btn-sm" onclick="showGlForm(${JSON.stringify(row).replace(/"/g,'&quot;')})">✏️ แก้ไข</button>
+        <button class="btn-danger" onclick="deleteGl(${row.id})">ลบ</button>
+      </div>
+    </div>`).join('');
+}
+
+function showGlForm(r){
+  r=r||{};editingGlId=r.id||null;
+  const cats=['general','nihss','rtpa','refer','protocol'];
+  document.getElementById('tabContent').innerHTML=`
+  <button class="btn-gray" onclick="showTab('gl',document.querySelectorAll('.tab-btn')[1])" style="margin-bottom:12px">← กลับ</button>
+  <div class="card">
+    <div class="sec">${editingGlId?'แก้ไขรายการ':'เพิ่มรายการใหม่'}</div>
+    <div class="form-row">
+      <div class="lbl">หมวดหมู่</div>
+      <div class="chip-row">
+        ${cats.map(c=>`<button class="chip-sel${(r.category||'general')===c?' on':''}" onclick="selectCat('${c}',this)" data-cat="${c}">${catLabel(c)}</button>`).join('')}
+      </div>
+      <input type="hidden" id="f_cat" value="${r.category||'general'}">
+    </div>
+    <div class="form-row"><div class="lbl">ชื่อ / หัวข้อ ★</div>
+      <input id="f_title" value="${esc(r.title||'')}" placeholder="เช่น วิธีประเมิน NIHSS" maxlength="100">
+    </div>
+    <div class="form-row"><div class="lbl">เนื้อหา / รายละเอียด</div>
+      <textarea id="f_body" rows="4" placeholder="อธิบาย protocol ขั้นตอน หรือ note สำคัญ...">${esc(r.body||'')}</textarea>
+    </div>
+    <div class="form-row"><div class="lbl">ลิงก์ (ถ้ามี)</div>
+      <input id="f_link" value="${esc(r.link_url||'')}" placeholder="https://" style="margin-bottom:8px">
+      <div class="lbl">ประเภทลิงก์</div>
+      <select id="f_ltype">
+        <option value="">— ไม่มีลิงก์ —</option>
+        <option value="youtube" ${r.link_type==='youtube'?'selected':''}>▶ YouTube</option>
+        <option value="gdrive" ${r.link_type==='gdrive'?'selected':''}>📂 Google Drive</option>
+        <option value="url" ${r.link_type==='url'?'selected':''}>🔗 ลิงก์ทั่วไป</option>
+      </select>
+      <div class="lbl" style="margin-top:8px">ชื่อลิงก์ (optional)</div>
+      <input id="f_llabel" value="${esc(r.link_label||'')}" placeholder="ชื่อปุ่มลิงก์">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-gray" onclick="showTab('gl',document.querySelectorAll('.tab-btn')[1])">ยกเลิก</button>
+      <button class="btn-red" style="flex:2" id="glSaveBtn" onclick="saveGl()">บันทึก</button>
+    </div>
+    <div id="glSaveMsg" class="msg" style="display:none"></div>
+  </div>`;
+}
+
+window.selectCat=function(c,btn){
+  document.getElementById('f_cat').value=c;
+  document.querySelectorAll('.chip-sel').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+};
+
+async function saveGl(){
+  const title=(document.getElementById('f_title')?.value||'').trim();
+  if(!title){alert('กรุณาใส่ชื่อ/หัวข้อ');return;}
+  const cat=document.getElementById('f_cat')?.value||'general';
+  const body=(document.getElementById('f_body')?.value||'').trim();
+  const link=(document.getElementById('f_link')?.value||'').trim();
+  const ltype=document.getElementById('f_ltype')?.value||'';
+  const llabel=(document.getElementById('f_llabel')?.value||'').trim();
+  const btn=document.getElementById('glSaveBtn');
+  btn.textContent='กำลังบันทึก...';btn.disabled=true;
+  await ensureTable();
+  let r;
+  if(editingGlId){
+    r=await tursoQuery('UPDATE guidelines SET category=?,title=?,body=?,link_url=?,link_type=?,link_label=? WHERE id=?',[cat,title,body,link,ltype,llabel,editingGlId]);
+  } else {
+    r=await tursoQuery('INSERT INTO guidelines(category,title,body,link_url,link_type,link_label) VALUES(?,?,?,?,?,?)',[cat,title,body,link,ltype,llabel]);
+  }
+  if(r.error){
+    const m=document.getElementById('glSaveMsg');
+    if(m){m.style.display='block';m.className='msg err';m.textContent='บันทึกไม่สำเร็จ: '+r.error;}
+    btn.textContent='บันทึก';btn.disabled=false;
+  } else {
+    showTab('gl',document.querySelectorAll('.tab-btn')[1]);
+  }
+}
+
+async function deleteGl(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  await tursoQuery('DELETE FROM guidelines WHERE id=?',[id]);
+  loadGlList();
+}
+
+// ═══════════════════════════════════════════════
+// 3. VIDEO / LINKS
+// ═══════════════════════════════════════════════
+function renderVid(){
+  return `
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <button class="btn-red" onclick="showVidForm()">+ เพิ่มวิดีโอ/ลิงก์ใหม่</button>
+    <button class="btn-sm" onclick="loadVidList()">↺ รีเฟรช</button>
+  </div>
+  <div id="vidList"><div style="font-size:12px;color:var(--tx2);padding:10px">กำลังโหลด...</div></div>`;
+}
+
+function getYTId(url){const m=(url||'').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([^&\s?#]+)/);return m?m[1]:null;}
+
+async function loadVidList(){
+  const el=document.getElementById('vidList');if(!el)return;
+  el.innerHTML='<div style="font-size:12px;color:var(--tx2);padding:10px">กำลังโหลด...</div>';
+  await ensureTable();
+  const r=await tursoQuery("SELECT * FROM guidelines WHERE link_type='youtube' OR link_type='gdrive' ORDER BY sort_order ASC,created_at DESC");
+  if(r.error){el.innerHTML=`<div style="color:var(--dtx);font-size:12px;padding:10px">${r.error}</div>`;return;}
+  if(!r.rows||r.rows.length===0){el.innerHTML='<div style="font-size:12px;color:var(--tx2);padding:10px">ยังไม่มีวิดีโอ/ลิงก์</div>';return;}
+  el.innerHTML=r.rows.map(row=>{
+    const ytId=getYTId(row.link_url||'');
+    return `<div class="gl-card">
+      <div class="gl-cat ${catClass(row.category)}">${catLabel(row.category)}</div>
+      <div class="gl-title">${row.link_type==='youtube'?'▶ ':'📂 '}${esc(row.title)}</div>
+      ${row.body?`<div class="gl-body">${esc(row.body)}</div>`:''}
+      ${ytId?`<div class="yt-embed"><iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen loading="lazy"></iframe></div>`
+             :`<a href="${esc(row.link_url)}" target="_blank" class="link-btn ${linkClass(row.link_type)}">${linkTypeIcon(row.link_type)}</a>`}
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button class="btn-danger" onclick="deleteGl(${row.id})">ลบ</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showVidForm(){
+  editingGlId=null;
+  document.getElementById('tabContent').innerHTML=`
+  <button class="btn-gray" onclick="showTab('vid',document.querySelectorAll('.tab-btn')[2])" style="margin-bottom:12px">← กลับ</button>
+  <div class="card">
+    <div class="sec">เพิ่มวิดีโอ / ลิงก์</div>
+    <div class="form-row"><div class="lbl">ประเภท</div>
+      <select id="f_ltype">
+        <option value="youtube">▶ YouTube (embed ได้)</option>
+        <option value="gdrive">📂 Google Drive</option>
+        <option value="url">🔗 ลิงก์ทั่วไป</option>
+      </select>
+    </div>
+    <div class="form-row"><div class="lbl">URL / Link ★</div>
+      <input id="f_link" placeholder="https://youtube.com/watch?v=..." oninput="prevYT()">
+    </div>
+    <div id="yt-preview" style="display:none;margin-bottom:12px"></div>
+    <div class="form-row"><div class="lbl">ชื่อวิดีโอ / หัวข้อ ★</div>
+      <input id="f_title" placeholder="เช่น สอนการประเมิน NIHSS" maxlength="100">
+    </div>
+    <div class="form-row"><div class="lbl">รายละเอียดเพิ่มเติม</div>
+      <textarea id="f_body" rows="3" placeholder="บรรยายเนื้อหา ระดับ ความยาว ฯลฯ"></textarea>
+    </div>
+    <div class="form-row"><div class="lbl">หมวดหมู่</div>
+      <select id="f_cat">
+        <option value="nihss">NIHSS</option><option value="general" selected>ทั่วไป</option>
+        <option value="rtpa">rt-PA</option><option value="refer">Refer</option><option value="protocol">Protocol</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-gray" onclick="showTab('vid',document.querySelectorAll('.tab-btn')[2])">ยกเลิก</button>
+      <button class="btn-red" style="flex:2" id="vidSaveBtn" onclick="saveVid()">บันทึก</button>
+    </div>
+    <div id="vidSaveMsg" class="msg" style="display:none"></div>
+  </div>`;
+}
+
+window.prevYT=function(){
+  const url=document.getElementById('f_link')?.value||'';
+  const ytId=getYTId(url);const prev=document.getElementById('yt-preview');
+  if(ytId&&prev){prev.style.display='block';prev.innerHTML=`<div class="yt-embed"><iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen loading="lazy"></iframe></div>`;}
+  else if(prev)prev.style.display='none';
+};
+
+async function saveVid(){
+  const title=(document.getElementById('f_title')?.value||'').trim();
+  const link=(document.getElementById('f_link')?.value||'').trim();
+  if(!title||!link){alert('กรุณาใส่ชื่อและ URL');return;}
+  const ltype=document.getElementById('f_ltype')?.value||'url';
+  const body=(document.getElementById('f_body')?.value||'').trim();
+  const cat=document.getElementById('f_cat')?.value||'general';
+  const btn=document.getElementById('vidSaveBtn');
+  btn.textContent='กำลังบันทึก...';btn.disabled=true;
+  await ensureTable();
+  const r=await tursoQuery('INSERT INTO guidelines(category,title,body,link_url,link_type,link_label) VALUES(?,?,?,?,?,?)',[cat,title,body,link,ltype,'']);
+  if(r.error){
+    const m=document.getElementById('vidSaveMsg');
+    if(m){m.style.display='block';m.className='msg err';m.textContent='บันทึกไม่สำเร็จ: '+r.error;}
+    btn.textContent='บันทึก';btn.disabled=false;
+  } else {showTab('vid',document.querySelectorAll('.tab-btn')[2]);}
+}
+
+// ═══════════════════════════════════════════════
+// 4. ASPECT LINKS
+// ═══════════════════════════════════════════════
+function renderAspect(){
+  return `
+  <div class="card">
+    <div class="sec">🔗 ลิงก์ ASPECT Score Calculator</div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;line-height:1.6">ลิงก์เหล่านี้จะแสดงใน Staff Wizard ขั้น CT Brain</div>
+    <div id="aspectLinkList"><div style="font-size:12px;color:var(--tx2)">กำลังโหลด...</div></div>
+    <button type="button" class="btn-sm" onclick="showAspectForm(-1)" style="margin-top:10px">+ เพิ่มลิงก์</button>
+    <div id="aspectSaveStatus" style="font-size:11px;min-height:14px;margin-top:6px"></div>
+    <div id="aspectForm"></div>
+  </div>`;
+}
+
+function getAspectLinks(){
+  try{return JSON.parse(localStorage.getItem(ASPECT_KEY)||'null')||ASPECT_DEFAULTS;}catch{return ASPECT_DEFAULTS;}
+}
+
+async function loadAspectLinks(){
+  await ensureSettingsTable();
+  const r=await tursoQuery("SELECT value FROM settings WHERE key='aspect_links' LIMIT 1");
+  if(!r.error&&r.rows?.[0]?.value){
+    try{const arr=JSON.parse(r.rows[0].value);if(Array.isArray(arr)&&arr.length)localStorage.setItem(ASPECT_KEY,JSON.stringify(arr));}catch(_){}
+  }
+  renderAspectList();
+}
+
+function renderAspectList(){
+  const el=document.getElementById('aspectLinkList');if(!el)return;
+  document.getElementById('aspectForm').innerHTML='';
+  const links=getAspectLinks();
+  if(links.length===0){el.innerHTML='<div style="font-size:12px;color:var(--tx2)">ยังไม่มีลิงก์</div>';return;}
+  el.innerHTML=links.map((l,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--bl)">
+      <div style="flex:1"><a href="${esc(l.url)}" target="_blank" rel="noopener" style="font-size:13px">${esc(l.label)}</a></div>
+      <button type="button" class="btn-sm" onclick="showAspectForm(${i})">แก้ไข</button>
+      <button type="button" class="btn-danger" onclick="delAspectLink(${i})">ลบ</button>
+    </div>`).join('');
+}
+
+function showAspectForm(editIdx){
+  const links=getAspectLinks();
+  const item=editIdx>=0&&editIdx<links.length?links[editIdx]:{label:'',url:''};
+  const form=document.getElementById('aspectForm');
+  form.innerHTML=`
+    <div style="margin-top:12px;padding:12px;background:var(--bg2);border-radius:var(--rm);border:0.5px solid var(--bm)">
+      <div style="font-size:12px;font-weight:600;margin-bottom:8px">${editIdx>=0?'แก้ไขลิงก์':'เพิ่มลิงก์ใหม่'}</div>
+      <div class="form-row"><div class="lbl">ชื่อ</div><input id="aLink_label" value="${esc(item.label)}" placeholder="เช่น MDCalc ASPECT"></div>
+      <div class="form-row"><div class="lbl">URL</div><input id="aLink_url" value="${esc(item.url)}" placeholder="https://..."></div>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn-gray" onclick="renderAspectList()">ยกเลิก</button>
+        <button type="button" class="btn-red" onclick="saveAspectLink(${editIdx})">บันทึก</button>
+      </div>
+    </div>`;
+}
+
+window.saveAspectLink=async function(idx){
+  const label=(document.getElementById('aLink_label')?.value||'').trim();
+  const url=(document.getElementById('aLink_url')?.value||'').trim();
+  if(!label||!url){alert('กรุณากรอกชื่อและ URL');return;}
+  const links=getAspectLinks();
+  if(idx>=0&&idx<links.length)links[idx]={label,url};else links.push({label,url});
+  localStorage.setItem(ASPECT_KEY,JSON.stringify(links));
+  renderAspectList();
+  await saveAspectToTurso(links);
+};
+
+function delAspectLink(idx){
+  if(!confirm('ลบลิงก์นี้?'))return;
+  const links=getAspectLinks();
+  links.splice(idx,1);
+  localStorage.setItem(ASPECT_KEY,JSON.stringify(links));
+  renderAspectList();
+  saveAspectToTurso(links);
+}
+
+async function saveAspectToTurso(links){
+  const st=document.getElementById('aspectSaveStatus');
+  if(st){st.textContent='กำลังบันทึก...';st.style.color='var(--tx2)';}
+  await ensureSettingsTable();
+  const r=await tursoQuery("INSERT INTO settings(key,value) VALUES('aspect_links',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",[JSON.stringify(links)]);
+  if(st){st.textContent=r.error?'❌ '+r.error:'✓ บันทึกแล้ว — Staff Wizard จะใช้ลิงก์ใหม่ทันที';st.style.color=r.error?'var(--dtx)':'var(--stx)';setTimeout(()=>{if(st)st.textContent='';},3000);}
+}
+
+// ═══════════════════════════════════════════════
+// 5. LINE OA INFO
+// ═══════════════════════════════════════════════
+function renderLine(){
+  return `
+  <div class="card" style="border-color:#06C755">
+    <div class="sec" style="color:#06C755">📲 LINE OA — การตั้งค่า</div>
+    <div style="font-size:12px;color:var(--tx2);line-height:1.8;margin-bottom:10px">
+      ระบบส่งแบบ <strong>Broadcast</strong> — ทุกคนที่ Add OA จะได้รับแจ้งเตือน
+    </div>
+    <div style="padding:12px;background:var(--ibg);border-radius:var(--rm);font-size:12px;color:var(--itx);line-height:1.9;margin-bottom:10px">
+      <strong>วิธีตั้งค่า:</strong><br>
+      1. สร้าง LINE OA ที่ <a href="https://business.line.me" target="_blank">business.line.me</a><br>
+      2. ตั้งค่า <code style="background:rgba(0,0,0,.07);padding:1px 5px;border-radius:3px">LINE_CHANNEL_ACCESS_TOKEN</code> ใน Cloudflare ENV<br>
+      3. บอกหมอระบบประสาท + ทีม Refer ให้ <strong>Add OA เป็นเพื่อน</strong><br>
+      4. Staff กดปุ่มแจ้งเตือนใน wizard → ทุกคนได้รับทันที<br>
+      <br>
+      <strong>ENV ที่เกี่ยวข้อง (Cloudflare Pages → Settings → Environment variables):</strong><br>
+      • <code>LINE_CHANNEL_ACCESS_TOKEN</code> — จาก LINE Developers Console<br>
+      • <code>WEBAPP_URL</code> — URL ของแอป (เช่น https://stroke-prh.pages.dev)
+    </div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:6px">
+      Admin สามารถแก้ข้อความ LINE สำหรับปุ่ม<br>
+      <strong>ส่งแพทย์ (Stroke Alert)</strong> และ <strong>ส่ง Refer</strong> ได้ที่นี่
+    </div>
+    <div class="form-row">
+      <div class="lbl">Template ข้อความสำหรับปุ่ม \"ส่งแพทย์\" (type = stroke_alert)</div>
+      <textarea id="tplStroke" rows="7" style="font-family:monospace;font-size:11px"></textarea>
+      <div style="font-size:11px;color:var(--tx2);margin-top:4px">
+        ตัวแปรที่ใช้ได้: <code>{{ward}}</code>, <code>{{onset}}</code>, <code>{{nihss}}</code>, <code>{{nihss_sev}}</code>,
+        <code>{{ct}}</code>, <code>{{dtn}}</code>, <code>{{dtn_line}}</code>, <code>{{web_url}}</code>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="lbl">Template ข้อความสำหรับปุ่ม \"ส่ง Refer\" (type = refer_alert)</div>
+      <textarea id="tplRefer" rows="7" style="font-family:monospace;font-size:11px"></textarea>
+    </div>
+    <button type="button" class="btn-red" onclick="saveLineTemplates()">บันทึกข้อความ LINE</button>
+    <div id="lineTplMsg" class="msg" style="display:none;margin-top:8px"></div>
+  </div>
+  <div class="card">
+    <div class="sec">ตรวจสอบ LINE broadcast</div>
+    <button class="btn-red" onclick="testLine()">ทดสอบส่ง LINE</button>
+    <div id="lineTestMsg" class="msg" style="display:none;margin-top:10px"></div>
+  </div>`;
+}
+
+async function loadLineTemplates(){
+  const strokeEl=document.getElementById('tplStroke');
+  const referEl=document.getElementById('tplRefer');
+  if(!strokeEl||!referEl)return;
+  strokeEl.value=`Stroke Alert — รพ.สงฆ์
+-------------------------
+Ward: {{ward}}
+Onset: {{onset}} ชม.
+NIHSS: {{nihss}} — {{nihss_sev}}
+CT: {{ct}}
+{{dtn_line}}
+-------------------------
+รายละเอียด: {{web_url}}`;
+
+  referEl.value=`REFER — Stroke Fast Tract
+-------------------------
+Ward: {{ward}}
+Onset: {{onset}} ชม.
+NIHSS: {{nihss}} — {{nihss_sev}}
+CT: {{ct}}
+Refer — ไม่ได้ให้ที่รพ.สงฆ์
+{{dtn_line}}
+-------------------------
+รายละเอียด: {{web_url}}
+กรุณาติดต่อกลับโดยด่วน`;
+
+  await ensureSettingsTable();
+  const r=await tursoQuery("SELECT key,value FROM settings WHERE key IN ('line_template_stroke','line_template_refer')");
+  if(!r.error&&r.rows){
+    r.rows.forEach(row=>{
+      if(row.key==='line_template_stroke'&&row.value)strokeEl.value=row.value;
+      if(row.key==='line_template_refer'&&row.value)referEl.value=row.value;
+    });
+  }
+}
+
+async function saveLineTemplates(){
+  const stroke=document.getElementById('tplStroke')?.value||'';
+  const refer=document.getElementById('tplRefer')?.value||'';
+  const msg=document.getElementById('lineTplMsg');
+  if(msg){msg.style.display='block';msg.className='msg info';msg.textContent='กำลังบันทึก...';}
+  await ensureSettingsTable();
+  const sql="INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value";
+  const r1=await tursoQuery(sql,['line_template_stroke',stroke]);
+  const r2=await tursoQuery(sql,['line_template_refer',refer]);
+  const hasErr=r1.error||r2.error;
+  if(msg){
+    msg.className=hasErr?'msg err':'msg ok';
+    msg.textContent=hasErr?('❌ บันทึกไม่สำเร็จ: '+(r1.error||r2.error)): '✓ บันทึกข้อความ LINE แล้ว';
+  }
+}
+
+async function testLine(){
+  const el=document.getElementById('lineTestMsg');
+  el.style.display='block';el.className='msg info';el.textContent='กำลังส่งทดสอบ...';
+  try{
+    const r=await fetch('/line',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'test',data:{message:'ทดสอบจาก Admin Panel — Stroke Fast Tract'}})});
+    const d=await r.json();
+    el.className=d.error?'msg err':'msg ok';
+    el.textContent=d.error?'❌ '+d.error:'✓ ส่งสำเร็จ — ตรวจสอบ LINE OA';
+  }catch(e){el.className='msg err';el.textContent='ไม่สามารถเชื่อมต่อได้: '+e.message;}
+}
+
+// ═══════════════════════════════════════════════
+// 6. AI CHAT
+// ═══════════════════════════════════════════════
+function renderAI(){
+  return `
+  <div class="card" style="border-color:#AFA9EC">
+    <div class="sec" style="color:#3C3489">🤖 ถามข้อมูล — Guideline + Case Log</div>
+    <div style="font-size:11px;color:var(--wtx);background:var(--wbg);border-radius:var(--rm);padding:6px 10px;margin-bottom:10px;line-height:1.6;border:0.5px solid var(--wbd)">
+      ⚠️ AI ตอบได้เฉพาะ Guideline ที่บันทึกไว้ และสรุป Case Log สถิติ — ไม่ใช่การวินิจฉัย
+    </div>
+    <div id="aiChatHistory" class="chat-box"></div>
+    <div style="display:flex;gap:8px">
+      <input id="aiChatInput" placeholder="ถาม guideline หรือ case stats..." style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();sendAdminChat();}">
+      <button onclick="sendAdminChat()" style="padding:9px 14px;border:0.5px solid #AFA9EC;border-radius:var(--rm);background:#EEEDFE;color:#3C3489;font-size:13px;font-weight:600;font-family:inherit;flex-shrink:0">ถาม</button>
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px">
+      <button onclick="quickQ('สรุป case log ทั้งหมด')" class="btn-sm">📊 Case summary</button>
+      <button onclick="quickQ('DTN เฉลี่ยและ target ≤60 นาที')" class="btn-sm">⏱ DTN</button>
+      <button onclick="quickQ('rt-PA ให้กี่เคส ไม่ให้กี่เคส')" class="btn-sm">💉 rt-PA</button>
+      <button onclick="quickQ('refer กี่เคส ICH กี่เคส')" class="btn-sm">🚑 Refer</button>
+      <button onclick="quickQ('สรุป guideline ทั้งหมดที่บันทึกไว้')" class="btn-sm">📋 Guideline</button>
+      <button onclick="quickQ('สรุป login log ของแต่ละหน่วย')" class="btn-sm">🔑 Ward login</button>
+    </div>
+  </div>`;
+}
+
+function quickQ(q){const i=document.getElementById('aiChatInput');if(i){i.value=q;sendAdminChat();}}
+
+function appendChatBubble(role,text,id=''){
+  const box=document.getElementById('aiChatHistory');if(!box)return;
+  const div=document.createElement('div');if(id)div.id=id;
+  if(role==='user'){div.style.cssText='align-self:flex-end;background:var(--red);color:white;padding:8px 12px;border-radius:12px 12px 2px 12px;font-size:13px;max-width:80%;line-height:1.5';div.textContent=text;}
+  else if(role==='typing'){div.style.cssText='align-self:flex-start;background:var(--bg2);border:0.5px solid var(--bl);padding:10px 14px;border-radius:12px 12px 12px 2px;display:flex;gap:5px;align-items:center';div.innerHTML='<div style="width:7px;height:7px;border-radius:50%;background:var(--bm);animation:bo 1.2s infinite"></div><div style="width:7px;height:7px;border-radius:50%;background:var(--bm);animation:bo 1.2s .2s infinite"></div><div style="width:7px;height:7px;border-radius:50%;background:var(--bm);animation:bo 1.2s .4s infinite"></div>';}
+  else{div.style.cssText='align-self:flex-start;background:var(--bg2);border:0.5px solid var(--bl);padding:10px 14px;border-radius:12px 12px 12px 2px;font-size:13px;max-width:92%;line-height:1.7;white-space:pre-wrap';div.textContent=text;}
+  box.appendChild(div);box.scrollTop=box.scrollHeight;
+}
+
+async function fetchCaseLogSummary(){
+  try{
+    const r=await tursoQuery(`SELECT COUNT(*) as total,SUM(rtpa_given) as rtpa_n,SUM(referred) as refer_n,ROUND(AVG(nihss_score),1) as avg_nihss,ROUND(AVG(CASE WHEN dtn_min>0 THEN dtn_min END),0) as avg_dtn,SUM(CASE WHEN dtn_min<=60 THEN 1 ELSE 0 END) as dtn_ok,SUM(CASE WHEN ct_result='ich' THEN 1 ELSE 0 END) as ich_n,MIN(logged_at) as first_case,MAX(logged_at) as last_case FROM case_log`);
+    if(r.error||!r.rows?.length)return null;
+    const s=r.rows[0];
+    const total=Number(s.total||0);if(total===0)return 'ยังไม่มีข้อมูล Case Log';
+    const rtpa_n=Number(s.rtpa_n||0),refer_n=Number(s.refer_n||0),ich_n=Number(s.ich_n||0),dtn_ok=Number(s.dtn_ok||0);
+    return `ข้อมูล Case Log:\n- รวม: ${total} เคส (${(s.first_case||'?').substring(0,10)} ถึง ${(s.last_case||'?').substring(0,10)})\n- rt-PA: ${rtpa_n} เคส (${total>0?Math.round(rtpa_n/total*100):0}%)\n- Refer: ${refer_n} เคส\n- ICH: ${ich_n} เคส\n- NIHSS เฉลี่ย: ${s.avg_nihss||'ไม่มีข้อมูล'}\n- DTN เฉลี่ย: ${s.avg_dtn?Math.round(Number(s.avg_dtn)):'ไม่มีข้อมูล'} นาที\n- DTN ≤60 นาที: ${dtn_ok}/${rtpa_n} เคส`;
+  }catch{return null;}
+}
+
+async function sendAdminChat(){
+  const input=document.getElementById('aiChatInput');
+  const q=(input?.value||'').trim();if(!q)return;
+  input.value='';
+  appendChatBubble('user',q);
+  const typingId='typing-'+Date.now();
+  appendChatBubble('typing','',typingId);
+  const caseData=await fetchCaseLogSummary();
+  adminChatHistory.push({role:'user',content:q});
+  try{
+    const r=await fetch('/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:adminChatHistory,system:`คุณคือผู้ช่วยข้อมูล Admin โรงพยาบาลสงฆ์ ตอบเฉพาะ Guideline + Case Log เท่านั้น ห้ามวินิจฉัยโรค ตอบภาษาไทยกระชับ\n\n${caseData?'Case Log:\n'+caseData:'(ไม่มีข้อมูล Case Log)'}`,max_tokens:800})});
+    document.getElementById(typingId)?.remove();
+    let d;try{d=await r.json();}catch{d={};}
+    const answer=(d.content?.[0]?.text||d.choices?.[0]?.message?.content||d.error)||'ไม่ได้รับคำตอบ';
+    appendChatBubble('ai',String(answer));
+    adminChatHistory.push({role:'assistant',content:answer});
+    if(adminChatHistory.length>20)adminChatHistory=adminChatHistory.slice(-20);
+  }catch(e){document.getElementById(typingId)?.remove();appendChatBubble('ai','ไม่สามารถเชื่อมต่อได้: '+e.message);}
+}
+
+// ── INIT ──
+// auto-load ward list and login log after tab renders
+const _origShowTab=showTab;
+window.showTab=function(name,btn){
+  _origShowTab(name,btn);
+  if(name==='ward'){setTimeout(()=>{loadWardList();loadLoginLog();},50);}
+  if(name==='gl')setTimeout(loadGlList,50);
+  if(name==='vid')setTimeout(loadVidList,50);
+  if(name==='aspect')setTimeout(loadAspectLinks,50);
+  if(name==='line')setTimeout(loadLineTemplates,50);
+};
+</script>
+</body>
+</html>

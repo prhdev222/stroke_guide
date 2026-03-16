@@ -39,6 +39,9 @@ pages_build_output_dir = "public"
 # [optional — ถ้าไม่ใส่ = Broadcast หาทุกคนที่ Add OA]
 #   LINE_NEURO_USER_ID  = Uxxxxxxxxxx  (User ID แพทย์ระบบประสาท)
 #   LINE_REFER_USER_ID  = Cxxxxxxxxxx  (Group ID ทีม refer)
+#
+# ── รหัสหน่วย Staff (Admin ตั้งรหัสประจำหน่วย เช่น ER 1234, MED1 2417) ──
+#   ADMIN_SECRET  = รหัสลับสำหรับเข้าเมนู "ตั้งรหัสหน่วย" ใน 📦 → ตั้งรหัสหน่วย (Admin)
 # ============================================================
 
 [vars]
