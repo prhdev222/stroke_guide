@@ -222,10 +222,12 @@ input.quick-time-input::placeholder{color:var(--tx2);font-size:11px}
     </div>
     <div class="step-progress" id="stepProgress"></div>
     <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-      <div id="timerWrap" style="display:flex;align-items:center;gap:6px">
+      <div id="timerWrap" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
         <span id="timerEl" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--tx2)">⏱ —</span>
+        <span id="timerTargetBadge" style="display:none;font-size:10px;padding:2px 8px;border-radius:999px;border:0.5px solid var(--bm);background:var(--bg2);color:var(--tx2);font-variant-numeric:tabular-nums" title="ตั้งเวลาเป้าหมาย (นาที)">เป้าหมาย: <span id="timerTargetMin">—</span> นาที</span>
         <button type="button" id="btnTimerStart" onclick="startTimerNow()" style="padding:4px 8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:11px;font-family:inherit;cursor:pointer" title="เริ่มจับเวลาตั้งแต่ตอนนี้">เริ่มจับเวลา</button>
         <button type="button" id="btnTimerSet" onclick="setTimerStart()" style="padding:4px 8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:11px;font-family:inherit;cursor:pointer" title="กำหนดเวลาเริ่มต้น (เช่น เวลาเข้า ER)">กำหนดเวลา</button>
+        <button type="button" id="btnTimerTarget" onclick="setTimerTarget()" style="padding:4px 8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:11px;font-family:inherit;cursor:pointer" title="ตั้งเวลาเป้าหมายเพื่อเตือนเมื่อเกิน (นาที)">ตั้งเวลาเตือน</button>
       </div>
       <div id="clockEl" style="font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;text-align:right;min-width:70px"></div>
       <button onclick="showTursoSettings()" style="padding:5px 9px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:12px;font-family:inherit" title="Turso Case Log">📦</button>
@@ -305,7 +307,11 @@ let D={ // all clinical data
   lastSeen:'',strokeOnset:'',erArrival:'',bloodDrawn:'',ctTime:'',activateFT:'',ivRtPA:'',
   rtpaGiven:null, // true=ให้ rt-PA, false=ไม่ให้ (Refer)
   referTime:'',   // วันเวลา Refer (เมื่อไม่ให้ rt-PA หรือ refer)
+  admitTime:'',   // วันเวลา Admit (กรณีเลือก admit เพื่อพิมพ์สรุปเก็บ)
+  planDisposition:'', // 'admit' | 'refer' | '' (ใช้ในกรณีไม่ใช่ fast tract ให้เลือกเอง)
   timerStartedAt:null, // ISO string — เริ่มจับเวลาเมื่อกดเริ่ม หรือกำหนดเวลาเริ่มต้น
+  timerTargetMin:null, // number นาที — ตั้งเป้าหมายเพื่อเตือนเมื่อเกินเวลา fast tract
+  timerAlerted:false,  // กันแจ้งเตือนซ้ำ
   befast:{B:false,E:false,F:false,A:false,S:false},
   gcs:{E:'',V:'',M:''},
   symptoms:{hemi:false,numb:false,comm:false,dysarthria:false,vis:false,drow:false,ataxia:false},
@@ -495,7 +501,7 @@ function renderProgress(){
   document.getElementById('stepLabel').textContent=`ขั้น ${step+1}/${STEPS.length} — ${STEPS[step].label}`;
   document.getElementById('btnBack').style.display=step===0?'none':'flex';
   const backEl=document.getElementById('backLabel');if(backEl)backEl.textContent=step>0?STEPS[step-1].label:'ย้อนกลับ';
-  document.getElementById('btnNext').textContent=step===7?'📋 สร้าง PDF ส่งต่อ':'ถัดไป →';
+  document.getElementById('btnNext').textContent=step===7?(D.planDisposition==='admit'?'✓ บันทึก (Admit)':'📋 สร้าง PDF ส่งต่อ'):'ถัดไป →';
   if(typeof renderAssessmentBases==='function') renderAssessmentBases();
 }
 
@@ -1196,11 +1202,59 @@ function rPlan(){
   const imgPrev=D.attachImages.map((img,i)=>`<div class="thumb"><img src="${img.dataUrl}"><button class="thumb-rm" onclick="D.attachImages.splice(${i},1);renderStep()">✕</button></div>`).join('');
   const docList=D.attachDocs.map((d,i)=>`<div class="doc-item"><span style="font-size:18px">📄</span><div style="flex:1;font-size:13px;font-weight:500">${d.name}</div><button onclick="D.attachDocs.splice(${i},1);renderStep()" style="border:none;background:transparent;color:var(--dtx);cursor:pointer">✕</button></div>`).join('');
 
+  const dispositionBlock = (rec!=='rtpa' && rec!=='refer-ich' && rec!=='refer-thr')
+    ? `<div class="card" style="background:var(--bg2);border-color:var(--bm)">
+        <div class="sec">สรุปปลายทาง (เลือกเอง)</div>
+        <div style="font-size:12px;color:var(--tx2);line-height:1.6;margin-bottom:10px">
+          กรณีไม่ใช่ Fast tract หรือไม่ต้องทำ refer document สามารถเลือก <strong>Admit</strong> แล้วบันทึกจบเคสได้ทันที
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <button type="button"
+            onclick="D.planDisposition='admit';D.referTime='';renderStep()"
+            style="padding:10px 16px;border-radius:var(--rm);border:1.5px solid ${D.planDisposition==='admit'?'var(--sbd)':'var(--bl)'};background:${D.planDisposition==='admit'?'var(--sbg)':'var(--bg)'};color:${D.planDisposition==='admit'?'var(--stx)':'var(--tx)'};font-weight:700;font-size:13px;font-family:inherit;cursor:pointer">
+            Admit (จบขั้นตอน)
+          </button>
+          <button type="button"
+            onclick="D.planDisposition='refer';renderStep()"
+            style="padding:10px 16px;border-radius:var(--rm);border:1.5px solid ${D.planDisposition==='refer'?'var(--wbd)':'var(--bl)'};background:${D.planDisposition==='refer'?'var(--wbg)':'var(--bg)'};color:${D.planDisposition==='refer'?'var(--wtx)':'var(--tx)'};font-weight:700;font-size:13px;font-family:inherit;cursor:pointer">
+            Refer (สร้าง PDF ส่งต่อ)
+          </button>
+        </div>
+        ${D.planDisposition==='refer'
+          ? `<div class="time-row"><div style="flex:1"><div class="lbl">เวลา Refer ${D.referTime?`<span style="color:var(--stx)">✓ ${formatDisplayDatetime(D.referTime)}</span>`:''}</div>
+              <div class="quick-time-wrap">
+                <input type="datetime-local" id="planReferTimeX" value="${toDatetimeLocalValue(D.referTime)}" oninput="D.referTime=this.value" class="datetime-input" step="60">
+                <span style="font-size:11px;color:var(--tx2)">หรือ</span>
+                <input type="text" class="quick-time-input" placeholder="18.45" data-timekey="referTime" onblur="applyQuickTime(this)" onkeydown="if(event.key==='Enter'){applyQuickTime(this);event.preventDefault()}" title="เวลา 24 ชม. เช่น 18.45">
+              </div>
+            </div>
+            <button type="button" class="now-btn" onclick="var v=getNowDatetime();D.referTime=v;var i=document.getElementById('planReferTimeX');if(i)i.value=v.slice(0,16)">📅 Now</button>
+          </div>`
+          : ''}
+        ${D.planDisposition==='admit'
+          ? `<div class="time-row"><div style="flex:1"><div class="lbl">เวลา Admit ${D.admitTime?`<span style="color:var(--stx)">✓ ${formatDisplayDatetime(D.admitTime)}</span>`:''}</div>
+              <div class="quick-time-wrap">
+                <input type="datetime-local" id="planAdmitTime" value="${toDatetimeLocalValue(D.admitTime)}" oninput="D.admitTime=this.value" class="datetime-input" step="60">
+                <span style="font-size:11px;color:var(--tx2)">หรือ</span>
+                <input type="text" class="quick-time-input" placeholder="18.45" data-timekey="admitTime" onblur="applyQuickTime(this)" onkeydown="if(event.key==='Enter'){applyQuickTime(this);event.preventDefault()}" title="เวลา 24 ชม. เช่น 18.45">
+              </div>
+            </div>
+            <button type="button" class="now-btn" onclick="var v=getNowDatetime();D.admitTime=v;var i=document.getElementById('planAdmitTime');if(i)i.value=v.slice(0,16)">📅 Now</button>
+          </div>
+          <div style="font-size:11px;color:var(--tx2);margin-top:6px;line-height:1.6">
+            เลือก Admit แล้วสามารถกดสร้าง PDF เพื่อพิมพ์สรุปเก็บไว้ได้ (ไม่ใช่ refer)
+          </div>`
+          : ''}
+      </div>`
+    : '';
+
   return `<div class="result-big" style="background:${rm.bg};border-color:${rm.bd};color:${rm.co}">
     <div style="font-size:28px;margin-bottom:6px">${rm.icon}</div>
     <div style="font-size:17px;font-weight:700">${rm.label}</div>
     <div style="font-size:13px;margin-top:6px;opacity:.85">NIHSS ${tot} — ${sev.label} | ${oh!==null?oh.toFixed(1)+' ชม.':'ไม่ทราบ onset'}</div>
   </div>
+
+  ${dispositionBlock}
 
   <div class="card" style="background:var(--ibg);border-color:var(--ibd)">
   <div class="sec" style="color:var(--itx)">📋 ก่อนสร้าง PDF</div>
@@ -1345,6 +1399,16 @@ function getMissingForPDF(){
   if(!D.erArrival)out.push({step:1,label:'ER arrival'});
   if(!D.ctResult)out.push({step:4,label:'ผล CT Brain'});
   const rec=getRecommendedAction();
+  // กรณีเลือก Admit แบบ manual ให้กรอกเวลา Admit ก่อนพิมพ์สรุป
+  if(D.planDisposition==='admit'){
+    if(!D.admitTime) out.push({step:7,label:'เวลา Admit'});
+    return out;
+  }
+  // กรณีเลือก Refer แบบ manual ให้กรอกเวลา Refer
+  if(D.planDisposition==='refer'){
+    if(!D.referTime) out.push({step:7,label:'เวลา Refer'});
+    return out;
+  }
   if(rec==='rtpa'){
     if(D.rtpaGiven===null)out.push({step:7,label:'การตัดสินใจ: ให้ rt-PA หรือไม่ให้ (Refer)'});
     else if(D.rtpaGiven===true&&!D.ivRtPA)out.push({step:7,label:'เวลาเริ่มให้ IV rt-PA'});
@@ -1363,14 +1427,29 @@ function buildSummaryHTML(){
   const absC=ABS.filter(i=>D.absExcl[i.id]).map(i=>i.th);
   const now=new Date().toLocaleString('th-TH');
   const ctMap={ich:'Hemorrhagic stroke',ais:'Ischemic / No acute change',neg:'Normal',pend:'รอผล'};
+  // โหมดเอกสาร: ถ้าเลือก Refer ชัดเจน → Referral Document
+  // ถ้าไม่ได้เลือก Refer และไม่เข้าเคส refer อัตโนมัติ → Summary (Admit) เพื่อพิมพ์เก็บ
+  const rec = getRecommendedAction();
+  const isReferralDoc =
+    D.planDisposition === 'refer' ||
+    rec === 'refer-ich' ||
+    rec === 'refer-thr' ||
+    (rec === 'rtpa' && D.rtpaGiven === false) ||
+    D.planDisposition === 'refer-manual';
+  const isAdmitDoc = !isReferralDoc;
+  const docTitle = isAdmitDoc ? 'Acute Stroke — Summary (Admit)' : 'Acute Stroke — Referral Document';
+  const badgeText = isAdmitDoc ? 'Admit' : (el ? 'เข้าเกณฑ์ rt-PA' : ab ? 'ห้ามให้ rt-PA' : 'ยังไม่ชัดเจน');
+  const badgeBg   = isAdmitDoc ? '#EAF3DE' : (el ? '#EAF3DE' : ab ? '#FCEBEB' : '#FAEEDA');
+  const badgeCo   = isAdmitDoc ? '#27500A' : (el ? '#27500A' : ab ? '#791F1F' : '#633806');
+  const badgeBd   = isAdmitDoc ? '#97C459' : (el ? '#97C459' : ab ? '#F09595' : '#EF9F27');
   return `<div style="border-bottom:2.5px solid #C41E3A;padding-bottom:14px;margin-bottom:16px;display:flex;justify-content:space-between">
-    <div><div style="font-size:20px;font-weight:700">Acute Stroke — Referral Document</div>
+    <div><div style="font-size:20px;font-weight:700">${docTitle}</div>
     <div style="font-size:12px;color:#555">โรงพยาบาลสงฆ์ (Priest Hospital)</div>
     <div style="font-size:11px;color:#888">${now}</div></div>
     <div style="text-align:right">
-      <div style="padding:5px 12px;border-radius:6px;font-size:13px;font-weight:700;background:${el?'#EAF3DE':ab?'#FCEBEB':'#FAEEDA'};color:${el?'#27500A':ab?'#791F1F':'#633806'};border:1.5px solid ${el?'#97C459':ab?'#F09595':'#EF9F27'}">${el?'เข้าเกณฑ์ rt-PA':ab?'ห้ามให้ rt-PA':'ยังไม่ชัดเจน'}</div>
-      ${lvoAssessed&&lvoResult==='yes'?'<div style="margin-top:5px;font-size:11px;color:#633806;font-weight:600">สงสัย LVO — พิจารณา Thrombectomy</div>':''}
-      ${dn!==null?`<div style="margin-top:5px;font-size:11px">DTN: ${dn} นาที</div>`:''}
+      <div style="padding:5px 12px;border-radius:6px;font-size:13px;font-weight:700;background:${badgeBg};color:${badgeCo};border:1.5px solid ${badgeBd}">${badgeText}</div>
+      ${(!isAdmitDoc && lvoAssessed && lvoResult==='yes')?'<div style="margin-top:5px;font-size:11px;color:#633806;font-weight:600">สงสัย LVO — พิจารณา Thrombectomy</div>':''}
+      ${(!isAdmitDoc && dn!==null)?`<div style="margin-top:5px;font-size:11px">DTN: ${dn} นาที</div>`:''}
     </div>
   </div>
   <div style="font-size:14px;font-weight:600;margin:14px 0 6px;color:#333;border-bottom:1px solid #e0e0e0;padding-bottom:3px">ข้อมูลผู้ป่วย</div>
@@ -1386,6 +1465,7 @@ function buildSummaryHTML(){
   <table style="width:100%;border-collapse:collapse;font-size:12px">
     <tr><td style="padding:5px 8px;border:0.5px solid #ddd;background:#f8f8f8;font-weight:500">Stroke onset</td><td style="padding:5px 8px;border:0.5px solid #ddd">${formatDisplayDatetime(D.strokeOnset)}</td><td style="padding:5px 8px;border:0.5px solid #ddd;background:#f8f8f8;font-weight:500">ER arrival</td><td style="padding:5px 8px;border:0.5px solid #ddd">${formatDisplayDatetime(D.erArrival)}</td></tr>
     <tr><td style="padding:5px 8px;border:0.5px solid #ddd;background:#f8f8f8;font-weight:500">CT brain</td><td style="padding:5px 8px;border:0.5px solid #ddd">${formatDisplayDatetime(D.ctTime)}</td><td style="padding:5px 8px;border:0.5px solid #ddd;background:#f8f8f8;font-weight:500">IV rt-PA</td><td style="padding:5px 8px;border:0.5px solid #ddd">${formatDisplayDatetime(D.ivRtPA)}</td></tr>
+    ${D.admitTime?`<tr><td style="padding:5px 8px;border:0.5px solid #ddd;background:#f8f8f8;font-weight:500">เวลา Admit</td><td style="padding:5px 8px;border:0.5px solid #ddd" colspan="3">${formatDisplayDatetime(D.admitTime)}</td></tr>`:''}
     ${D.referTime?`<tr><td style="padding:5px 8px;border:0.5px solid #ddd;background:#f8f8f8;font-weight:500">เวลา Refer</td><td style="padding:5px 8px;border:0.5px solid #ddd" colspan="3">${formatDisplayDatetime(D.referTime)}</td></tr>`:''}
     <tr><td style="padding:5px 8px;border:0.5px solid #ddd;background:#f8f8f8;font-weight:500">Onset window</td><td style="padding:5px 8px;border:0.5px solid #ddd;font-weight:700">${oh!==null?oh.toFixed(1)+' ชม.':'ไม่ทราบ'}</td><td style="padding:5px 8px;border:0.5px solid #ddd;background:#f8f8f8;font-weight:500">Door-to-Needle</td><td style="padding:5px 8px;border:0.5px solid #ddd;font-weight:700;color:${dn!==null&&dn<=60?'#185FA5':'#A32D2D'}">${dn!==null?dn+' นาที':'—'}</td></tr>
   </table>
@@ -1446,12 +1526,15 @@ async function generatePDF(){
     setP('บันทึกไฟล์...',90);
     const fb=await merged.save();const blob=new Blob([fb],{type:'application/pdf'});
     const url=URL.createObjectURL(blob);const a=document.createElement('a');
-    a.href=url;a.download=`stroke_refer_${D.hn||'case'}_${new Date().toISOString().slice(0,10)}.pdf`;a.click();URL.revokeObjectURL(url);
+    const prefix = (D.planDisposition==='admit') ? 'stroke_admit' : 'stroke_refer';
+    a.href=url;a.download=`${prefix}_${D.hn||'case'}_${new Date().toISOString().slice(0,10)}.pdf`;a.click();URL.revokeObjectURL(url);
 
     // Log anonymized case to Turso รวมข้อมูลจับเวลา (silent — ไม่แสดง error ถ้าไม่ได้ตั้งค่า)
     const completedAt=new Date().toISOString();
     const timerData=D.timerStartedAt?{startedAt:D.timerStartedAt,completedAt,durationSec:Math.round((new Date(completedAt).getTime()-new Date(D.timerStartedAt).getTime())/1000)}:null;
     const recKey=(()=>{
+      if(D.planDisposition==='admit') return 'admit';
+      if(D.planDisposition==='refer') return 'refer-manual';
       const oh=getOnsetHours();const tot=getNIHSS();const lvo=suspectLVO();const el=eligible();const ab=hasAbs();
       if(D.ctResult==='ich')return'refer-ich';
       if(oh!==null&&oh<=4.5&&el&&tot>=4)return'rtpa';
@@ -1468,6 +1551,20 @@ async function generatePDF(){
   }catch(e){alert('Error: '+e.message);}finally{ol.style.display='none';}
 }
 
+async function finalizeAdmit(){
+  try{
+    const completedAt=new Date().toISOString();
+    const timerData=D.timerStartedAt
+      ? {startedAt:D.timerStartedAt,completedAt,durationSec:Math.round((new Date(completedAt).getTime()-new Date(D.timerStartedAt).getTime())/1000)}
+      : null;
+    await logCase('admit',timerData);
+    alert('✓ บันทึกเคสแบบ Admit แล้ว');
+    clearAll();
+  }catch(e){
+    alert('บันทึกไม่สำเร็จ: '+(e?.message||e));
+  }
+}
+
 // ==================== NAVIGATION ====================
 function validate(){
   if(step===0)return D.name&&D.hn&&D.age&&D.weight;
@@ -1477,7 +1574,10 @@ function validate(){
 }
 
 function goNext(){
-  if(step===7){generatePDF();return;}
+  if(step===7){
+    generatePDF();
+    return;
+  }
   if(!validate()&&step<7){
     if(!confirm('ยังไม่ครบ — ข้ามไปก่อนได้ กลับมาเติมทีหลังได้\n\nดำเนินการต่อ?'))return;
   }
@@ -1493,7 +1593,7 @@ function goBack(){step=Math.max(step-1,0);renderStep();}
 function confirmExit(){if(confirm('ออกจากระบบและเคลียร์ข้อมูลทั้งหมด?')){clearAll();}}
 function clearAll(){
   const keepWard=D.ward;const keepWardLabel=D.wardLabel;
-  D={name:'',hn:'',age:'',weight:'',ward:keepWard||'',wardLabel:keepWardLabel||'',lastSeen:'',strokeOnset:'',erArrival:'',bloodDrawn:'',ctTime:'',activateFT:'',ivRtPA:'',rtpaGiven:null,referTime:'',timerStartedAt:null,
+  D={name:'',hn:'',age:'',weight:'',ward:keepWard||'',wardLabel:keepWardLabel||'',lastSeen:'',strokeOnset:'',erArrival:'',bloodDrawn:'',ctTime:'',activateFT:'',ivRtPA:'',rtpaGiven:null,referTime:'',admitTime:'',planDisposition:'',timerStartedAt:null,timerTargetMin:null,timerAlerted:false,
     befast:{B:false,E:false,F:false,A:false,S:false},gcs:{E:'',V:'',M:''},symptoms:{hemi:false,numb:false,comm:false,dysarthria:false,vis:false,drow:false,ataxia:false},
     ctResult:'',nihss:{},incl:{ais:false,onset45:false,age18:false},absExcl:{},relExcl:{},
     excl45:{nihss25:false,inr17:false},relExcl45:{age80:false,strokeDM:false},
@@ -1655,13 +1755,39 @@ function formatElapsed(isoStart){
 function updateTimerDisplay(){
   const te=document.getElementById('timerEl');
   if(!te||typeof D==='undefined')return;
-  if(D.timerStartedAt){te.textContent='⏱ '+formatElapsed(D.timerStartedAt);te.title='เริ่มจับเวลา: '+new Date(D.timerStartedAt).toLocaleString('th-TH');}
+  if(D.timerStartedAt){
+    te.textContent='⏱ '+formatElapsed(D.timerStartedAt);
+    te.title='เริ่มจับเวลา: '+new Date(D.timerStartedAt).toLocaleString('th-TH');
+
+    // เตือนเมื่อเกินเวลาเป้าหมาย
+    const tgt=Number(D.timerTargetMin||0);
+    if(tgt>0){
+      const elapsedSec=Math.max(0,Math.floor((Date.now()-new Date(D.timerStartedAt).getTime())/1000));
+      const over=elapsedSec>=tgt*60;
+      te.style.color=over?'var(--dtx)':'var(--tx2)';
+      if(over && !D.timerAlerted){
+        D.timerAlerted=true;
+        try{
+          alert(`⏰ เกินเวลาเป้าหมาย ${tgt} นาทีแล้ว`);
+        }catch(_){}
+      }
+    } else {
+      te.style.color='var(--tx2)';
+    }
+  }
 }
 function updateTimerUI(){
   const te=document.getElementById('timerEl');
   const bStart=document.getElementById('btnTimerStart');
   const bSet=document.getElementById('btnTimerSet');
+  const badge=document.getElementById('timerTargetBadge');
+  const badgeMin=document.getElementById('timerTargetMin');
   if(!te)return;
+  if(badge&&badgeMin){
+    const tgt=Number(D.timerTargetMin||0);
+    if(tgt>0){badge.style.display='';badgeMin.textContent=String(tgt);}
+    else {badge.style.display='none';badgeMin.textContent='—';}
+  }
   if(D.timerStartedAt){
     te.textContent='⏱ '+formatElapsed(D.timerStartedAt);
     te.title='เริ่มจับเวลา: '+new Date(D.timerStartedAt).toLocaleString('th-TH');
@@ -1669,11 +1795,13 @@ function updateTimerUI(){
   }else{
     te.textContent='⏱ —';
     te.title='';
+    te.style.color='var(--tx2)';
     if(bStart)bStart.style.display='';if(bSet)bSet.style.display='';
   }
 }
 window.startTimerNow=function(){
   D.timerStartedAt=new Date().toISOString();
+  D.timerAlerted=false;
   updateTimerUI();
 };
 window.setTimerStart=function(){
@@ -1689,12 +1817,25 @@ window.setTimerStart=function(){
   else t=new Date(raw.trim());
   if(isNaN(t.getTime())){alert('รูปแบบเวลาไม่ถูกต้อง');return;}
   D.timerStartedAt=t.toISOString();
+  D.timerAlerted=false;
   updateTimerUI();
+};
+
+window.setTimerTarget=function(){
+  const def=D.timerTargetMin?String(D.timerTargetMin):'60';
+  const raw=prompt('ตั้งเวลาเป้าหมาย (นาที) เพื่อเตือนเมื่อเกิน\nเช่น 45 หรือ 60',def);
+  if(raw==null)return;
+  const n=Number(String(raw).trim());
+  if(!n||isNaN(n)||n<1){D.timerTargetMin=null;D.timerAlerted=false;updateTimerUI();return;}
+  D.timerTargetMin=Math.round(n);
+  D.timerAlerted=false;
+  updateTimerUI();
+  if(D.timerStartedAt)updateTimerDisplay();
 };
 function updateClock(){
   const d=new Date();
   const el=document.getElementById('clockEl');
-  if(el)el.textContent=d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  if(el)el.textContent='ขณะนี้เวลา '+d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
   if(typeof D!=='undefined'&&D.timerStartedAt)updateTimerDisplay();
 }
 setInterval(updateClock,1000);
@@ -1769,9 +1910,10 @@ async function logCase(rec,timerData){
   const absN=Object.values(D.absExcl).filter(Boolean).length;
   const relN=Object.values(D.relExcl).filter(Boolean).length;
   const rtpaGiven = D.rtpaGiven===true ? 1 : 0;
-  const isReferred = D.rtpaGiven===false || rec==='refer-ich'||rec==='refer-thr';
+  const isReferred = D.rtpaGiven===false || rec==='refer-ich'||rec==='refer-thr'||rec==='refer-manual';
   let decisionSummary = '';
-  if(rtpaGiven===1) decisionSummary = 'ให้ rt-PA ที่รพ.สงฆ์';
+  if(rec==='admit') decisionSummary = 'Admit';
+  else if(rtpaGiven===1) decisionSummary = 'ให้ rt-PA ที่รพ.สงฆ์';
   else if(isReferred) decisionSummary = 'เลือก refer ไป ไม่ได้ให้ที่รพ.สงฆ์';
   await ensureCaseTable();
   const r=await tursoExec(

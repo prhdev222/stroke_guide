@@ -151,7 +151,7 @@ const STAFF_FILE='stroke_staff_wizard.html';
 const GUEST_FILE='stroke_guest.html';
 
 // ── CLOCK ──
-setInterval(()=>{const d=new Date();const el=document.getElementById('clockEl');if(el)el.textContent=d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});},1000);
+setInterval(()=>{const d=new Date();const el=document.getElementById('clockEl');if(el)el.textContent='ขณะนี้เวลา '+d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});},1000);
 
 // ── TABS ──
 let currentTab='home';
