@@ -239,6 +239,13 @@ async function tursoQuery(sql,args=[]){
   }catch(e){return{error:e.message};}
 }
 
+async function ensureTable(){
+  await tursoQuery(`CREATE TABLE IF NOT EXISTS guidelines(id INTEGER PRIMARY KEY AUTOINCREMENT,category TEXT NOT NULL DEFAULT 'general',title TEXT NOT NULL,body TEXT,link_url TEXT,link_type TEXT,link_label TEXT,sort_order INTEGER DEFAULT 0,created_at TEXT DEFAULT (datetime('now')),section TEXT DEFAULT 'guideline')`);
+  await tursoQuery("ALTER TABLE guidelines ADD COLUMN section TEXT DEFAULT 'guideline'").catch?.(()=>{});
+  await tursoQuery("UPDATE guidelines SET section='video' WHERE link_type IN ('youtube','gdrive') AND (section IS NULL OR section='')");
+  await tursoQuery("UPDATE guidelines SET section='guideline' WHERE section IS NULL OR section=''");
+}
+
 
 // ── GUIDELINES TAB ──
 let glData=null;
@@ -252,19 +259,8 @@ function tursoErrorHtml(msg){
 }
 
 async function loadGuidelines(){
-  const createResult=await tursoQuery(`CREATE TABLE IF NOT EXISTS guidelines (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    category TEXT NOT NULL DEFAULT 'general',
-    title TEXT NOT NULL,
-    body TEXT,
-    link_url TEXT,
-    link_type TEXT,
-    link_label TEXT,
-    sort_order INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now'))
-  )`);
-  if(createResult.error)return{error:createResult.error};
-  const r=await tursoQuery("SELECT * FROM guidelines WHERE link_type != 'youtube' OR link_type IS NULL ORDER BY sort_order ASC, created_at DESC");
+  await ensureTable();
+  const r=await tursoQuery("SELECT * FROM guidelines WHERE section='guideline' OR section IS NULL ORDER BY sort_order ASC, created_at DESC");
   if(r.error)return{error:r.error};
   return{rows:r.rows||[]};
 }
@@ -387,9 +383,9 @@ window.saveGl=async function(){
   await ensureTable();
   let r;
   if(editingGlId){
-    r=await tursoQuery('UPDATE guidelines SET category=?,title=?,body=?,link_url=?,link_type=?,link_label=? WHERE id=?',[cat,title,body,link,ltype,llabel,editingGlId]);
+    r=await tursoQuery('UPDATE guidelines SET category=?,title=?,body=?,link_url=?,link_type=?,link_label=?,section=? WHERE id=?',[cat,title,body,link,ltype,llabel,'guideline',editingGlId]);
   } else {
-    r=await tursoQuery('INSERT INTO guidelines(category,title,body,link_url,link_type,link_label) VALUES(?,?,?,?,?,?)',[cat,title,body,link,ltype,llabel]);
+    r=await tursoQuery('INSERT INTO guidelines(category,title,body,link_url,link_type,link_label,section) VALUES(?,?,?,?,?,?,?)',[cat,title,body,link,ltype,llabel,'guideline']);
   }
   if(r.error){alert('บันทึกไม่สำเร็จ: '+r.error);document.querySelector('.btn-red').textContent='บันทึก';document.querySelector('.btn-red').disabled=false;return;}
   glData=null;
@@ -412,21 +408,10 @@ function rVideos(){
 }
 
 async function loadAndShowVid(){
-  const createResult=await tursoQuery(`CREATE TABLE IF NOT EXISTS guidelines (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    category TEXT NOT NULL DEFAULT 'general',
-    title TEXT NOT NULL,
-    body TEXT,
-    link_url TEXT,
-    link_type TEXT,
-    link_label TEXT,
-    sort_order INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now'))
-  )`);
+  await ensureTable();
   const el=document.getElementById('vidContent');
   if(!el)return;
-  if(createResult.error){el.innerHTML=tursoErrorHtml(createResult.error);return;}
-  const r=await tursoQuery("SELECT * FROM guidelines WHERE link_type='youtube' OR link_type='gdrive' ORDER BY sort_order ASC, created_at DESC");
+  const r=await tursoQuery("SELECT * FROM guidelines WHERE section='video' ORDER BY sort_order ASC, created_at DESC");
   if(r.error){el.innerHTML=tursoErrorHtml(r.error);return;}
   const rows=r.rows||[];
   const ytRows=rows.filter(x=>x.link_type==='youtube');
@@ -556,7 +541,7 @@ window.saveVid=async function(){
   const btn=document.querySelector('.btn-red');
   btn.textContent='กำลังบันทึก...';btn.disabled=true;
   await ensureTable();
-  const r=await tursoQuery('INSERT INTO guidelines(category,title,body,link_url,link_type,link_label) VALUES(?,?,?,?,?,?)',[cat,title,body,link,ltype,'']);
+  const r=await tursoQuery('INSERT INTO guidelines(category,title,body,link_url,link_type,link_label,section) VALUES(?,?,?,?,?,?,?)',[cat,title,body,link,ltype,'','video']);
   if(r.error){alert('บันทึกไม่สำเร็จ: '+r.error);btn.textContent='บันทึก';btn.disabled=false;return;}
   switchTab('videos',document.querySelectorAll('.tab-btn')[2]);
 };
@@ -578,7 +563,7 @@ const TURSO_WAIT_MS=12000;
 async function loadAdminLists(){
   const timeout=()=>new Promise((_,rej)=>setTimeout(()=>rej(new Error('หมดเวลารอการเชื่อมต่อ Turso')),TURSO_WAIT_MS));
   let gr,vr;
-  try{gr=await Promise.race([tursoQuery("SELECT * FROM guidelines WHERE link_type != 'youtube' OR link_type IS NULL ORDER BY sort_order ASC, created_at DESC"),timeout()]);}catch(e){gr={error:e.message};}
+  try{gr=await Promise.race([tursoQuery("SELECT * FROM guidelines WHERE section='guideline' OR section IS NULL ORDER BY sort_order ASC, created_at DESC"),timeout()]);}catch(e){gr={error:e.message};}
   setAdminGlList(gr.error
     ? `<div style="font-size:12px;color:var(--dtx);padding:8px">ไม่มีข้อมูลจาก Turso — ${gr.error}</div>`
     : (!gr.rows||gr.rows.length===0)
@@ -588,13 +573,13 @@ async function loadAdminLists(){
           <button onclick="requirePin(()=>showEditGl(${JSON.stringify(r).replace(/"/g,'&quot;')}))" style="padding:4px 10px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);font-size:11px;font-family:inherit">แก้ไข</button>
           <button onclick="requirePin(async()=>{if(confirm('ลบ?')){await tursoQuery('DELETE FROM guidelines WHERE id=?',[${r.id}]);loadAdminLists();}})" style="padding:4px 10px;border:0.5px solid var(--dbd);border-radius:var(--rm);background:var(--dbg);font-size:11px;color:var(--dtx);font-family:inherit">ลบ</button>
         </div>`).join(''));
-  try{vr=await Promise.race([tursoQuery("SELECT * FROM guidelines WHERE link_type='youtube' OR link_type='gdrive' ORDER BY sort_order ASC, created_at DESC"),timeout()]);}catch(e){vr={error:e.message};}
+  try{vr=await Promise.race([tursoQuery("SELECT * FROM guidelines WHERE section='video' ORDER BY sort_order ASC, created_at DESC"),timeout()]);}catch(e){vr={error:e.message};}
   setAdminVidList(vr.error
     ? `<div style="font-size:12px;color:var(--dtx);padding:8px">ไม่มีข้อมูลจาก Turso — ${vr.error}</div>`
     : (!vr.rows||vr.rows.length===0)
       ? '<div style="font-size:12px;color:var(--tx2);padding:8px">ยังไม่มีวิดีโอ</div>'
       : vr.rows.map(r=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--bl)">
-          <div style="flex:1"><div style="font-size:13px;font-weight:500">${r.link_type==='youtube'?'▶':'📂'} ${r.title}</div></div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">${r.link_type==='youtube'?'▶':r.link_type==='gdrive'?'📂':'🔗'} ${r.title}</div></div>
           <button onclick="requirePin(async()=>{if(confirm('ลบ?')){await tursoQuery('DELETE FROM guidelines WHERE id=?',[${r.id}]);loadAdminLists();}})" style="padding:4px 10px;border:0.5px solid var(--dbd);border-radius:var(--rm);background:var(--dbg);font-size:11px;color:var(--dtx);font-family:inherit">ลบ</button>
         </div>`).join(''));
 }

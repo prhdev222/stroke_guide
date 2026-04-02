@@ -151,7 +151,10 @@ async function tursoQuery(sql, args=[]){
 }
 
 async function ensureTable(){
-  await tursoQuery(`CREATE TABLE IF NOT EXISTS guidelines(id INTEGER PRIMARY KEY AUTOINCREMENT,category TEXT NOT NULL DEFAULT 'general',title TEXT NOT NULL,body TEXT,link_url TEXT,link_type TEXT,link_label TEXT,sort_order INTEGER DEFAULT 0,created_at TEXT DEFAULT (datetime('now')))`);
+  await tursoQuery(`CREATE TABLE IF NOT EXISTS guidelines(id INTEGER PRIMARY KEY AUTOINCREMENT,category TEXT NOT NULL DEFAULT 'general',title TEXT NOT NULL,body TEXT,link_url TEXT,link_type TEXT,link_label TEXT,sort_order INTEGER DEFAULT 0,created_at TEXT DEFAULT (datetime('now')),section TEXT DEFAULT 'guideline')`);
+  await tursoQuery("ALTER TABLE guidelines ADD COLUMN section TEXT DEFAULT 'guideline'").catch?.(()=>{});
+  await tursoQuery("UPDATE guidelines SET section='video' WHERE link_type IN ('youtube','gdrive') AND (section IS NULL OR section='')");
+  await tursoQuery("UPDATE guidelines SET section='guideline' WHERE section IS NULL OR section=''");
 }
 async function ensureSettingsTable(){
   await tursoQuery(`CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT)`);
@@ -323,7 +326,7 @@ async function loadGlList(){
   if(!el)return;
   el.innerHTML='<div style="font-size:12px;color:var(--tx2);padding:10px">กำลังโหลด...</div>';
   await ensureTable();
-  const r=await tursoQuery("SELECT * FROM guidelines WHERE link_type != 'youtube' OR link_type IS NULL ORDER BY sort_order ASC,created_at DESC");
+  const r=await tursoQuery("SELECT * FROM guidelines WHERE section='guideline' OR section IS NULL ORDER BY sort_order ASC,created_at DESC");
   if(r.error){el.innerHTML=`<div style="color:var(--dtx);font-size:12px;padding:10px">${r.error}</div>`;return;}
   if(!r.rows||r.rows.length===0){el.innerHTML='<div style="font-size:12px;color:var(--tx2);padding:10px">ยังไม่มี Guideline — กดปุ่ม + เพิ่มรายการแรก</div>';return;}
   el.innerHTML=r.rows.map(row=>`
@@ -398,9 +401,9 @@ async function saveGl(){
   await ensureTable();
   let r;
   if(editingGlId){
-    r=await tursoQuery('UPDATE guidelines SET category=?,title=?,body=?,link_url=?,link_type=?,link_label=? WHERE id=?',[cat,title,body,link,ltype,llabel,editingGlId]);
+    r=await tursoQuery('UPDATE guidelines SET category=?,title=?,body=?,link_url=?,link_type=?,link_label=?,section=? WHERE id=?',[cat,title,body,link,ltype,llabel,'guideline',editingGlId]);
   } else {
-    r=await tursoQuery('INSERT INTO guidelines(category,title,body,link_url,link_type,link_label) VALUES(?,?,?,?,?,?)',[cat,title,body,link,ltype,llabel]);
+    r=await tursoQuery('INSERT INTO guidelines(category,title,body,link_url,link_type,link_label,section) VALUES(?,?,?,?,?,?,?)',[cat,title,body,link,ltype,llabel,'guideline']);
   }
   if(r.error){
     const m=document.getElementById('glSaveMsg');
@@ -435,14 +438,14 @@ async function loadVidList(){
   const el=document.getElementById('vidList');if(!el)return;
   el.innerHTML='<div style="font-size:12px;color:var(--tx2);padding:10px">กำลังโหลด...</div>';
   await ensureTable();
-  const r=await tursoQuery("SELECT * FROM guidelines WHERE link_type='youtube' OR link_type='gdrive' ORDER BY sort_order ASC,created_at DESC");
+  const r=await tursoQuery("SELECT * FROM guidelines WHERE section='video' ORDER BY sort_order ASC,created_at DESC");
   if(r.error){el.innerHTML=`<div style="color:var(--dtx);font-size:12px;padding:10px">${r.error}</div>`;return;}
   if(!r.rows||r.rows.length===0){el.innerHTML='<div style="font-size:12px;color:var(--tx2);padding:10px">ยังไม่มีวิดีโอ/ลิงก์</div>';return;}
   el.innerHTML=r.rows.map(row=>{
     const ytId=getYTId(row.link_url||'');
     return `<div class="gl-card">
       <div class="gl-cat ${catClass(row.category)}">${catLabel(row.category)}</div>
-      <div class="gl-title">${row.link_type==='youtube'?'▶ ':'📂 '}${esc(row.title)}</div>
+      <div class="gl-title">${row.link_type==='youtube'?'▶ ':row.link_type==='gdrive'?'📂 ':'🔗 '}${esc(row.title)}</div>
       ${row.body?`<div class="gl-body">${esc(row.body)}</div>`:''}
       ${ytId?`<div class="yt-embed"><iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen loading="lazy"></iframe></div>`
              :`<a href="${esc(row.link_url)}" target="_blank" class="link-btn ${linkClass(row.link_type)}">${linkTypeIcon(row.link_type)}</a>`}
@@ -507,7 +510,7 @@ async function saveVid(){
   const btn=document.getElementById('vidSaveBtn');
   btn.textContent='กำลังบันทึก...';btn.disabled=true;
   await ensureTable();
-  const r=await tursoQuery('INSERT INTO guidelines(category,title,body,link_url,link_type,link_label) VALUES(?,?,?,?,?,?)',[cat,title,body,link,ltype,'']);
+  const r=await tursoQuery('INSERT INTO guidelines(category,title,body,link_url,link_type,link_label,section) VALUES(?,?,?,?,?,?,?)',[cat,title,body,link,ltype,'','video']);
   if(r.error){
     const m=document.getElementById('vidSaveMsg');
     if(m){m.style.display='block';m.className='msg err';m.textContent='บันทึกไม่สำเร็จ: '+r.error;}
