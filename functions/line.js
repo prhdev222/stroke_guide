@@ -77,7 +77,10 @@ function buildReferUrl(webUrl, d) {
     reason:    d.reason    || '',
     ts: new Date().toISOString()  // สำหรับตรวจ expiry 4 ชม.
   };
-  const encoded = btoa(JSON.stringify(payload))
+  const bytes = new TextEncoder().encode(JSON.stringify(payload));
+  let binary = '';
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  const encoded = btoa(binary)
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   return `${webUrl}/refer-view?d=${encoded}`;
 }
