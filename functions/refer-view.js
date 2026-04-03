@@ -1,10 +1,11 @@
 // functions/refer-view.js
-// GET /refer-view?d={base64}  → แสดงใบ Refer จากข้อมูลใน URL
+// GET /refer-view?d={base64url}  → แสดงใบ Refer จากข้อมูลใน URL
 //
 // ✅ PDPA: ไม่มีการ query Turso เลย
-//         ข้อมูลทั้งหมดอยู่ใน ?d= ที่ encode มาจาก line.js
+//         decode จาก ?d= ที่ encode มาจาก line.js (TextEncoder)
 //         ไม่มี HN ไม่มีชื่อผู้ป่วย — เฉพาะข้อมูล clinical
-//         link หมดอายุใน 4 ชั่วโมงจาก timestamp
+//         รองรับภาษาไทยด้วย TextDecoder
+//         link หมดอายุใน 4 ชั่วโมง
 
 export async function onRequestGet(context) {
   const url = new URL(context.request.url);
@@ -16,8 +17,13 @@ export async function onRequestGet(context) {
 
   if (encoded) {
     try {
-      const json = atob(encoded.replace(/-/g, '+').replace(/_/g, '/'));
+      // Unicode-safe decode (รองรับภาษาไทย)
+      const b64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+      const binString = atob(b64);
+      const bytes = Uint8Array.from(binString, c => c.charCodeAt(0));
+      const json = new TextDecoder().decode(bytes);
       d = JSON.parse(json);
+
       if (d.ts) {
         const age = Date.now() - new Date(d.ts).getTime();
         if (age > 4 * 60 * 60 * 1000) { expired = true; d = null; }
@@ -58,21 +64,22 @@ function renderPage(d, webUrl, expired, decodeError) {
   });
 
   const ward     = d?.ward    || '-';
-  const onset    = d?.onset   != null ? `${d.onset} ชั่วโมง` : '-';
-  const nihss    = d?.nihss   != null ? String(d.nihss) : '-';
+  const onset    = d?.onset != null && d.onset !== '' ? `${d.onset} ชั่วโมง` : '-';
+  const nihss    = d?.nihss != null && d.nihss !== '' ? String(d.nihss) : '-';
   const nihssSev = d?.nihss_sev || (d?.nihss != null ? sevLabel(d.nihss) : '-');
   const ct       = d?.ct      || '-';
   const action   = d?.action  || '-';
   const bp       = d?.bp      || '-';
   const inr      = d?.inr     || '-';
-  const dtn      = d?.dtn     ? `${d.dtn} นาที` : null;
+  const dtn      = d?.dtn && d.dtn !== '' ? `${d.dtn} นาที` : null;
   const dest     = d?.dest    || 'สถาบันประสาทวิทยา';
   const reason   = d?.reason  || 'Ischemic Stroke — ต้องการ Mechanical Thrombectomy / IV tPA';
   const createdAt = d?.ts
-    ? new Date(d.ts).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok', dateStyle: 'medium', timeStyle: 'short' })
+    ? new Date(d.ts).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok',
+        dateStyle: 'medium', timeStyle: 'short' })
     : now;
-  const nColor = d?.nihss != null ? sevColor(d.nihss) : '#222';
-  const nBg    = d?.nihss != null ? sevBg(d.nihss) : '#eee';
+  const nColor = (d?.nihss != null && d.nihss !== '') ? sevColor(d.nihss) : '#222';
+  const nBg    = (d?.nihss != null && d.nihss !== '') ? sevBg(d.nihss)    : '#eee';
 
   const body = !d ? `
     <div class="empty">
