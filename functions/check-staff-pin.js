@@ -39,7 +39,7 @@ export async function onRequestPost(context) {
     const cols = selectRes?.results?.[0]?.response?.result?.cols || [];
     const list = rows.map(r => Object.fromEntries((cols || []).map((c, i) => [c.name, r[i]?.value ?? r[i]])));
 
-    const match = list.find(w => w.pin === pin);
+    const match = list.find(w => String(w.pin != null ? w.pin : '').trim() === pin);
     if (!match) {
       return Response.json({ ok: false }, { status: 200 });
     }
