@@ -90,7 +90,26 @@ npx wrangler kv namespace list
 
 ---
 
-## ขั้นตอนที่ 3 — ผูก Bindings บน Cloudflare Pages
+## ทำไมกด **Add binding** ใน Dashboard ไม่ได้ / บอกให้ไปดู `wrangler.toml`?
+
+ถ้าใน repo มี **`wrangler.toml`** ที่ระบุ **`pages_build_output_dir`** (เช่น `public`) ไว้แล้ว Cloudflare จะถือว่า **การตั้งค่า Pages (รวม bindings) มาจากไฟล์นี้เป็นแหล่งหลัก** — ตาม [เอกสารทางการ](https://developers.cloudflare.com/pages/functions/wrangler-configuration/) จะ **แก้ฟิลด์เดียวกันใน Dashboard ไม่ได้** (หรือปุ่ม Add binding ใช้ไม่ได้) นี่เป็น**พฤติกรรมปกติ** ไม่ใช่บั๊ก
+
+**ทำอย่างไร:** แก้ **`wrangler.toml`** ใน repo ให้มี `[[kv_namespaces]]` และ `[[r2_buckets]]` ครบ แล้ว **commit + push** ไป branch ที่ Pages build (เช่น `main`) — รอ deploy รอบใหม่แล้ว binding จะถูกใช้จากไฟล์
+
+ข้อกำหนดเพิ่ม:
+
+- โปรเจกต์ Pages ต้องใช้ **Build system V2** ขึ้นไป ([คู่มือ V2](https://developers.cloudflare.com/pages/configuration/build-image/#v2-build-system))  
+- ชื่อโปรเจกต์ในไฟล์ **`name`** ต้องตรงกับชื่อโปรเจกต์ใน Dashboard (เช่น `stroke-prh`)
+
+โปรเจกต์นี้ใส่ KV + R2 ใน `wrangler.toml` ไว้แล้ว — แค่ให้ไฟล์นี้ **อยู่บน GitHub และ deploy ผ่านแล้ว**
+
+ตรวจว่า binding มีผล: หลัง deploy ลองกดสร้างลิงก์ CT ใน Staff wizard — ถ้าไม่ขึ้น 503 แปลว่า `CT_SESSIONS` / `CT_IMAGES` เข้าถึงได้
+
+---
+
+## ขั้นตอนที่ 3 — ผูก Bindings บน Cloudflare Pages (เฉพาะโปรเจกต์ที่ยังไม่ใช้ wrangler เป็น source of truth)
+
+> **ถ้าโปรเจกต์คุณใช้ `wrangler.toml` + `pages_build_output_dir` แล้ว — ข้ามขั้นตอนนี้** ใช้การแก้ไฟล์ใน repo ตามหัวข้อด้านบนแทน
 
 1. เปิด **Cloudflare Dashboard** → **Workers & Pages** → เลือกโปรเจกต์ Pages ของ Stroke  
 2. **Settings** → **Functions** → **Bindings** → **Add binding**

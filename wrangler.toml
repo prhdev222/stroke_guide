@@ -1,4 +1,6 @@
-# ต้องตรงชื่อโปรเจกต์ Pages ใน Dashboard (Workers & Pages) — ใช้ deploy/binding จาก repo
+# ต้องตรงชื่อโปรเจกต์ Pages ใน Dashboard (Workers & Pages)
+# มี pages_build_output_dir แล้ว = Cloudflare ใช้ไฟล์นี้เป็น source of truth
+# → แก้ KV/R2 ที่นี่ แล้ว push — หน้า Dashboard มัก "กด Add binding" ไม่ได้ (เป็นเรื่องปกติ)
 name = "stroke-prh"
 compatibility_date = "2024-12-01"
 pages_build_output_dir = "public"
@@ -53,10 +55,9 @@ pages_build_output_dir = "public"
 #   1) wrangler r2 bucket create stroke-ct-temp
 #   2) wrangler kv namespace create CT_SESSIONS
 #   3) wrangler kv namespace create CT_SESSIONS --preview   (สำหรับ local)
-#   4) Cloudflare Pages → Settings → Functions → Bindings:
-#        KV namespace  → binding CT_SESSIONS
-#        R2 bucket     → binding CT_IMAGES  → stroke-ct-temp
-#   5) (แนะนำ production) CT_TEMP_SECRET = รหัสลับ — ต้องส่งใน header X-CT-Temp-Secret ตอนสร้าง session
+#   4) ใส่ id / preview_id / bucket_name ใน [[kv_namespaces]] และ [[r2_buckets]] ด้านล่าง แล้ว push
+#      (โปรเจกต์นี้ใช้ wrangler เป็น source of truth — ไม่ต้อง Add binding ใน Dashboard)
+#   5) (แนะนำ production) CT_TEMP_SECRET = รหัสลับ — ตั้งใน Pages → Environment variables
 #   6) R2 Lifecycle (แดชบอร์ด): ลบ prefix ct/ หลัง 1 วัน — เก็บซากไฟล์หลัง KV หมดอายุ
 # ============================================================
 
@@ -66,7 +67,7 @@ ENVIRONMENT = "production"
 # KV / R2 — ตรงกับ Workers KV + R2 ใน Dashboard (stroke-prh)
 [[kv_namespaces]]
 binding = "CT_SESSIONS"
-id = "eb070dd86a3a44a9a9b19eefaf5f0f811"
+id = "eb070dd86a344a9a9b19eefaf5f0f811"
 preview_id = "bfe2fb9bb0a7403da2fcae214ff0ef63"
 
 [[r2_buckets]]
