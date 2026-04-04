@@ -9,9 +9,12 @@
 // body: {
 //   subject: string,
 //   html: string,           // email body HTML
-//   pdf_base64: string,     // PDF as base64 string
-//   filename: string        // ชื่อไฟล์ PDF
+//   pdf_base64?: string,    // PDF as base64 string
+//   filename?: string       // ชื่อไฟล์ PDF
 // }
+//
+// Resend Free Plan: ส่งได้เฉพาะ email ที่สมัคร Resend เท่านั้น
+// → ส่งทีละคน เพื่อให้คนที่ verified ได้รับ แม้คนอื่นจะ 403
 
 export async function onRequestPost(context) {
   const { RESEND_API_KEY, NEURO_EMAIL, ADMIN_EMAIL } = context.env;
@@ -31,49 +34,58 @@ export async function onRequestPost(context) {
     return Response.json({ error: 'ต้องระบุ subject และ html' }, { status: 400 });
   }
 
-  // ส่งไปหา neuro + admin พร้อมกัน
-  const recipients = [
-    NEURO_EMAIL || 'krida009@yahoo.com',
-    ADMIN_EMAIL || 'uradev222@gmail.com',
-  ].filter(Boolean);
-
-  const payload = {
-    from: 'Stroke Fast Track รพ.สงฆ์ <onboarding@resend.dev>',
-    to: recipients,
-    subject,
-    html,
-  };
-
-  // แนบ PDF ถ้ามี
-  if (pdf_base64 && filename) {
-    payload.attachments = [{
-      filename,
-      content: pdf_base64,
-    }];
+  const recipients = [...new Set([NEURO_EMAIL, ADMIN_EMAIL].filter(Boolean))];
+  if (recipients.length === 0) {
+    return Response.json({ error: 'ยังไม่ได้ตั้ง NEURO_EMAIL / ADMIN_EMAIL' }, { status: 503 });
   }
 
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${RESEND_API_KEY}`,
-    },
-    body: JSON.stringify(payload),
-  });
+  const attachments = (pdf_base64 && filename)
+    ? [{ filename, content: pdf_base64 }]
+    : undefined;
 
-  const data = await res.json();
+  const results = await Promise.all(recipients.map(async (to) => {
+    try {
+      const payload = {
+        from: 'Stroke Fast Track <onboarding@resend.dev>',
+        to: [to],
+        subject,
+        html,
+      };
+      if (attachments) payload.attachments = attachments;
 
-  if (!res.ok) {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${RESEND_API_KEY}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) return { to, ok: false, status: res.status, error: data.message || 'Resend error' };
+      return { to, ok: true, id: data.id };
+    } catch (e) {
+      return { to, ok: false, error: e.message };
+    }
+  }));
+
+  const sent = results.filter(r => r.ok);
+  const failed = results.filter(r => !r.ok);
+
+  if (sent.length === 0) {
+    const hint = failed[0]?.status === 403
+      ? ' — Resend Free Plan ส่งได้เฉพาะ email ที่สมัคร Resend เท่านั้น (ต้อง verify domain หรืออัพเกรด)'
+      : '';
     return Response.json({
-      error: data.message || 'ส่ง email ไม่สำเร็จ',
-      detail: data
-    }, { status: res.status });
+      error: `ส่ง email ไม่สำเร็จทุกราย${hint}`,
+      detail: failed,
+    }, { status: failed[0]?.status || 500 });
   }
 
   return Response.json({
     ok: true,
-    id: data.id,
-    to: recipients,
+    sent: sent.map(r => r.to),
+    failed: failed.map(r => ({ to: r.to, error: r.error })),
   });
 }
 

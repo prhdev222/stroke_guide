@@ -376,6 +376,7 @@ let D={ // all clinical data
   drNsxStaff:'',      // Staff Nsx
   drNsxResident:'',   // Resident Nsx
   antiHiv:null,       // Anti-HIV
+  vs:{temp:'',rr:'',pr:'',bp:'',o2:'',o2mode:'RA'},
 };
 
 const NIHSS=[
@@ -441,7 +442,7 @@ const ASSESSMENT_BASES=[
 ];
 function getBaseDone(){
   const hx = !!(D.name&&D.hn&&(D.strokeOnset||D.lastSeen));
-  const befast = Object.values(D.befast||{}).some(Boolean) || Object.values(D.symptoms||{}).some(Boolean) || (D.gcs&&(D.gcs.E||D.gcs.V||D.gcs.M));
+  const befast = Object.values(D.befast||{}).some(Boolean) || (D.gcs&&(D.gcs.E||D.gcs.V||D.gcs.M));
   const nihss = (D.nihss&&typeof NIHSS!=='undefined') && Object.keys(D.nihss).length >= NIHSS.length;
   const ct = !!D.ctResult && D.ctResult !== '';
   const aspectlvo = ct;
@@ -600,6 +601,21 @@ function rPatient(){
     <div><div class="lbl">หอผู้ป่วย</div><input value="${D.ward}" oninput="D.ward=this.value" placeholder="ICU / Ward"></div>
   </div>
   </div>
+  <div class="card">
+  <div class="sec">V/S (Vital Signs)</div>
+  <div class="grid2">
+    <div><div class="lbl">T (°C)</div><input type="number" step="0.1" value="${D.vs.temp}" oninput="D.vs.temp=this.value" placeholder="36.5"></div>
+    <div><div class="lbl">RR (/min)</div><input type="number" value="${D.vs.rr}" oninput="D.vs.rr=this.value" placeholder="20"></div>
+    <div><div class="lbl">PR (/min)</div><input type="number" value="${D.vs.pr}" oninput="D.vs.pr=this.value" placeholder="80"></div>
+    <div><div class="lbl">BP (mmHg)</div><input value="${D.vs.bp}" oninput="D.vs.bp=this.value" placeholder="140/90"></div>
+    <div><div class="lbl">O₂Sat (%)</div><input type="number" value="${D.vs.o2}" oninput="D.vs.o2=this.value" placeholder="98"></div>
+    <div><div class="lbl">O₂ Mode</div>
+      <select style="width:100%;padding:8px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);font-size:13px" onchange="D.vs.o2mode=this.value">
+        ${['RA','O2 cannula','O2 mask','O2 mask c bag','Ventilator'].map(m=>`<option value="${m}" ${D.vs.o2mode===m?'selected':''}>${m}</option>`).join('')}
+      </select>
+    </div>
+  </div>
+  </div>
   <div style="padding:10px 14px;background:var(--ibg);border-radius:var(--rl);border:0.5px solid var(--ibd);font-size:12px;color:var(--itx);line-height:1.7">
     🔒 ข้อมูลทั้งหมดอยู่ใน RAM เท่านั้น — จะถูกเคลียร์เมื่อออกจากระบบ ตามหลัก PDPA
   </div>`;
@@ -739,14 +755,7 @@ function rSymptoms(){
   </div>
   ${gcsSum!==null?`<div style="font-size:12px;color:var(--tx2)">GCS รวม: <strong style="color:var(--tx)">${gcsSum}</strong> (E+V+M)</div>`:''}
   </div>
-  <div class="card">
-  <div class="sec">อาการเฉพาะ (Nurse Checklist)</div>
-  <div class="sym-grid">
-  ${syI.map(s=>`<div onclick="D.symptoms['${s.id}']=!D.symptoms['${s.id}'];this.className='sym-chip'+(D.symptoms['${s.id}']?' on':'')" class="sym-chip${D.symptoms[s.id]?' on':''}">
-    <div class="sym-chip-dot"></div>${s.th}
-  </div>`).join('')}
-  </div>
-  </div>`;
+  `;
 }
 
 // ---- STEP 4: CT BRAIN ----
@@ -1478,25 +1487,12 @@ function rPlan(){
 
 
   <div class="card" style="background:var(--sbg);border-color:var(--sbd)">
-  <div class="sec" style="color:var(--stx)">📲 แจ้งเตือนทีมแพทย์ผ่าน LINE</div>
-  ${isOver24h()?`
-  <button onclick="sendLineAlert('stroke_nft')" id="btnLineNeuro"
-    style="width:100%;padding:12px 8px;border:none;border-radius:var(--rl);background:#06C755;color:white;font-size:14px;font-weight:700;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px">
+  <div class="sec" style="color:var(--stx)">📲 รายงานผ่าน LINE</div>
+  <button onclick="sendLineAuto()" id="btnLineSend"
+    style="width:100%;padding:12px 8px;border:none;border-radius:var(--rl);background:#06C755;color:white;font-size:14px;font-weight:700;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer">
     <span style="font-size:20px">💬</span>
-    <span>แจ้ง Stroke LINE OA (Non-Fast Track)</span>
-  </button>`:`
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-    <button onclick="sendLineAlert('neuro_alert')" id="btnLineNeuro"
-      style="padding:12px 8px;border:none;border-radius:var(--rl);background:#06C755;color:white;font-size:13px;font-weight:700;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px">
-      <span style="font-size:20px">💬</span>
-      <span>แจ้งแพทย์ระบบประสาท</span>
-    </button>
-    <button onclick="sendLineAlert('refer_alert')" id="btnLineRefer"
-      style="padding:12px 8px;border:none;border-radius:var(--rl);background:${isAutoRefer?'#C41E3A':'var(--bg2)'};color:${isAutoRefer?'white':'var(--tx2)'};font-size:13px;font-weight:700;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px;border:0.5px solid var(--bm)">
-      <span style="font-size:20px">🚨</span>
-      <span>แจ้ง Refer</span>
-    </button>
-  </div>`}
+    <span>ส่งรายงาน LINE</span>
+  </button>
   <div id="lineStatus" style="font-size:11px;margin-top:8px;min-height:14px;text-align:center;color:var(--tx2)"></div>
   <button type="button" onclick="showLineMessageSummary()" style="width:100%;margin-top:8px;padding:8px 12px;border:0.5px solid var(--sbd);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:12px;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
     📋 สรุป message — Copy ส่ง LINE เอง (เผื่อ OA ไม่ได้)
@@ -1699,7 +1695,7 @@ function buildSummaryHTML(){
 <!-- V/S -->
 <div style="padding:3px 5px;border:1px solid #ccc;margin-bottom:5px;font-size:10.5px">
   <span style="font-weight:600">V/S:</span>
-  T ____°C &nbsp;RR ____/m &nbsp;PR ____/m &nbsp;BP <strong>${D.vs&&D.vs.bp||'___/___'}</strong> &nbsp;O₂Sat <strong>${D.vs&&D.vs.o2||'___'}</strong>% ${D.vs&&D.vs.o2mode||'RA'}
+  T <strong>${D.vs.temp||'___'}</strong>°C &nbsp;RR <strong>${D.vs.rr||'___'}</strong>/m &nbsp;PR <strong>${D.vs.pr||'___'}</strong>/m &nbsp;BP <strong>${D.vs.bp||'___/___'}</strong> &nbsp;O₂Sat <strong>${D.vs.o2||'___'}</strong>% ${D.vs.o2mode||'RA'}
 </div>
 
 <!-- CT Brain + rt-PA + Lab (merged) -->
@@ -1949,7 +1945,8 @@ function clearAll(){
     referDest:'สถาบันประสาทวิทยา',height:'',npoTime:'',sitsang:'',telContact:'',reasonNoRtPA:'',ctaResult:'',ctaTime:'',cxrResult:'',ekgResult:'',echoEf:'',antiHiv:null,
     equip:{foley:false,ett:false,canular:false,mask:false,ivNss:false,lock:false,tube:false},
     docs:{cdPacs:false,kanjor:false,certificate:false},
-    drResident:'',drNeurologist:'',drInterventionist:'',drAnes:'',drNsxStaff:'',drNsxResident:''};
+    drResident:'',drNeurologist:'',drInterventionist:'',drAnes:'',drNsxStaff:'',drNsxResident:'',
+    vs:{temp:'',rr:'',pr:'',bp:'',o2:'',o2mode:'RA'}};
   step=0;
   document.getElementById('app').style.display='none';
   document.getElementById('lockWrap').style.display='flex';
@@ -1968,10 +1965,16 @@ window.openGuidelineSearch=function(){
 };
 
 // ── LINE Alert ────────────────────────────────────────────────────────────
+window.sendLineAuto=function(){
+  const oh=getOnsetHours();
+  let type='neuro_alert';
+  if(oh!==null&&oh>24) type='stroke_nft';
+  else if(D.planDisposition==='refer') type='refer_alert';
+  sendLineAlert(type);
+};
 window.sendLineAlert=async function(type){
   const st=document.getElementById('lineStatus');
-  const btnId=type==='neuro_alert'||type==='stroke_nft'?'btnLineNeuro':'btnLineRefer';
-  const btn=document.getElementById(btnId);
+  const btn=document.getElementById('btnLineSend');
   if(!btn||!st)return;
 
   const origText=btn.querySelector('span:last-child').textContent;

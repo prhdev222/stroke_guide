@@ -10,6 +10,11 @@ TURSO_TOKEN=eyJhbGci...
 GROQ_API_KEY=gsk_...
 SAMBANOVA_API_KEY=sn-...
 
+# ── Email via Resend (optional — ส่ง PDF ทาง Email) ──────
+RESEND_API_KEY=re_xxxxxxxxxx
+NEURO_EMAIL=neuro@example.com
+ADMIN_EMAIL=admin@example.com
+
 # ── LINE (optional) ──────────────────────────────────────
 LINE_CHANNEL_ACCESS_TOKEN=
 WEBAPP_URL=http://localhost:8788

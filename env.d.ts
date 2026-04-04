@@ -33,7 +33,13 @@ declare global {
     LINE_NEURO_USER_ID?: string;   // User ID แพทย์ระบบประสาท (U...)
     LINE_REFER_USER_ID?: string;   // Group ID ทีม refer (C...)
 
+    // ── Email (Resend) ─────────────────────────────────
+    RESEND_API_KEY?: string;
+    NEURO_EMAIL?: string;
+    ADMIN_EMAIL?: string;
+
     // ── General ─────────────────────────────────────────
+    ADMIN_SECRET?: string;
     ENVIRONMENT?: string;
   }
 }
