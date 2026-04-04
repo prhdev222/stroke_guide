@@ -10,10 +10,11 @@ TURSO_TOKEN=eyJhbGci...
 GROQ_API_KEY=gsk_...
 SAMBANOVA_API_KEY=sn-...
 
-# ── Email via Resend (optional — ส่ง PDF ทาง Email) ──────
+# ── Email via Resend (optional — ส่ง PDF ให้ Admin) ─────
+# Free plan: ส่งได้เฉพาะอีเมลที่ใช้สมัคร Resend — ใช้เมลทีม stroke แล้วตั้ง ADMIN_EMAIL ให้ตรงกัน
 RESEND_API_KEY=re_xxxxxxxxxx
-NEURO_EMAIL=neuro@example.com
-ADMIN_EMAIL=admin@example.com
+ADMIN_EMAIL=stroketeamprh@gmail.com
+# NEURO_EMAIL=...  (ไม่บังคับ — ถ้าไม่มี ADMIN_EMAIL ระบบจะลองใช้ค่านี้)
 
 # ── LINE (optional) ──────────────────────────────────────
 LINE_CHANNEL_ACCESS_TOKEN=

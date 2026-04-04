@@ -29,6 +29,10 @@ pages_build_output_dir = "public"
 #   AI_API_KEY    = your-api-key
 #   AI_BASE_URL   = (เฉพาะ openai_compat)
 #
+# ── Resend Email (optional — ปุ่มส่ง PDF ให้ Admin ใน Staff wizard) ──
+#   RESEND_API_KEY  = re_... จาก resend.com (บัญชีที่สมัครด้วยเมลทีม stroke)
+#   ADMIN_EMAIL     = stroketeamprh@gmail.com  (ให้ตรงอีเมลที่ verify ใน Resend — Free tier)
+#
 # ── LINE Messaging API (optional) ────────────────────────
 # สมัคร LINE OA → business.line.me → Messaging API
 # รพ.อื่นใช้ → ตั้ง ENV ชุดนี้ใหม่ ไม่ต้องแก้โค้ด

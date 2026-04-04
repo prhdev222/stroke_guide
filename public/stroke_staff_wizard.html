@@ -17,10 +17,12 @@
   --dbg:#FCEBEB;--dtx:#791F1F;--dbd:#F09595;
   --ibg:#E6F1FB;--itx:#185FA5;--ibd:#85B7EB;
   --red:#C41E3A;
+  --ftx:#9a988f;
 }
 @media(prefers-color-scheme:dark){:root{
   --bg:#1e1e1c;--bg2:#2a2a27;--bg3:#111110;
   --tx:#f0ede6;--tx2:#9a9893;--bl:#2e2e2b;--bm:#3a3a36;
+  --ftx:#6e6d68;
   --sbg:#173404;--stx:#C0DD97;--sbd:#3B6D11;
   --wbg:#412402;--wtx:#FAC775;--wbd:#854F0B;
   --dbg:#501313;--dtx:#F7C1C1;--dbd:#A32D2D;
@@ -139,9 +141,15 @@ input.quick-time-input::placeholder{color:var(--tx2);font-size:11px}
 .action-num{width:22px;height:22px;border-radius:50%;background:var(--red);color:white;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
 
 /* BOTTOM NAV */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:0.5px solid var(--bl);padding:12px 16px;display:flex;gap:10px;z-index:99}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:0.5px solid var(--bl);padding:12px 16px;display:flex;gap:10px;z-index:99;align-items:stretch}
+.nav-next-cluster{flex:2;display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;min-width:0}
+.nav-next-cluster .btn-next{flex:1;min-width:min(100%,140px)}
+.email-pdf-wrap{display:none;flex:1;flex-direction:column;justify-content:center;gap:6px;min-width:min(100%,240px);max-width:100%}
+.btn-email-pdf{width:100%;padding:10px 8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer}
+.btn-email-pdf:disabled{opacity:.5;cursor:not-allowed}
+#emailPdfStatus{font-size:11px;color:var(--tx2);line-height:1.35;min-height:0}
 .btn-back{flex:1;padding:13px;border:0.5px solid var(--bm);border-radius:var(--rl);background:var(--bg2);color:var(--tx);font-size:14px;font-family:inherit}
-.btn-next{flex:2;padding:13px;border:none;border-radius:var(--rl);background:var(--red);color:white;font-size:14px;font-weight:700;font-family:inherit}
+.btn-next{padding:13px;border:none;border-radius:var(--rl);background:var(--red);color:white;font-size:14px;font-weight:700;font-family:inherit}
 .btn-next:disabled{opacity:.4;cursor:not-allowed}
 
 /* ATTACH */
@@ -155,6 +163,12 @@ input.quick-time-input::placeholder{color:var(--tx2);font-size:11px}
 
 /* ONSET CALC */
 .onset-box{padding:12px 16px;border-radius:var(--rl);text-align:center;margin-top:10px;border:1px solid}
+
+.app-footer{max-width:680px;margin:0 auto;padding:12px 14px calc(88px + env(safe-area-inset-bottom,0px));text-align:center;font-size:11px;color:var(--ftx);line-height:1.65}
+.app-footer-mission{font-size:12px;color:var(--ftx);font-weight:400;margin-bottom:10px;line-height:1.55}
+.app-footer-copy{font-size:11px;color:var(--ftx)}
+.app-footer a{color:var(--ftx);text-decoration:underline}
+.app-footer a:hover{color:var(--tx2)}
 
 /* ── MOBILE ─────────────────────────────────────── */
 @media (max-width:520px){
@@ -208,7 +222,11 @@ input.quick-time-input::placeholder{color:var(--tx2);font-size:11px}
   .action-num{width:24px;height:24px;font-size:12px}
 
   /* bottom nav */
-  .bottom-nav{padding:10px 12px;gap:8px}
+  .bottom-nav{padding:10px 12px;gap:8px;flex-wrap:wrap}
+  .bottom-nav .btn-back{flex:1 1 auto;min-width:120px}
+  .nav-next-cluster{flex:1 1 100%;gap:8px}
+  .nav-next-cluster .btn-next{min-width:0;flex:1 1 100%}
+  .email-pdf-wrap{min-width:0;flex:1 1 100%}
   .btn-next,.btn-back{padding:15px;font-size:15px;border-radius:12px}
   .btn-next{font-size:16px}
 
@@ -301,9 +319,20 @@ input.quick-time-input::placeholder{color:var(--tx2);font-size:11px}
   </div>
   <div class="assessment-bases" id="assessmentBases" title="สถานะประเมิน: ฐานไหนผ่านแล้ว"></div>
   <div class="wizard-wrap" id="wizardContent"></div>
+  <footer class="app-footer">
+    <div class="app-footer-mission">สร้างด้วยใจ เพื่อช่วยผู้ป่วยหลอดเลือดสมอง รพ.สงฆ์</div>
+    <div class="app-footer-copy">© 2026 directed by <a href="mailto:uradev222@gmail.com">uradev</a></div>
+  </footer>
   <div class="bottom-nav">
     <button class="btn-back" id="btnBack" onclick="goBack()" style="display:none;align-items:center;justify-content:center;gap:6px">← <span id="backLabel">ย้อนกลับ</span></button>
-    <button class="btn-next" id="btnNext" onclick="goNext()">ถัดไป →</button>
+    <div class="nav-next-cluster" id="navNextCluster">
+      <button class="btn-next" id="btnNext" onclick="goNext()">ถัดไป →</button>
+      <div class="email-pdf-wrap" id="emailPdfWrap" aria-hidden="true">
+        <button type="button" class="btn-email-pdf" id="btnEmailPdf" onclick="sendEmailAlert()">📧 ส่ง PDF ให้ Admin</button>
+        <div style="font-size:10px;color:var(--tx2);line-height:1.45;margin-top:2px">ส่งไปอีเมล Admin ที่ตั้งในระบบ (Cloudflare) — ทีม stroke ส่งต่อหมอประสาทได้จากอีเมลนั้น</div>
+        <div id="emailPdfStatus"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -624,6 +653,14 @@ function renderProgress(){
   } else if(step===3&&_over24) _nextLabel='ถัดไป → (ข้ามไป แผนการรักษา)';
   else if(step===5&&_skip6) _nextLabel='ถัดไป → (ข้าม Checklist rt-PA)';
   document.getElementById('btnNext').textContent=_nextLabel;
+  const _emWrap=document.getElementById('emailPdfWrap');
+  if(_emWrap){
+    const on7=step===7;
+    _emWrap.style.display=on7?'flex':'none';
+    _emWrap.setAttribute('aria-hidden',on7?'false':'true');
+  }
+  const _emSt=document.getElementById('emailPdfStatus');
+  if(_emSt&&step!==7)_emSt.textContent='';
   if(typeof renderAssessmentBases==='function') renderAssessmentBases();
 }
 
@@ -1898,7 +1935,9 @@ function buildAdmitSummary(tot,sev,oh,dn,bw,td,el,ab,lvoAssessed,lvoResult,now,c
     <span>โรงพยาบาลสงฆ์ — Stroke Fast Track</span><span>PDPA Protected</span><span>${now}</span>
   </div>`;
 }
-async function generatePDF(){
+async function generatePDF(opts){
+  opts=opts||{};
+  const skipDownload=!!opts.skipDownload;
   const missing=getMissingForPDF();
   if(missing.length>0){
     const msg='กรอกให้ครบก่อนพิมพ์ PDF:\n\n'+missing.map(m=>'• '+m.label).join('\n')+'\n\nกลับไปกรอกขั้นตอนที่เกี่ยวข้องแล้วกดพิมพ์อีกครั้ง';
@@ -1932,10 +1971,16 @@ async function generatePDF(){
       try{const at=await PDFDocument.load(d.arrayBuffer,{ignoreEncryption:true});const pgs=await merged.copyPages(at,at.getPageIndices());pgs.forEach(p=>merged.addPage(p));}catch(e){}
     }
     setP('บันทึกไฟล์...',90);
-    const fb=await merged.save();const blob=new Blob([fb],{type:'application/pdf'});
-    const url=URL.createObjectURL(blob);const a=document.createElement('a');
-    const prefix = (D.planDisposition==='refer') ? 'stroke_refer' : 'stroke_admit';
-    a.href=url;a.download=`${prefix}_${D.hn||'case'}_${new Date().toISOString().slice(0,10)}.pdf`;a.click();URL.revokeObjectURL(url);
+    const fb=await merged.save();
+    const prefix=(D.planDisposition==='refer')?'stroke_refer':'stroke_admit';
+    const pdfName=`${prefix}_${D.hn||'case'}_${new Date().toISOString().slice(0,10)}.pdf`;
+    D._lastPdfBytes=new Uint8Array(fb);
+    D._lastPdfFilename=pdfName;
+    if(!skipDownload){
+      const blob=new Blob([fb],{type:'application/pdf'});
+      const url=URL.createObjectURL(blob);const a=document.createElement('a');
+      a.href=url;a.download=pdfName;a.click();URL.revokeObjectURL(url);
+    }
 
     // Log anonymized case to Turso รวมข้อมูลจับเวลา (silent — ไม่แสดง error ถ้าไม่ได้ตั้งค่า)
     const completedAt=new Date().toISOString();
@@ -1956,8 +2001,63 @@ async function generatePDF(){
     })();
     logCase(recKey,timerData).catch(()=>{});
 
-    setP('เสร็จแล้ว 🎉',100);await new Promise(r=>setTimeout(r,1200));
+    setP(skipDownload?'พร้อมส่งอีเมล ✓':'เสร็จแล้ว 🎉',100);await new Promise(r=>setTimeout(r,skipDownload?400:1200));
   }catch(e){alert('Error: '+e.message);}finally{ol.style.display='none';}
+}
+
+function pdfBytesToBase64(bytes){
+  const u8=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);
+  let bin='';
+  const chunk=0x8000;
+  for(let i=0;i<u8.length;i+=chunk){
+    bin+=String.fromCharCode.apply(null,u8.subarray(i,i+chunk));
+  }
+  return btoa(bin);
+}
+
+window.sendEmailAlert=async function(){
+  const st=document.getElementById('emailPdfStatus');
+  const btn=document.getElementById('btnEmailPdf');
+  if(btn)btn.disabled=true;
+  if(st)st.textContent='กำลังสร้าง PDF...';
+  try{
+    await generatePDF({skipDownload:true});
+    if(!D._lastPdfBytes||!D._lastPdfFilename)throw new Error('สร้าง PDF ไม่สำเร็จ');
+    if(st)st.textContent='กำลังส่งอีเมลไป Admin...';
+    const isRef=D.planDisposition==='refer';
+    const kind=isRef?'Refer':'Admit';
+    const html=`<p>Stroke Fast Track — สรุปเคส (${kind})</p><p>HN: ${escapeHtml(D.hn||'—')} | ไฟล์แนบ: ${escapeHtml(D._lastPdfFilename)}</p><p style="font-size:12px;color:#666">ส่งจาก Stroke Fast Track — รายละเอียดใน PDF</p>`;
+    const r=await fetch('/send-email',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        subject:`[Stroke Fast Track] ${kind} ${D.hn||'case'} — ${new Date().toISOString().slice(0,10)}`,
+        html,
+        pdf_base64:pdfBytesToBase64(D._lastPdfBytes),
+        filename:D._lastPdfFilename,
+      }),
+    });
+    let data={};
+    try{data=await r.json();}catch(_){}
+    if(!r.ok||!data.ok){
+      const det=(data.detail&&Array.isArray(data.detail)&&data.detail[0]&&data.detail[0].error)?data.detail[0].error:'';
+      const msg=[data.error,det].filter(Boolean).join(' — ')||('HTTP '+r.status);
+      throw new Error(msg);
+    }
+    const sent=(data.sent||[]).join(', ');
+    const failed=(data.failed||[]).map(f=>(f.to||'')+': '+(f.error||'')).filter(Boolean).join(' | ');
+    if(st)st.textContent='ส่งถึง Admin แล้ว: '+sent+(failed?(' | ไม่สำเร็จ: '+failed):'');
+    alert('ส่ง PDF ถึงอีเมล Admin สำเร็จ'+(sent?'\n('+sent+')':''));
+  }catch(e){
+    if(st)st.textContent='';
+    alert('ส่งอีเมลไม่สำเร็จ: '+(e.message||e));
+  }finally{
+    if(btn)btn.disabled=false;
+  }
+};
+
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 async function finalizeAdmit(){

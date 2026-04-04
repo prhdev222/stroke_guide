@@ -14,10 +14,12 @@
   --dbg:#FCEBEB;--dtx:#791F1F;--dbd:#F09595;
   --ibg:#E6F1FB;--itx:#185FA5;--ibd:#85B7EB;
   --red:#C41E3A;
+  --ftx:#9a988f;
 }
 @media(prefers-color-scheme:dark){:root{
   --bg:#1e1e1c;--bg2:#2a2a27;--bg3:#111110;
   --tx:#f0ede6;--tx2:#9a9893;--bl:#2e2e2b;--bm:#3a3a36;
+  --ftx:#6e6d68;
   --sbg:#173404;--stx:#C0DD97;--sbd:#3B6D11;
   --wbg:#412402;--wtx:#FAC775;--wbd:#854F0B;
   --dbg:#501313;--dtx:#F7C1C1;--dbd:#A32D2D;
@@ -77,6 +79,12 @@ a{color:var(--itx)}
 .ward-row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px}
 @media(max-width:560px){.ward-row{grid-template-columns:1fr 1fr}.ward-row button{grid-column:span 2}}
 
+.app-footer{max-width:680px;margin:0 auto;padding:22px 16px 28px;text-align:center;font-size:11px;color:var(--ftx);line-height:1.65}
+.app-footer-mission{font-size:12px;color:var(--ftx);font-weight:400;margin-bottom:10px;line-height:1.55}
+.app-footer-copy{font-size:11px;color:var(--ftx)}
+.app-footer a{color:var(--ftx);text-decoration:underline}
+.app-footer a:hover{color:var(--tx2)}
+
 /* AI CHAT */
 .chat-box{max-height:280px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;padding:4px 0}
 @keyframes bo{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
@@ -121,10 +129,10 @@ a{color:var(--itx)}
   </div>
 </div>
 
-<div style="padding:22px 16px 26px;color:var(--tx2);text-align:center;font-size:12px;line-height:1.7">
-  <div style="font-weight:600;color:var(--tx)">© 2026 directed by <a href="mailto:Uradev222@gmail.com" style="color:inherit;text-decoration:underline">Uradev</a></div>
-  <div>สร้างด้วยใจ เพื่อแผนกอายุรกรรม</div>
-</div>
+<footer class="app-footer">
+  <div class="app-footer-mission">สร้างด้วยใจ เพื่อช่วยผู้ป่วยหลอดเลือดสมอง รพ.สงฆ์</div>
+  <div class="app-footer-copy">© 2026 directed by <a href="mailto:uradev222@gmail.com">uradev</a></div>
+</footer>
 
 <script>
 let adminSecret = '';

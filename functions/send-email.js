@@ -1,20 +1,20 @@
 // functions/send-email.js
 // POST /send-email  → ส่ง email ผ่าน Resend พร้อม PDF แนบ
 //
-// ENV ที่ต้องตั้งใน Cloudflare Pages → Settings → Environment Variables:
-//   RESEND_API_KEY  = re_xxxxxxxxxx   (จาก resend.com ฟรี)
-//   NEURO_EMAIL     = krida009@yahoo.com
-//   ADMIN_EMAIL     = uradev222@gmail.com
+// ENV ใน Cloudflare Pages → Settings → Environment Variables:
+//   RESEND_API_KEY  = re_...          (จากบัญชี Resend ที่สมัครด้วยเมลทีม)
+//   ADMIN_EMAIL     = stroketeamprh@gmail.com  (ควรตรงกับอีเมลที่ verify ใน Resend — Free ส่งได้แค่เมลนี้)
+//   NEURO_EMAIL     = (optional fallback ถ้าไม่ตั้ง ADMIN_EMAIL)
 //
 // body: {
 //   subject: string,
-//   html: string,           // email body HTML
-//   pdf_base64?: string,    // PDF as base64 string
-//   filename?: string       // ชื่อไฟล์ PDF
+//   html: string,
+//   pdf_base64?: string,
+//   filename?: string
 // }
 //
-// Resend Free Plan: ส่งได้เฉพาะ email ที่สมัคร Resend เท่านั้น
-// → ส่งทีละคน เพื่อให้คนที่ verified ได้รับ แม้คนอื่นจะ 403
+// ปลายทาง: ADMIN_EMAIL เท่านั้น (ถ้าไม่ตั้ง → fallback NEURO_EMAIL)
+// Resend Free: ต้องเป็นอีเมลที่ verify กับ Resend — มิฉะนั้น 403
 
 export async function onRequestPost(context) {
   const { RESEND_API_KEY, NEURO_EMAIL, ADMIN_EMAIL } = context.env;
@@ -34,9 +34,13 @@ export async function onRequestPost(context) {
     return Response.json({ error: 'ต้องระบุ subject และ html' }, { status: 400 });
   }
 
-  const recipients = [...new Set([NEURO_EMAIL, ADMIN_EMAIL].filter(Boolean))];
+  // ส่งเฉพาะ Admin (อีเมลที่ verify กับ Resend) — ไม่รับที่อยู่จาก client
+  let recipients = [...new Set([ADMIN_EMAIL].filter(Boolean))];
   if (recipients.length === 0) {
-    return Response.json({ error: 'ยังไม่ได้ตั้ง NEURO_EMAIL / ADMIN_EMAIL' }, { status: 503 });
+    recipients = [...new Set([NEURO_EMAIL].filter(Boolean))];
+  }
+  if (recipients.length === 0) {
+    return Response.json({ error: 'ยังไม่ได้ตั้ง ADMIN_EMAIL (หรือ NEURO_EMAIL) ใน Environment Variables' }, { status: 503 });
   }
 
   const attachments = (pdf_base64 && filename)
@@ -93,7 +97,8 @@ export async function onRequestGet(context) {
   return Response.json({
     ok: true,
     configured: !!context.env.RESEND_API_KEY,
-    neuro_email: context.env.NEURO_EMAIL || '(ยังไม่ได้ตั้งค่า)',
+    sends_to: 'ADMIN_EMAIL (หรือ NEURO_EMAIL ถ้าไม่มี ADMIN)',
     admin_email: context.env.ADMIN_EMAIL || '(ยังไม่ได้ตั้งค่า)',
+    neuro_email: context.env.NEURO_EMAIL || '(ยังไม่ได้ตั้งค่า)',
   });
 }

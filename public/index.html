@@ -15,9 +15,11 @@
   --ibg:#E6F1FB;--itx:#185FA5;--ibd:#85B7EB;
   --red:#C41E3A;
   --purple-bg:#EEEDFE;--purple-tx:#3C3489;--purple-bd:#AFA9EC;
+  --ftx:#9a988f;
 }
 @media(prefers-color-scheme:dark){:root{
   --bg:#1e1e1c;--bg2:#2a2a27;--bg3:#111110;--tx:#f0ede6;--tx2:#9a9893;
+  --ftx:#6e6d68;
   --bl:#2e2e2b;--bm:#3a3a36;
   --sbg:#173404;--stx:#C0DD97;--sbd:#3B6D11;
   --wbg:#412402;--wtx:#FAC775;--wbd:#854F0B;
@@ -36,7 +38,12 @@ button{font-family:inherit;cursor:pointer}
 .tab-bar{display:flex;background:var(--bg);border-bottom:0.5px solid var(--bl);overflow-x:auto;position:sticky;top:57px;z-index:99;-webkit-overflow-scrolling:touch}
 .tab-btn{padding:10px 16px;border:none;border-bottom:2px solid transparent;background:transparent;cursor:pointer;font-size:13px;color:var(--tx2);white-space:nowrap;font-family:inherit}
 .tab-btn.active{color:var(--red);border-bottom-color:var(--red);font-weight:600}
-.content{padding:14px;max-width:680px;margin:0 auto;padding-bottom:60px}
+.content{padding:14px;max-width:680px;margin:0 auto;padding-bottom:24px}
+.app-footer{max-width:680px;margin:0 auto;padding:16px 14px 28px;text-align:center;font-size:11px;color:var(--ftx);line-height:1.65}
+.app-footer-mission{font-size:12px;color:var(--ftx);font-weight:400;margin-bottom:10px;line-height:1.55}
+.app-footer-copy{font-size:11px;color:var(--ftx)}
+.app-footer a{color:var(--ftx);text-decoration:underline}
+.app-footer a:hover{color:var(--tx2)}
 .card{background:var(--bg);border:0.5px solid var(--bl);border-radius:var(--rl);padding:16px;margin-bottom:10px}
 
 /* LAUNCH CARDS */
@@ -119,6 +126,10 @@ button{font-family:inherit;cursor:pointer}
 </div>
 
 <div class="content" id="content"></div>
+<footer class="app-footer">
+  <div class="app-footer-mission">สร้างด้วยใจ เพื่อช่วยผู้ป่วยหลอดเลือดสมอง รพ.สงฆ์</div>
+  <div class="app-footer-copy">© 2026 directed by <a href="mailto:uradev222@gmail.com">uradev</a></div>
+</footer>
 
 <!-- PIN MODAL -->
 <div class="modal-bg" id="pinModal">
