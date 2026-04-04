@@ -1001,7 +1001,7 @@ function getCTNeuroShareHTML(){
   return `<div class="card" style="margin-top:10px;background:var(--ibg);border-color:var(--ibd)">
     <div class="sec" style="color:var(--itx)">แชร์ภาพ CT ให้ Neuro (ชั่วคราว 4 ชม.)</div>
     <p style="font-size:12px;color:var(--itx);line-height:1.65;margin-bottom:10px">
-      สร้างลิงก์ → อัปโหลดไฟล์จากมือถือ/PC → ส่งลิงก์ดูให้แพทย์ (LINE) — <strong>ไม่มี HN/ชื่อ</strong> ใน URL • หมดอายุอัตโนมัติ
+      <strong>Neuro</strong> ได้แค่ลิงก์/QR <strong>ดูภาพ</strong> — เปิดได้ทันที <strong>ไม่มี PIN</strong> • <strong>พยาบาล</strong> สแกน QR อัปโหลดแล้วกรอกรหัสจากจอ Staff • Staff อัปโหลดจาก PC ไม่ต้องรหัส — <strong>ไม่มี HN/ชื่อ</strong> ใน URL • ~4 ชม.
     </p>
     <button type="button" onclick="ctNeuroCreateSession()" style="width:100%;padding:11px;border-radius:var(--rm);border:0.5px solid var(--ibd);background:var(--itx);color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:8px">1) สร้างลิงก์อัปโหลด + ลิงก์ให้ Neuro</button>
     <div id="ctNeuroSessionOut" style="display:none;font-size:11px;color:var(--tx2);margin-bottom:10px"></div>
@@ -1266,13 +1266,15 @@ window.ctNeuroEnsureQrLib=function(cb){
   });
   window._ctNeuroQrLoadPromise.then(cb).catch(function(){});
 };
-window.ctNeuroRenderQrs=function(viewUrl,uploadToken){
+window.ctNeuroRenderQrs=function(viewUrl,mobileKey,uploadTokenFallback){
   var vEl=document.getElementById('ctNeuroQrView');
   var uEl=document.getElementById('ctNeuroQrUp');
   if(!vEl||!uEl)return;
   vEl.innerHTML='<span style="font-size:10px;color:var(--tx2)">กำลังสร้าง QR…</span>';
   uEl.innerHTML='<span style="font-size:10px;color:var(--tx2)">กำลังสร้าง QR…</span>';
-  var upPage=(location.origin||'')+'/ct-temp/mobile-upload?u='+encodeURIComponent(uploadToken);
+  var upPage=(location.origin||'')+(mobileKey
+    ? '/ct-temp/mobile-upload?k='+encodeURIComponent(mobileKey)
+    : '/ct-temp/mobile-upload?u='+encodeURIComponent(uploadTokenFallback||''));
   ctNeuroEnsureQrLib(function(){
     if(!window.QRCode){vEl.textContent='—';uEl.textContent='โหลดไลบรารี QR ไม่ได้';return;}
     var L=QRCode.CorrectLevel?QRCode.CorrectLevel.M:2;
@@ -1298,23 +1300,27 @@ window.ctNeuroCreateSession=async function(){
     const r=await fetch('/ct-temp/session',{method:'POST'});
     const j=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(j.error||('HTTP '+r.status));
-    window._ctNeuro={uploadToken:j.uploadToken,viewUrl:j.viewUrl};
+    window._ctNeuro={uploadToken:j.uploadToken,viewUrl:j.viewUrl,uploadPin:j.uploadPin,mobileKey:j.mobileKey};
     window._ctNeuroRecordedFiles=[];
     if(typeof ctNeuroRecListRefresh==='function')ctNeuroRecListRefresh();
     if(typeof ctNeuroCapInit==='function')ctNeuroCapInit();
     if(out){
       out.style.display='block';
-      out.innerHTML='<div style="margin-bottom:6px;font-weight:700;color:var(--tx)">ลิงก์ให้ Neuro เปิดดู</div><div style="word-break:break-all;background:var(--bg2);padding:10px;border-radius:var(--rm);font-size:11px;margin-bottom:8px" id="ctNeuroViewUrlEl"></div><button type="button" onclick="ctNeuroCopyViewUrl()" style="width:100%;padding:9px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);font-size:12px;font-family:inherit;cursor:pointer">📋 คัดลอกลิงก์</button><div style="margin-top:12px;padding-top:12px;border-top:0.5px solid var(--bm)"><div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--tx)">QR สแกนบนมือถือ</div><div style="display:flex;flex-wrap:wrap;gap:18px;justify-content:flex-start;align-items:flex-start"><div style="text-align:center"><div style="font-size:10px;color:var(--tx2);margin-bottom:6px;font-weight:600">พยาบาล — อัปโหลดภาพ/วิดีโอ</div><div id="ctNeuroQrUp" style="min-height:40px;display:flex;justify-content:center;align-items:center"></div></div><div style="text-align:center"><div style="font-size:10px;color:var(--tx2);margin-bottom:6px;font-weight:600">Neuro — ดูภาพ (หลังอัปโหลด)</div><div id="ctNeuroQrView" style="min-height:40px;display:flex;justify-content:center;align-items:center"></div></div></div><p style="font-size:10px;color:var(--tx2);margin-top:10px;line-height:1.5">สแกน <strong>ซ้าย</strong> = เปิดหน้าเลือกไฟล์/ถ่ายบนมือถือ • สแกน <strong>ขวา</strong> = Neuro ดูและซูม — QR สร้างในเบราว์เซอร์ (โหลดไลบรารี qrcodejs จาก jsDelivr ครั้งแรก)</p></div><button type="button" onclick="ctNeuroShareLine()" style="width:100%;padding:10px;margin-top:8px;border-radius:var(--rm);border:none;background:#06C755;color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">💬 ส่งเข้า LINE (OA)</button><div style="font-size:10px;color:var(--tx2);margin-top:6px;line-height:1.45">Messaging API: <code style="font-size:9px">LINE_CHANNEL_ACCESS_TOKEN</code> + ปลายทาง • ข้อความรวม BEFAST/GCS และ NIHSS เมื่อกรอกครบในขั้นอาการ/NIHSS</div>';
+      out.innerHTML='<div style="margin-bottom:6px;font-weight:700;color:var(--tx)">ลิงก์ให้ Neuro เปิดดูภาพ</div><div style="word-break:break-all;background:var(--bg2);padding:10px;border-radius:var(--rm);font-size:11px;margin-bottom:8px" id="ctNeuroViewUrlEl"></div><button type="button" onclick="ctNeuroCopyViewUrl()" style="width:100%;padding:9px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);font-size:12px;font-family:inherit;cursor:pointer">📋 คัดลอกลิงก์</button><p style="font-size:11px;color:var(--stx);margin:12px 0 0;line-height:1.55;border-left:3px solid var(--stx);padding-left:10px">แพทย์ Neuro: กดลิงก์ด้านบน หรือสแกน <strong>QR ขวา</strong> — <strong>ดูภาพได้ทันที ไม่ต้องกรอก PIN</strong> (ลิงก์นี้ดูอย่างเดียว ไม่ใช่หน้าอัปโหลด)</p><div style="margin-top:14px;padding-top:14px;border-top:0.5px solid var(--bm)"><div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--tx)">QR บนมือถือ</div><div style="display:flex;flex-wrap:wrap;gap:18px;justify-content:flex-start;align-items:flex-start"><div style="text-align:center"><div style="font-size:10px;color:var(--tx2);margin-bottom:6px;font-weight:600">พยาบาล — อัปโหลด <span style="color:var(--dtx)">(ต้อง PIN)</span></div><div id="ctNeuroQrUp" style="min-height:40px;display:flex;justify-content:center;align-items:center"></div></div><div style="text-align:center"><div style="font-size:10px;color:var(--tx2);margin-bottom:6px;font-weight:600">Neuro — ดูภาพ <span style="color:var(--stx)">(ไม่มี PIN)</span></div><div id="ctNeuroQrView" style="min-height:40px;display:flex;justify-content:center;align-items:center"></div></div></div><p style="font-size:10px;color:var(--tx2);margin-top:10px;line-height:1.5"><strong>ขวา</strong> = เปิดดู/ซูม ทันที • <strong>ซ้าย</strong> = อัปโหลดเท่านั้น หลังสแกนต้องกรอกรหัสด้านล่าง — QR สร้างในเบราว์เซอร์ (qrcodejs)</p></div><div id="ctNeuroPinWrap" style="margin:0 0 12px;padding:14px;border-radius:var(--rm);background:rgba(27,79,114,.09);border:0.5px solid var(--ibd)"><div style="font-size:11px;color:var(--tx2);margin-bottom:8px;font-weight:700">รหัส 4 หลัก — <strong>เฉพาะพยาบาล</strong> หลังสแกน QR ซ้ายเท่านั้น (Neuro ไม่ใช้รหัสนี้)</div><div id="ctNeuroPinEl" style="font-size:32px;font-weight:800;letter-spacing:0.28em;font-family:ui-monospace,system-ui,monospace;color:var(--tx);text-align:center"></div></div><button type="button" onclick="ctNeuroShareLine()" style="width:100%;padding:10px;margin-top:8px;border-radius:var(--rm);border:none;background:#06C755;color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">💬 ส่งเข้า LINE (OA)</button><div style="font-size:10px;color:var(--tx2);margin-top:6px;line-height:1.45">Messaging API: <code style="font-size:9px">LINE_CHANNEL_ACCESS_TOKEN</code> + ปลายทาง • ข้อความรวม BEFAST/GCS และ NIHSS เมื่อกรอกครบในขั้นอาการ/NIHSS</div>';
       const el=document.getElementById('ctNeuroViewUrlEl');
       if(el)el.textContent=j.viewUrl;
-      if(typeof ctNeuroRenderQrs==='function')ctNeuroRenderQrs(j.viewUrl,j.uploadToken);
+      const pw=document.getElementById('ctNeuroPinWrap');
+      const pel=document.getElementById('ctNeuroPinEl');
+      if(j.uploadPin&&pel){pel.textContent=j.uploadPin;}
+      else if(pw){pw.style.display='none';}
+      if(typeof ctNeuroRenderQrs==='function')ctNeuroRenderQrs(j.viewUrl,j.mobileKey,j.uploadToken);
     }
     if(upRow)upRow.style.display='block';
     if(st)st.textContent='สร้าง session แล้ว — อัปโหลดไฟล์แล้วส่งลิงก์ด้านบนให้ Neuro';
   }catch(e){
     if(out)out.style.display='none';
     if(upRow)upRow.style.display='none';
-    window._ctNeuro={uploadToken:null,viewUrl:null};
+    window._ctNeuro={uploadToken:null,viewUrl:null,uploadPin:null,mobileKey:null};
     window._ctNeuroRecordedFiles=[];
     if(typeof ctNeuroRecListRefresh==='function')ctNeuroRecListRefresh();
     alert('สร้างลิงก์ไม่สำเร็จ: '+(e.message||e)+'\n\nถ้ายังไม่ได้ผูก KV+R2 บน Cloudflare ดู wrangler.toml');

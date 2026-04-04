@@ -198,7 +198,7 @@ export async function onRequestGet(context) {
   }
 
   const parts = [
-    '<p class="note">ลิงก์ชั่วคราว ~4 ชม. — ไม่มีข้อมูลระบุตัวตนใน URL</p>',
+    '<p class="note">ลิงก์ชั่วคราว ~4 ชม. — เปิดดูได้ทันที (ไม่ต้องกรอก PIN) — ไม่มีข้อมูลระบุตัวตนใน URL</p>',
     '<p class="note hint">Neuro เปิดดูจากลิงก์นี้ได้เลย • ภาพ: กด <strong>+ ขยาย / − ย่อ</strong> แล้วเลื่อนดูในกรอบ • วิดีโอ: ปรับ <strong>slow motion</strong> ที่ปุ่ม 0.25×–0.5× • <strong>บันทึกภาพ/วิดีโอ</strong> = ดาวน์โหลด (บางมือถืออาจต้อง <strong>กดค้าง</strong> ที่รูปหรือวิดีโอ แล้วเลือกบันทึก)</p>',
   ];
   const basePath = url.pathname;

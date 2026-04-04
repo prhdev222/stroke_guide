@@ -8,6 +8,7 @@ import {
   ctBindingsOk,
   purgeSession,
   remainingKvTtlSec,
+  timingSafeEqualAscii,
 } from '../_ct-temp-shared.js';
 
 const ALLOW_CT = new Set([
@@ -35,15 +36,18 @@ export async function onRequestPost(context) {
 
   const auth = request.headers.get('Authorization') || '';
   const m = auth.match(/^Bearer\s+(.+)$/i);
-  const uploadToken = m ? m[1].trim() : '';
-  if (!uploadToken) {
+  const bearer = m ? m[1].trim() : '';
+  if (!bearer) {
     return Response.json(
       { error: 'ใส่ Authorization: Bearer <uploadToken> จากขั้นตอนสร้าง session' },
       { status: 401 }
     );
   }
 
-  const sessionId = await env.CT_SESSIONS.get(`ctu:${uploadToken}`);
+  const viaWrite = await env.CT_SESSIONS.get(`ctw:${bearer}`);
+  const resolvedUploadToken = viaWrite ? String(viaWrite).trim() : bearer;
+
+  const sessionId = await env.CT_SESSIONS.get(`ctu:${resolvedUploadToken}`);
   if (!sessionId) {
     return Response.json(
       { error: 'upload token ไม่ถูกต้องหรือหมดอายุ' },
@@ -61,6 +65,20 @@ export async function onRequestPost(context) {
     session = JSON.parse(raw);
   } catch {
     return Response.json({ error: 'ข้อมูล session เสีย' }, { status: 500 });
+  }
+
+  if (session.uploadPin) {
+    const staffOk = !viaWrite && timingSafeEqualAscii(bearer, session.uploadToken);
+    const mobileOk = !!viaWrite;
+    if (!staffOk && !mobileOk) {
+      return Response.json(
+        {
+          error:
+            'session นี้ต้องยืนยันรหัสบนมือถือก่อน — สแกน QR แล้วกรอกรหัสจากจอ Staff',
+        },
+        { status: 403 }
+      );
+    }
   }
 
   if (Date.now() > session.exp) {

@@ -12,6 +12,22 @@ export function randomHex(byteLen = 24) {
   return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+/** รหัสตัวเลขสำหรับ PIN (เช่น 4 หลัก) */
+export function randomDigits(len) {
+  const n = new Uint8Array(len);
+  crypto.getRandomValues(n);
+  return [...n].map((b) => (b % 10).toString()).join('');
+}
+
+export function timingSafeEqualAscii(a, b) {
+  const x = String(a);
+  const y = String(b);
+  if (x.length !== y.length) return false;
+  let r = 0;
+  for (let i = 0; i < x.length; i++) r |= x.charCodeAt(i) ^ y.charCodeAt(i);
+  return r === 0;
+}
+
 /** ถ้าตั้ง CT_TEMP_SECRET ใน env → ต้องส่ง header X-CT-Temp-Secret ตรงกัน */
 export function checkCtTempSecret(env, request) {
   const required = env.CT_TEMP_SECRET;
@@ -25,6 +41,26 @@ export function checkCtTempSecret(env, request) {
 
 export function ctBindingsOk(env) {
   return !!(env.CT_SESSIONS && env.CT_IMAGES);
+}
+
+/** คืน sessionId จาก ?k= (mobileKey) หรือ ?u= (uploadToken) — ไม่โหลด session */
+export async function resolveCtSessionIdFromMobileParams(env, k, u) {
+  const kk = String(k || '').trim();
+  const uu = String(u || '').trim();
+  if (kk && /^[a-fA-F0-9]+$/i.test(kk) && kk.length >= 8 && kk.length <= 64) {
+    const sid = await env.CT_SESSIONS.get(`ctm:${kk}`);
+    if (sid) return { sessionId: sid, paramK: kk };
+  }
+  if (
+    uu &&
+    uu.length >= 16 &&
+    uu.length <= 256 &&
+    /^[a-fA-F0-9]+$/i.test(uu)
+  ) {
+    const sid = await env.CT_SESSIONS.get(`ctu:${uu}`);
+    if (sid) return { sessionId: sid, paramU: uu };
+  }
+  return null;
 }
 
 export async function purgeSession(env, sessionId, session) {
@@ -41,6 +77,11 @@ export async function purgeSession(env, sessionId, session) {
   await env.CT_SESSIONS.delete(`cts:${sessionId}`);
   await env.CT_SESSIONS.delete(`ctu:${session.uploadToken}`);
   await env.CT_SESSIONS.delete(`ctv:${session.viewToken}`);
+  if (session.mobileKey) {
+    try {
+      await env.CT_SESSIONS.delete(`ctm:${session.mobileKey}`);
+    } catch (_) { /* ignore */ }
+  }
 }
 
 export function remainingKvTtlSec(session) {
