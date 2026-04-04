@@ -1253,6 +1253,42 @@ window.ctNeuroShareLine=async function(){
     alert('เปิด LINE ไม่ได้ — ใช้คัดลอกลิงก์\n\n'+(window._ctNeuro&&window._ctNeuro.viewUrl));
   }
 };
+window.ctNeuroEnsureQrLib=function(cb){
+  if(window.QRCode)return void cb();
+  if(window._ctNeuroQrLoadPromise)return void window._ctNeuroQrLoadPromise.then(cb).catch(function(){});
+  window._ctNeuroQrLoadPromise=new Promise(function(res,rej){
+    var s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+    s.crossOrigin='anonymous';
+    s.onload=function(){res();};
+    s.onerror=function(){rej(new Error('qr script'));};
+    document.head.appendChild(s);
+  });
+  window._ctNeuroQrLoadPromise.then(cb).catch(function(){});
+};
+window.ctNeuroRenderQrs=function(viewUrl,uploadToken){
+  var vEl=document.getElementById('ctNeuroQrView');
+  var uEl=document.getElementById('ctNeuroQrUp');
+  if(!vEl||!uEl)return;
+  vEl.innerHTML='<span style="font-size:10px;color:var(--tx2)">กำลังสร้าง QR…</span>';
+  uEl.innerHTML='<span style="font-size:10px;color:var(--tx2)">กำลังสร้าง QR…</span>';
+  var upPage=(location.origin||'')+'/ct-temp/mobile-upload?u='+encodeURIComponent(uploadToken);
+  ctNeuroEnsureQrLib(function(){
+    if(!window.QRCode){vEl.textContent='—';uEl.textContent='โหลดไลบรารี QR ไม่ได้';return;}
+    var L=QRCode.CorrectLevel?QRCode.CorrectLevel.M:2;
+    function paint(container,text){
+      container.innerHTML='';
+      var d=document.createElement('div');
+      d.setAttribute('aria-label','QR code');
+      d.style.display='inline-block';
+      container.appendChild(d);
+      try{new QRCode(d,{text:text,width:200,height:200,colorDark:'#111111',colorLight:'#ffffff',correctLevel:L});}
+      catch(e){container.textContent='สร้าง QR ไม่ได้';}
+    }
+    paint(vEl,viewUrl);
+    paint(uEl,upPage);
+  });
+};
 window.ctNeuroCreateSession=async function(){
   const st=document.getElementById('ctNeuroStatus');
   const out=document.getElementById('ctNeuroSessionOut');
@@ -1268,9 +1304,10 @@ window.ctNeuroCreateSession=async function(){
     if(typeof ctNeuroCapInit==='function')ctNeuroCapInit();
     if(out){
       out.style.display='block';
-      out.innerHTML='<div style="margin-bottom:6px;font-weight:700;color:var(--tx)">ลิงก์ให้ Neuro เปิดดู</div><div style="word-break:break-all;background:var(--bg2);padding:10px;border-radius:var(--rm);font-size:11px;margin-bottom:8px" id="ctNeuroViewUrlEl"></div><button type="button" onclick="ctNeuroCopyViewUrl()" style="width:100%;padding:9px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);font-size:12px;font-family:inherit;cursor:pointer">📋 คัดลอกลิงก์</button><button type="button" onclick="ctNeuroShareLine()" style="width:100%;padding:10px;margin-top:8px;border-radius:var(--rm);border:none;background:#06C755;color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">💬 ส่งเข้า LINE (OA)</button><div style="font-size:10px;color:var(--tx2);margin-top:6px;line-height:1.45">Messaging API: <code style="font-size:9px">LINE_CHANNEL_ACCESS_TOKEN</code> + ปลายทาง • ข้อความรวม BEFAST/GCS และ NIHSS เมื่อกรอกครบในขั้นอาการ/NIHSS</div>';
+      out.innerHTML='<div style="margin-bottom:6px;font-weight:700;color:var(--tx)">ลิงก์ให้ Neuro เปิดดู</div><div style="word-break:break-all;background:var(--bg2);padding:10px;border-radius:var(--rm);font-size:11px;margin-bottom:8px" id="ctNeuroViewUrlEl"></div><button type="button" onclick="ctNeuroCopyViewUrl()" style="width:100%;padding:9px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);font-size:12px;font-family:inherit;cursor:pointer">📋 คัดลอกลิงก์</button><div style="margin-top:12px;padding-top:12px;border-top:0.5px solid var(--bm)"><div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--tx)">QR สแกนบนมือถือ</div><div style="display:flex;flex-wrap:wrap;gap:18px;justify-content:flex-start;align-items:flex-start"><div style="text-align:center"><div style="font-size:10px;color:var(--tx2);margin-bottom:6px;font-weight:600">พยาบาล — อัปโหลดภาพ/วิดีโอ</div><div id="ctNeuroQrUp" style="min-height:40px;display:flex;justify-content:center;align-items:center"></div></div><div style="text-align:center"><div style="font-size:10px;color:var(--tx2);margin-bottom:6px;font-weight:600">Neuro — ดูภาพ (หลังอัปโหลด)</div><div id="ctNeuroQrView" style="min-height:40px;display:flex;justify-content:center;align-items:center"></div></div></div><p style="font-size:10px;color:var(--tx2);margin-top:10px;line-height:1.5">สแกน <strong>ซ้าย</strong> = เปิดหน้าเลือกไฟล์/ถ่ายบนมือถือ • สแกน <strong>ขวา</strong> = Neuro ดูและซูม — QR สร้างในเบราว์เซอร์ (โหลดไลบรารี qrcodejs จาก jsDelivr ครั้งแรก)</p></div><button type="button" onclick="ctNeuroShareLine()" style="width:100%;padding:10px;margin-top:8px;border-radius:var(--rm);border:none;background:#06C755;color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">💬 ส่งเข้า LINE (OA)</button><div style="font-size:10px;color:var(--tx2);margin-top:6px;line-height:1.45">Messaging API: <code style="font-size:9px">LINE_CHANNEL_ACCESS_TOKEN</code> + ปลายทาง • ข้อความรวม BEFAST/GCS และ NIHSS เมื่อกรอกครบในขั้นอาการ/NIHSS</div>';
       const el=document.getElementById('ctNeuroViewUrlEl');
       if(el)el.textContent=j.viewUrl;
+      if(typeof ctNeuroRenderQrs==='function')ctNeuroRenderQrs(j.viewUrl,j.uploadToken);
     }
     if(upRow)upRow.style.display='block';
     if(st)st.textContent='สร้าง session แล้ว — อัปโหลดไฟล์แล้วส่งลิงก์ด้านบนให้ Neuro';
