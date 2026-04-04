@@ -986,6 +986,27 @@ function getCTExtraHTML(){
   </div>`;
 }
 
+function getCTNeuroShareHTML(){
+  return `<div class="card" style="margin-top:10px;background:var(--ibg);border-color:var(--ibd)">
+    <div class="sec" style="color:var(--itx)">แชร์ภาพ CT ให้ Neuro (ชั่วคราว 4 ชม.)</div>
+    <p style="font-size:12px;color:var(--itx);line-height:1.65;margin-bottom:10px">
+      สร้างลิงก์ → อัปโหลดไฟล์จากมือถือ/PC → ส่งลิงก์ดูให้แพทย์ (LINE) — <strong>ไม่มี HN/ชื่อ</strong> ใน URL • หมดอายุอัตโนมัติ
+    </p>
+    <div style="margin-bottom:8px">
+      <div class="lbl">รหัส CT share (เฉพาะถ้าตั้ง <code style="font-size:10px">CT_TEMP_SECRET</code> บน Cloudflare)</div>
+      <input type="password" id="ctTempSecretInp" placeholder="ว่างได้ถ้ายังไม่ได้ตั้งค่า" style="width:100%" autocomplete="off">
+    </div>
+    <button type="button" onclick="ctNeuroCreateSession()" style="width:100%;padding:11px;border-radius:var(--rm);border:0.5px solid var(--ibd);background:var(--itx);color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:8px">1) สร้างลิงก์อัปโหลด + ลิงก์ให้ Neuro</button>
+    <div id="ctNeuroSessionOut" style="display:none;font-size:11px;color:var(--tx2);margin-bottom:10px"></div>
+    <div id="ctNeuroUploadRow" style="display:none">
+      <div class="lbl">2) เลือกไฟล์ภาพ CT / DICOM</div>
+      <input type="file" id="ctNeuroFile" accept="image/*,.dcm,application/dicom" style="width:100%;margin-bottom:8px;font-size:13px">
+      <button type="button" onclick="ctNeuroUpload()" style="width:100%;padding:10px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);color:var(--tx);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">อัปโหลดไฟล์</button>
+    </div>
+    <div id="ctNeuroStatus" style="font-size:11px;margin-top:8px;min-height:18px;color:var(--tx2)"></div>
+  </div>`;
+}
+
 function rCT(){
   const opts=[
     {v:'ich',label:'Hemorrhage',sub:'มีเลือดออก',icon:'🔴',cls:'sel-ich'},
@@ -1022,6 +1043,7 @@ function rCT(){
     <button type="button" class="now-btn" onclick="var v=getNowDatetime();D.ctTime=v;var i=document.getElementById('ctTimeInp');if(i)i.value=v.slice(0,16)" title="บันทึกเวลาปัจจุบัน">📅 Now</button>
   </div>
 
+  ${getCTNeuroShareHTML()}
   <div id="ctExtra">${getCTExtraHTML()}</div>
   </div>`;
 }
@@ -1034,6 +1056,82 @@ window.updCTResultKeepScroll=function(){
   const sy=window.scrollY||document.documentElement.scrollTop;
   updCTResult();
   requestAnimationFrame(()=>window.scrollTo(0,sy));
+};
+
+window._ctNeuro={uploadToken:null,viewUrl:null};
+window.ctNeuroCopyViewUrl=function(){
+  const u=window._ctNeuro&&window._ctNeuro.viewUrl;
+  if(!u)return;
+  navigator.clipboard.writeText(u).then(()=>{
+    const st=document.getElementById('ctNeuroStatus');
+    if(st)st.textContent='คัดลอกลิงก์ Neuro แล้ว';
+  }).catch(()=>alert(u));
+};
+/** เปิด LINE พร้อมข้อความร่าง (รวมลิงก์) — ผู้ใช้เลือกแชทแล้วกดส่งเอง */
+window.ctNeuroShareLine=function(){
+  const u=window._ctNeuro&&window._ctNeuro.viewUrl;
+  if(!u){alert('ยังไม่มีลิงก์ — กดสร้างลิงก์ก่อน');return;}
+  const text='[Stroke Fast Track] ลิงก์ดูภาพ CT (ชั่วคราว ~4ชม. ไม่มี HN ในลิงก์)\n'+u;
+  const lineUrl='https://line.me/R/msg/text/?'+encodeURIComponent(text);
+  try{
+    window.open(lineUrl,'_blank','noopener,noreferrer');
+    const st=document.getElementById('ctNeuroStatus');
+    if(st)st.textContent='เปิด LINE แล้ว — เลือกแชท/กลุ่ม Neuro แล้วกดส่ง';
+  }catch(e){
+    alert('เปิด LINE ไม่ได้ — ใช้คัดลอกลิงก์แล้ววางในแชทแทน\n\n'+u);
+  }
+};
+window.ctNeuroCreateSession=async function(){
+  const st=document.getElementById('ctNeuroStatus');
+  const out=document.getElementById('ctNeuroSessionOut');
+  const upRow=document.getElementById('ctNeuroUploadRow');
+  const secInp=document.getElementById('ctTempSecretInp');
+  if(st)st.textContent='';
+  const headers={};
+  const s=secInp&&secInp.value.trim();
+  if(s)headers['X-CT-Temp-Secret']=s;
+  try{
+    const r=await fetch('/ct-temp/session',{method:'POST',headers});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(j.error||('HTTP '+r.status));
+    window._ctNeuro={uploadToken:j.uploadToken,viewUrl:j.viewUrl};
+    if(out){
+      out.style.display='block';
+      out.innerHTML='<div style="margin-bottom:6px;font-weight:700;color:var(--tx)">ลิงก์ให้ Neuro เปิดดู</div><div style="word-break:break-all;background:var(--bg2);padding:10px;border-radius:var(--rm);font-size:11px;margin-bottom:8px" id="ctNeuroViewUrlEl"></div><button type="button" onclick="ctNeuroCopyViewUrl()" style="width:100%;padding:9px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);font-size:12px;font-family:inherit;cursor:pointer">📋 คัดลอกลิงก์</button><button type="button" onclick="ctNeuroShareLine()" style="width:100%;padding:10px;margin-top:8px;border-radius:var(--rm);border:none;background:#06C755;color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">💬 เปิด LINE (ข้อความ+ลิงก์ร่าง)</button><div style="font-size:10px;color:var(--tx2);margin-top:6px;line-height:1.45">ถ้า LINE ไม่เปิดหรือเว็บใน LINE โหลดไม่ได้ — ใช้คัดลอก หรือเมนู ⋯ → เปิดใน Safari/Chrome</div>';
+      const el=document.getElementById('ctNeuroViewUrlEl');
+      if(el)el.textContent=j.viewUrl;
+    }
+    if(upRow)upRow.style.display='block';
+    if(st)st.textContent='สร้าง session แล้ว — อัปโหลดไฟล์แล้วส่งลิงก์ด้านบนให้ Neuro';
+  }catch(e){
+    if(out)out.style.display='none';
+    if(upRow)upRow.style.display='none';
+    window._ctNeuro={uploadToken:null,viewUrl:null};
+    alert('สร้างลิงก์ไม่สำเร็จ: '+(e.message||e)+'\n\nถ้ายังไม่ได้ผูก KV+R2 บน Cloudflare ดู wrangler.toml');
+  }
+};
+window.ctNeuroUpload=async function(){
+  const st=document.getElementById('ctNeuroStatus');
+  const tok=window._ctNeuro&&window._ctNeuro.uploadToken;
+  const fi=document.getElementById('ctNeuroFile');
+  if(!tok){if(st)st.textContent='กดสร้างลิงก์ก่อน';return;}
+  if(!fi||!fi.files||!fi.files[0]){if(st)st.textContent='เลือกไฟล์ก่อน';return;}
+  if(st)st.textContent='กำลังอัปโหลด...';
+  try{
+    const fd=new FormData();
+    fd.append('file',fi.files[0]);
+    const r=await fetch('/ct-temp/upload',{
+      method:'POST',
+      headers:{Authorization:'Bearer '+tok},
+      body:fd,
+    });
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(j.error||('HTTP '+r.status));
+    if(st)st.textContent='อัปโหลดสำเร็จ — แจ้ง Neuro เปิดลิงก์ได้เลย';
+  }catch(e){
+    if(st)st.textContent='';
+    alert('อัปโหลดไม่สำเร็จ: '+(e.message||e));
+  }
 };
 
 // ---- STEP 5: NIHSS (was 5, now 6 for lab insertion)
@@ -2143,6 +2241,7 @@ function clearAll(){
     vs:{temp:'',rr:'',pr:'',bp:'',o2:'',o2mode:'RA'},
     pmh:{dm:false,ht:false,dl:false,heart:false},pmhOther:'',currentMed:''};
   step=0;
+  window._ctNeuro={uploadToken:null,viewUrl:null};
   document.getElementById('app').style.display='none';
   document.getElementById('lockWrap').style.display='flex';
   pinBuf='';updDots('pinDots',0);

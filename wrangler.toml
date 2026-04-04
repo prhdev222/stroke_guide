@@ -1,4 +1,5 @@
-name = "stroke-fast-tract"
+# ต้องตรงชื่อโปรเจกต์ Pages ใน Dashboard (Workers & Pages) — ใช้ deploy/binding จาก repo
+name = "stroke-prh"
 compatibility_date = "2024-12-01"
 pages_build_output_dir = "public"
 
@@ -46,7 +47,28 @@ pages_build_output_dir = "public"
 #
 # ── รหัสหน่วย Staff (Admin ตั้งรหัสประจำหน่วย เช่น ER 1234, MED1 2417) ──
 #   ADMIN_SECRET  = รหัสลับสำหรับเข้าเมนู "ตั้งรหัสหน่วย" ใน 📦 → ตั้งรหัสหน่วย (Admin)
+#
+# ── CT ชั่วคราว (แชร์ภาพ CT ให้ Neuro — R2 + KV) ────────
+#   คู่มือละเอียด: docs/CT_NEURO_SHARE_SETUP.md
+#   1) wrangler r2 bucket create stroke-ct-temp
+#   2) wrangler kv namespace create CT_SESSIONS
+#   3) wrangler kv namespace create CT_SESSIONS --preview   (สำหรับ local)
+#   4) Cloudflare Pages → Settings → Functions → Bindings:
+#        KV namespace  → binding CT_SESSIONS
+#        R2 bucket     → binding CT_IMAGES  → stroke-ct-temp
+#   5) (แนะนำ production) CT_TEMP_SECRET = รหัสลับ — ต้องส่งใน header X-CT-Temp-Secret ตอนสร้าง session
+#   6) R2 Lifecycle (แดชบอร์ด): ลบ prefix ct/ หลัง 1 วัน — เก็บซากไฟล์หลัง KV หมดอายุ
 # ============================================================
 
 [vars]
 ENVIRONMENT = "production"
+
+# KV / R2 — ตรงกับ Workers KV + R2 ใน Dashboard (stroke-prh)
+[[kv_namespaces]]
+binding = "CT_SESSIONS"
+id = "eb070dd86a3a44a9a9b19eefaf5f0f811"
+preview_id = "bfe2fb9bb0a7403da2fcae214ff0ef63"
+
+[[r2_buckets]]
+binding = "CT_IMAGES"
+bucket_name = "stroke-ct-temp"

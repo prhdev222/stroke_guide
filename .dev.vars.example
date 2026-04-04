@@ -16,6 +16,9 @@ RESEND_API_KEY=re_xxxxxxxxxx
 ADMIN_EMAIL=stroketeamprh@gmail.com
 # NEURO_EMAIL=...  (ไม่บังคับ — ถ้าไม่มี ADMIN_EMAIL ระบบจะลองใช้ค่านี้)
 
+# ── CT ชั่วคราวให้ Neuro (optional — ต้องผูก KV CT_SESSIONS + R2 CT_IMAGES ใน Pages)
+# CT_TEMP_SECRET=รหัสลับ  (ถ้าตั้ง ต้องใส่ในช่อง Staff wizard ตอนสร้างลิงก์)
+#
 # ── LINE (optional) ──────────────────────────────────────
 LINE_CHANNEL_ACCESS_TOKEN=
 WEBAPP_URL=http://localhost:8788

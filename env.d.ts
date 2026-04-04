@@ -38,6 +38,12 @@ declare global {
     NEURO_EMAIL?: string;
     ADMIN_EMAIL?: string;
 
+    // ── CT ชั่วคราว (R2 + KV) — แชร์ภาพให้ Neuro ───────
+    CT_SESSIONS?: KVNamespace;
+    CT_IMAGES?: R2Bucket;
+    /** ถ้าตั้งแล้ว ต้องส่ง header X-CT-Temp-Secret ตอน POST /ct-temp/session */
+    CT_TEMP_SECRET?: string;
+
     // ── General ─────────────────────────────────────────
     ADMIN_SECRET?: string;
     ENVIRONMENT?: string;
