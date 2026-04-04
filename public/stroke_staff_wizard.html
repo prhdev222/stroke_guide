@@ -61,10 +61,6 @@ button{font-family:inherit;cursor:pointer}
 .base-item.done{border-color:var(--sbd);background:var(--sbg);color:var(--stx);font-weight:600}
 .base-item .base-check{margin-right:2px;font-size:12px;opacity:.9}
 .base-arrow{flex-shrink:0;color:var(--bm);font-size:10px}
-@media (max-width:480px){
-  .assessment-bases{gap:4px;padding:6px 10px}
-  .base-item{font-size:10px;padding:3px 6px}
-}
 
 /* CONTENT */
 .wizard-wrap{padding:14px;max-width:680px;margin:0 auto;padding-bottom:100px}
@@ -127,11 +123,6 @@ input.quick-time-input::placeholder{color:var(--tx2);font-size:11px}
 .ck-row .ck-box.bad{background:var(--red);border-color:#8B1225;color:white}
 .ck-row .ck-row-text{flex:1;min-width:0;word-break:break-word;font-size:13px;line-height:1.4}
 .ck-row .ck-badge{flex-shrink:0;font-size:11px;color:var(--tx2)}
-@media (max-width:480px){
-  .ck-row{padding:12px 14px;gap:12px;min-height:48px}
-  .ck-row .ck-box{width:24px;height:24px;min-width:24px;min-height:24px;font-size:13px}
-  .ck-row .ck-row-text{font-size:14px}
-}
 
 /* AI */
 .ai-bubble{background:var(--bg2);border-radius:var(--rl);padding:16px;border:0.5px solid var(--bl);white-space:pre-wrap;line-height:1.8;font-size:13px;min-height:120px}
@@ -164,6 +155,72 @@ input.quick-time-input::placeholder{color:var(--tx2);font-size:11px}
 
 /* ONSET CALC */
 .onset-box{padding:12px 16px;border-radius:var(--rl);text-align:center;margin-top:10px;border:1px solid}
+
+/* ── MOBILE ─────────────────────────────────────── */
+@media (max-width:520px){
+  /* top-bar */
+  .top-bar{flex-wrap:wrap;gap:6px;padding:8px 10px}
+  .step-progress{order:10;width:100%;margin:4px 0 0}
+  .top-bar>div:last-child{gap:4px}
+  .timer-btn-text{display:none}
+  #timerWrap{gap:4px}
+  #timerWrap button{padding:4px 6px;font-size:10px}
+  #clockEl{font-size:11px;min-width:58px}
+
+  /* wizard content */
+  .wizard-wrap{padding:10px 8px;padding-bottom:110px}
+  .card{padding:14px 12px;margin-bottom:8px}
+  .step-title{font-size:17px}
+  .step-sub{font-size:12px;margin-bottom:12px}
+  .sec{font-size:10px;margin-bottom:8px}
+  .lbl{font-size:11px}
+
+  /* grids */
+  .grid2{grid-template-columns:1fr}
+  .grid3{grid-template-columns:1fr 1fr 1fr}
+  .sym-grid{grid-template-columns:1fr}
+  .ct-opts{grid-template-columns:1fr 1fr}
+
+  /* time row */
+  .time-row{grid-template-columns:1fr;gap:6px}
+  .now-btn{width:100%;text-align:center;padding:10px}
+  input.datetime-input{min-width:0;width:100%}
+
+  /* inputs — touch-friendly */
+  input:not([type="checkbox"]):not([type="radio"]),select,textarea{font-size:16px !important;padding:10px !important;border-radius:8px !important}
+
+  /* NIHSS */
+  .nihss-btn{padding:8px 12px;font-size:14px;min-height:44px}
+  .nihss-item{padding:10px}
+  .nihss-opts{gap:6px}
+
+  /* checklist */
+  .ck-row{padding:12px 14px;gap:12px;min-height:48px}
+  .ck-row .ck-box{width:26px;height:26px;min-width:26px;min-height:26px;font-size:14px}
+  .ck-row .ck-row-text{font-size:14px}
+
+  /* BEFAST chips */
+  .sym-chip{padding:12px 14px;font-size:14px}
+
+  /* result / action */
+  .result-big{padding:14px;font-size:15px}
+  .action-item{padding:10px 12px;font-size:13px}
+  .action-num{width:24px;height:24px;font-size:12px}
+
+  /* bottom nav */
+  .bottom-nav{padding:10px 12px;gap:8px}
+  .btn-next,.btn-back{padding:15px;font-size:15px;border-radius:12px}
+  .btn-next{font-size:16px}
+
+  /* misc */
+  .attach-zone{padding:16px}
+  .thumb-grid{grid-template-columns:repeat(auto-fill,minmax(70px,1fr))}
+  .onset-box{padding:10px 14px}
+  .pin-card{padding:24px 18px}
+  .pin-btn{width:54px;height:54px;font-size:22px}
+  .assessment-bases{gap:3px;padding:5px 8px;overflow-x:auto}
+  .base-item{font-size:10px;padding:3px 6px;white-space:nowrap}
+}
 
 @media print {
   body { margin: 0; background: #fff !important; }
@@ -233,9 +290,9 @@ input.quick-time-input::placeholder{color:var(--tx2);font-size:11px}
       <div id="timerWrap" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
         <span id="timerEl" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--tx2)">⏱ —</span>
         <span id="timerTargetBadge" style="display:none;font-size:10px;padding:2px 8px;border-radius:999px;border:0.5px solid var(--bm);background:var(--bg2);color:var(--tx2);font-variant-numeric:tabular-nums" title="ตั้งเวลาเป้าหมาย (นาที)">เป้าหมาย: <span id="timerTargetMin">—</span> นาที</span>
-        <button type="button" id="btnTimerStart" onclick="startTimerNow()" style="padding:4px 8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:11px;font-family:inherit;cursor:pointer" title="เริ่มจับเวลาตั้งแต่ตอนนี้">เริ่มจับเวลา</button>
-        <button type="button" id="btnTimerSet" onclick="setTimerStart()" style="padding:4px 8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:11px;font-family:inherit;cursor:pointer" title="กำหนดเวลาเริ่มต้น (เช่น เวลาเข้า ER)">กำหนดเวลา</button>
-        <button type="button" id="btnTimerTarget" onclick="setTimerTarget()" style="padding:4px 8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:11px;font-family:inherit;cursor:pointer" title="ตั้งเวลาเป้าหมายเพื่อเตือนเมื่อเกิน (นาที)">ตั้งเวลาเตือน</button>
+        <button type="button" id="btnTimerStart" onclick="startTimerNow()" style="padding:4px 8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:11px;font-family:inherit;cursor:pointer" title="เริ่มจับเวลาตั้งแต่ตอนนี้">▶<span class="timer-btn-text"> เริ่มจับเวลา</span></button>
+        <button type="button" id="btnTimerSet" onclick="setTimerStart()" style="padding:4px 8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:11px;font-family:inherit;cursor:pointer" title="กำหนดเวลาเริ่มต้น (เช่น เวลาเข้า ER)">🕐<span class="timer-btn-text"> กำหนดเวลา</span></button>
+        <button type="button" id="btnTimerTarget" onclick="setTimerTarget()" style="padding:4px 8px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:11px;font-family:inherit;cursor:pointer" title="ตั้งเวลาเป้าหมายเพื่อเตือนเมื่อเกิน (นาที)">⏰<span class="timer-btn-text"> ตั้งเวลาเตือน</span></button>
       </div>
       <div id="clockEl" style="font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;text-align:right;min-width:70px"></div>
       <button onclick="showTursoSettings()" style="padding:5px 9px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:12px;font-family:inherit" title="Turso Case Log">📦</button>
@@ -377,6 +434,9 @@ let D={ // all clinical data
   drNsxResident:'',   // Resident Nsx
   antiHiv:null,       // Anti-HIV
   vs:{temp:'',rr:'',pr:'',bp:'',o2:'',o2mode:'RA'},
+  pmh:{dm:false,ht:false,dl:false,heart:false},
+  pmhOther:'',
+  currentMed:'',
 };
 
 const NIHSS=[
@@ -748,7 +808,7 @@ function rSymptoms(){
   </div>`}).join('')}
   </div>
   <div class="sec" style="margin-top:12px">GCS (E — V — M)</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:7px">
+  <div class="grid3" style="margin-bottom:7px">
     <div><div class="lbl">E (Eye) 1–4</div><select style="width:100%;padding:8px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);font-size:13px" onchange="D.gcs.E=this.value;renderStepKeepScroll()"><option value="">—</option>${(GCS_OPTS.E||[]).map(o=>`<option value="${o.v}" ${D.gcs.E==o.v?'selected':''}>${o.v}: ${o.t}</option>`).join('')}</select></div>
     <div><div class="lbl">V (Verbal) 1–5</div><select style="width:100%;padding:8px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);font-size:13px" onchange="D.gcs.V=this.value;renderStepKeepScroll()"><option value="">—</option>${(GCS_OPTS.V||[]).map(o=>`<option value="${o.v}" ${D.gcs.V==o.v?'selected':''}>${o.v}: ${o.t}</option>`).join('')}</select></div>
     <div><div class="lbl">M (Motor) 1–6</div><select style="width:100%;padding:8px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);font-size:13px" onchange="D.gcs.M=this.value;renderStepKeepScroll()"><option value="">—</option>${(GCS_OPTS.M||[]).map(o=>`<option value="${o.v}" ${D.gcs.M==o.v?'selected':''}>${o.v}: ${o.t}</option>`).join('')}</select></div>
@@ -1012,7 +1072,7 @@ function rLab(){
   ${labRow('Hemoglobin','hb','g/dL','Baseline ก่อนให้ยา',null)}
 
   <div class="sec" style="margin-top:14px">ประวัติยาต้านการแข็งตัวของเลือด</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+  <div class="grid3" style="margin-bottom:10px">
     ${['no','yes','unknown'].map(v=>`<button onclick="D.lab.onAnticoag='${v}';this.parentElement.querySelectorAll('button').forEach(b=>b.style.background='var(--bg2)');this.parentElement.querySelectorAll('button').forEach(b=>b.style.color='var(--tx)');this.style.background='${v==='no'?'var(--sbg)':v==='yes'?'var(--dbg)':'var(--wbg)'}';this.style.color='${v==='no'?'var(--stx)':v==='yes'?'var(--dtx)':'var(--wtx)'}'" style="padding:9px;border:0.5px solid var(--bm);border-radius:var(--rm);font-size:12px;font-family:inherit;cursor:pointer;background:${D.lab.onAnticoag===v?(v==='no'?'var(--sbg)':v==='yes'?'var(--dbg)':'var(--wbg)'):'var(--bg2)'};color:${D.lab.onAnticoag===v?(v==='no'?'var(--stx)':v==='yes'?'var(--dtx)':'var(--wtx)'):'var(--tx)'}">${v==='no'?'ไม่ได้ใช้':v==='yes'?'ใช้อยู่':'ไม่ทราบ'}</button>`).join('')}
   </div>
   ${D.lab.onAnticoag==='yes'?`<div style="padding:8px 12px;background:var(--dbg);border-radius:var(--rm);font-size:12px;color:var(--dtx)">
@@ -1440,6 +1500,18 @@ function rPlan(){
     </div>
     <input value="${D.referDest||''}" oninput="D.referDest=this.value" placeholder="หรือพิมพ์ชื่อ รพ.ปลายทาง" style="margin-top:2px"></div>
 
+    <div class="form-row"><div class="lbl">โรคประจำตัว</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+      ${[['dm','เบาหวาน (DM)'],['ht','ความดัน (HT)'],['dl','ไขมัน (DLP)'],['heart','หัวใจ (Heart)']].map(([k,lb])=>`
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;padding:5px 10px;border-radius:var(--rm);background:${D.pmh[k]?'var(--sbg)':'var(--bg2)'};border:0.5px solid ${D.pmh[k]?'var(--sbd)':'var(--bl)'};cursor:pointer">
+          <input type="checkbox" ${D.pmh[k]?'checked':''} onchange="D.pmh['${k}']=this.checked;renderStepKeepScroll()"> ${lb}
+        </label>`).join('')}
+    </div>
+    <input value="${D.pmhOther||''}" oninput="D.pmhOther=this.value" placeholder="อื่นๆ เช่น CKD, AF, Stroke เดิม"></div>
+
+    <div class="form-row"><div class="lbl">Current Medication</div>
+    <input value="${D.currentMed||''}" oninput="D.currentMed=this.value" placeholder="เช่น Aspirin, Warfarin, Metformin"></div>
+
     <div class="form-row"><div class="lbl">สิทธิการรักษา</div>
     <input value="${D.sitsang||''}" oninput="D.sitsang=this.value" placeholder="เช่น ประกันสังคม / UC / ข้าราชการ / ชำระเอง"></div>
 
@@ -1458,27 +1530,30 @@ function rPlan(){
       <input value="${D.ctaResult||''}" oninput="D.ctaResult=this.value" placeholder="ผล CTA/CTP/MRI" style="flex:1">
       <input value="${D.ctaTime||''}" oninput="D.ctaTime=this.value" placeholder="เวลา" style="width:80px">
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+    <div class="grid2" style="margin-bottom:10px">
       <div><div class="lbl">CXR</div><input value="${D.cxrResult||''}" oninput="D.cxrResult=this.value" placeholder="ผล CXR"></div>
       <div><div class="lbl">EKG</div><input value="${D.ekgResult||''}" oninput="D.ekgResult=this.value" placeholder="ผล EKG"></div>
       <div><div class="lbl">Echo EF (%)</div><input value="${D.echoEf||''}" oninput="D.echoEf=this.value" placeholder="%"></div>
       <div><div class="lbl">Anti-HIV</div><input value="${D.antiHiv||''}" oninput="D.antiHiv=this.value" placeholder="NR / R / ไม่ได้เจาะ"></div>
     </div>
 
-    <div class="lbl" style="margin-bottom:6px">อุปกรณ์ที่ใส่</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:12px">
-      ${[['foley','Foley Cath'],['ett','ETT / Intubated'],['canular','Canula / Airway'],['mask','Mask + Bag'],['ivNss','IV NSS line'],['lock','On Lock (IV lock)'],['tube','NG Tube']].map(([k,lb])=>`
-        <label style="display:flex;align-items:center;gap:6px;font-size:13px;padding:5px 8px;border-radius:var(--rm);background:${D.equip[k]?'var(--sbg)':'var(--bg2)'};border:0.5px solid ${D.equip[k]?'var(--sbd)':'var(--bl)'}">
-          <input type="checkbox" ${D.equip[k]?'checked':''} onchange="D.equip['${k}']=this.checked;renderStepKeepScroll()"> ${lb}
-        </label>`).join('')}
-    </div>
-
-    <div class="lbl" style="margin-bottom:6px">เอกสาร / สิ่งส่งไปด้วย</div>
-    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px">
-      ${[['cdPacs','CD ลง PACs / ภาพ CT'],['kanjor','ญาติผู้ป่วย (ไปด้วย)'],['certificate','ใบรับรองสิทธิ']].map(([k,lb])=>`
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:7px 10px;border-radius:var(--rm);background:${D.docs[k]?'var(--sbg)':'var(--bg2)'};border:0.5px solid ${D.docs[k]?'var(--sbd)':'var(--bl)'}">
-          <input type="checkbox" ${D.docs[k]?'checked':''} onchange="D.docs['${k}']=this.checked;renderStepKeepScroll()"> ${lb}
-        </label>`).join('')}
+    <div class="grid2" style="margin-bottom:12px">
+      <div>
+        <div class="lbl" style="margin-bottom:6px">อุปกรณ์ที่ใส่</div>
+        ${[['foley','Foley Cath'],['ett','ETT / Intubated'],['canular','Canula / Airway'],['mask','Mask + Bag'],['ivNss','IV NSS line'],['lock','On Lock (IV lock)'],['tube','NG Tube']].map(([k,lb])=>`
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:7px 10px;border-bottom:0.5px solid var(--bl);cursor:pointer">
+            <input type="checkbox" style="width:16px;height:16px;flex-shrink:0" ${D.equip[k]?'checked':''} onchange="D.equip['${k}']=this.checked;renderStepKeepScroll()">
+            <span style="text-align:left">${lb}</span>
+          </label>`).join('')}
+      </div>
+      <div>
+        <div class="lbl" style="margin-bottom:6px">เอกสาร / สิ่งส่งไปด้วย</div>
+        ${[['cdPacs','CD ลง PACs / ภาพ CT'],['kanjor','ญาติผู้ป่วย (ไปด้วย)'],['certificate','ใบรับรองสิทธิ']].map(([k,lb])=>`
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:7px 10px;border-bottom:0.5px solid var(--bl);cursor:pointer">
+            <input type="checkbox" style="width:16px;height:16px;flex-shrink:0" ${D.docs[k]?'checked':''} onchange="D.docs['${k}']=this.checked;renderStepKeepScroll()">
+            <span style="text-align:left">${lb}</span>
+          </label>`).join('')}
+      </div>
     </div>
 
     <div class="form-row"><div class="lbl">แพทย์ผู้ส่งตัว (รพ.สงฆ์)</div>
@@ -1599,11 +1674,11 @@ function buildSummaryHTML(){
 <div style="font-family:'Sarabun',Helvetica,sans-serif;padding:6px 8px;color:#000;font-size:11px;max-width:794px;margin:0 auto;line-height:1.35">
 
 <!-- HEADER -->
-<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2.5px solid #C41E3A;padding-bottom:6px;margin-bottom:8px">
+<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2.5px solid #000;padding-bottom:6px;margin-bottom:8px">
   <div>
-    <div style="font-size:8px;color:#888;letter-spacing:.05em;text-transform:uppercase">โรงพยาบาลสงฆ์ — Stroke Fast Track</div>
-    <div style="font-size:17px;font-weight:800;color:#C41E3A;letter-spacing:-.3px">REFER Stroke Fast Track</div>
-    <div style="font-size:11px;font-weight:600">ส่งต่อ → <span style="color:#C41E3A">${D.referDest||'สถาบันประสาทวิทยา'}</span>${isClinicalJudgmentRefer?' <span style="color:#C41E3A;font-size:9px">⚠ Clinical Judgment</span>':''}</div>
+    <div style="font-size:8px;color:#555;letter-spacing:.05em;text-transform:uppercase">โรงพยาบาลสงฆ์ — Stroke Fast Track</div>
+    <div style="font-size:17px;font-weight:800;color:#000;letter-spacing:-.3px">REFER Stroke Fast Track</div>
+    <div style="font-size:11px;font-weight:600">ส่งต่อ → <span style="font-weight:800;text-decoration:underline">${D.referDest||'สถาบันประสาทวิทยา'}</span>${isClinicalJudgmentRefer?' <span style="font-size:9px;font-weight:700">⚠ Clinical Judgment</span>':''}</div>
   </div>
   <div style="text-align:right;font-size:9px;color:#666">
     <div>${new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}</div>
@@ -1642,7 +1717,7 @@ function buildSummaryHTML(){
 <!-- โรคประจำตัว -->
 <div style="padding:3px 5px;border:1px solid #ccc;margin-bottom:5px;font-size:10.5px">
   <span style="font-weight:600">โรคประจำตัว:</span>
-  ${chk(D.pmh&&D.pmh.dm)} DM &nbsp;${chk(D.pmh&&D.pmh.ht)} HT &nbsp;${chk(D.pmh&&D.pmh.dl)} DLP &nbsp;${chk(D.pmh&&D.pmh.heart)} Heart &nbsp; อื่นๆ: ____________ &nbsp;
+  ${chk(D.pmh&&D.pmh.dm)} DM &nbsp;${chk(D.pmh&&D.pmh.ht)} HT &nbsp;${chk(D.pmh&&D.pmh.dl)} DLP &nbsp;${chk(D.pmh&&D.pmh.heart)} Heart &nbsp; อื่นๆ: ${D.pmhOther||'____________'} &nbsp;
   <span style="font-weight:600">Current med:</span> ${D.currentMed||'—'}
 </div>
 
@@ -1661,7 +1736,7 @@ function buildSummaryHTML(){
   <td style="padding:2px 5px;border:1px solid #ccc;font-weight:700">${oh!==null?oh.toFixed(1)+' ชม.':'ไม่ทราบ'}</td>
 </tr>
 <tr>
-  <td style="padding:2px 5px;border:1px solid #ccc;background:#FFF3CD;font-weight:700">NIHSS</td>
+  <td style="padding:2px 5px;border:1px solid #ccc;background:#eee;font-weight:700">NIHSS</td>
   <td style="padding:2px 5px;border:1px solid #ccc;font-weight:700;font-size:14px">${tot}/42 (${sev.label})</td>
   <td style="padding:2px 5px;border:1px solid #ccc;background:#f5f5f5;font-weight:600">NPO</td>
   <td style="padding:2px 5px;border:1px solid #ccc">${D.npoTime||'—'}</td>
@@ -1669,14 +1744,14 @@ function buildSummaryHTML(){
 </table>
 
 <!-- LVO / VAN Assessment -->
-<div style="border:1.5px solid #B8860B;background:#FFF8E7;padding:5px 7px;margin-bottom:5px;font-size:10.5px">
-  <div style="font-weight:700;margin-bottom:3px;font-size:11px;color:#8B6914">Large Vessel Occlusion (LVO) Assessment</div>
+<div style="border:1.5px solid #000;padding:5px 7px;margin-bottom:5px;font-size:10.5px">
+  <div style="font-weight:700;margin-bottom:3px;font-size:11px">Large Vessel Occlusion (LVO) Assessment</div>
   <table style="width:100%;border-collapse:collapse;font-size:10px">
   <tr>
-    <td style="padding:2px 4px;border:0.5px solid #D4A84B;background:#FFF3CD;font-weight:600;width:25%">NIHSS</td>
-    <td style="padding:2px 4px;border:0.5px solid #D4A84B;width:25%;font-weight:700;font-size:12px">${tot}/42</td>
-    <td style="padding:2px 4px;border:0.5px solid #D4A84B;background:#FFF3CD;font-weight:600;width:25%">ASPECTS</td>
-    <td style="padding:2px 4px;border:0.5px solid #D4A84B;width:25%;font-weight:700;font-size:12px">${D.aspect!==undefined?D.aspect:'—'}${D.aspect!==undefined?(D.aspect>=6?' ✓':' ✗'):''}</td>
+    <td style="padding:2px 4px;border:0.5px solid #999;background:#eee;font-weight:600;width:25%">NIHSS</td>
+    <td style="padding:2px 4px;border:0.5px solid #999;width:25%;font-weight:700;font-size:12px">${tot}/42</td>
+    <td style="padding:2px 4px;border:0.5px solid #999;background:#eee;font-weight:600;width:25%">ASPECTS</td>
+    <td style="padding:2px 4px;border:0.5px solid #999;width:25%;font-weight:700;font-size:12px">${D.aspect!==undefined?D.aspect:'—'}${D.aspect!==undefined?(D.aspect>=6?' ✓':' ✗'):''}</td>
   </tr>
   </table>
   <div style="margin-top:4px;font-weight:600;margin-bottom:2px">VAN Signs</div>
@@ -1685,7 +1760,7 @@ function buildSummaryHTML(){
     <span>${chk(D.lvoSigns&&D.lvoSigns.aphasia)} Aphasia</span>
     <span>${chk(D.lvoSigns&&D.lvoSigns.neglect)} Neglect / Inattention</span>
   </div>
-  <div style="margin-top:3px;font-weight:600;font-size:10px;color:${(Object.values(D.lvoSigns||{}).filter(Boolean).length>=1||tot>=6)?'#8B0000':'#555'}">
+  <div style="margin-top:3px;font-weight:700;font-size:10px">
     ${(Object.values(D.lvoSigns||{}).filter(Boolean).length>=1||tot>=6)
       ?'→ สงสัย LVO — NIHSS ≥6 หรือ VAN (+) → พิจารณา Refer Thrombectomy'
       :'→ ยังไม่สงสัย LVO'}
@@ -1706,7 +1781,7 @@ function buildSummaryHTML(){
   <td style="padding:2px 5px;border:1px solid #ccc;background:#f5f5f5;font-weight:600;width:17%">ASPECTS</td>
   <td style="padding:2px 5px;border:1px solid #ccc;font-weight:700;width:33%">${D.aspect!==undefined?D.aspect:'—'}</td>
 </tr>
-<tr><td colspan="4" style="padding:3px 5px;border:1px solid #ccc;background:#FFF3CD;font-size:10px"><strong>${rtpaLine}</strong></td></tr>
+<tr><td colspan="4" style="padding:3px 5px;border:1px solid #ccc;background:#eee;font-size:10px"><strong>${rtpaLine}</strong></td></tr>
 <tr>
   <td style="padding:2px 5px;border:1px solid #ccc;background:#f5f5f5;font-weight:600">CTA/CTP</td>
   <td style="padding:2px 5px;border:1px solid #ccc">${D.ctaResult||'—'} [${D.ctaTime||'—'}]</td>
@@ -1728,6 +1803,25 @@ function buildSummaryHTML(){
 </tr>
 </table>
 
+${(rec==='refer-rtpa'||( oh!==null&&oh<=4.5))?`
+<!-- rt-PA Checklist -->
+<div style="border:1.5px solid #000;padding:5px 7px;margin-bottom:5px;font-size:10px">
+  <div style="font-weight:700;font-size:11px;margin-bottom:4px;border-bottom:1px solid #999;padding-bottom:3px">
+    Checklist rt-PA — ${el?'✓ เข้าเกณฑ์':'✗ ไม่เข้าเกณฑ์'}${ab?' (มีข้อห้ามเด็ดขาด)':''}
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px">
+    <div style="grid-column:1/-1;font-weight:700;margin-top:2px">Inclusion (ต้องครบ 3 ข้อ)</div>
+    <div>${chk(D.incl.ais)} Acute Ischemic Stroke</div>
+    <div>${chk(D.incl.onset45)} Onset ≤4.5 ชม.${oh!==null?' ('+oh.toFixed(1)+' ชม.)':''}</div>
+    <div>${chk(D.incl.age18)} อายุ ≥18 ปี${D.age?' ('+D.age+' ปี)':''}</div>
+    <div style="grid-column:1/-1;font-weight:700;margin-top:4px">Absolute Exclusion${ab?' — พบข้อห้าม':' — ไม่พบ'}</div>
+    ${ABS.filter(i=>D.absExcl[i.id]).map(i=>`<div style="font-weight:700">${chk(true)} ${i.th}</div>`).join('')||'<div>ไม่มีข้อห้ามเด็ดขาด</div>'}
+    ${(()=>{const rels=REL.filter(i=>D.relExcl[i.id]);return rels.length?`
+    <div style="grid-column:1/-1;font-weight:700;margin-top:4px">Relative Exclusion — พบ ${rels.length} ข้อ</div>
+    ${rels.map(i=>`<div>${chk(true)} ${i.th}</div>`).join('')}`:'';})()}
+  </div>
+</div>
+`:''}
 <!-- Equipment + Documents (2 columns) -->
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:5px;font-size:10px">
   <div style="border:1px solid #ccc;padding:4px 6px">
@@ -1773,12 +1867,12 @@ function buildSummaryHTML(){
 // ── ADMIT SUMMARY (original layout preserved) ──
 function buildAdmitSummary(tot,sev,oh,dn,bw,td,el,ab,lvoAssessed,lvoResult,now,ctMap){
   const absC=ABS.filter(i=>D.absExcl[i.id]).map(i=>i.th);
-  return `<div style="border-bottom:2.5px solid #C41E3A;padding-bottom:14px;margin-bottom:16px;display:flex;justify-content:space-between">
+  return `<div style="border-bottom:2.5px solid #000;padding-bottom:14px;margin-bottom:16px;display:flex;justify-content:space-between">
     <div><div style="font-size:20px;font-weight:700">Acute Stroke — Summary (Admit)</div>
     <div style="font-size:12px;color:#555">โรงพยาบาลสงฆ์ (Priest Hospital)</div>
     <div style="font-size:11px;color:#888">${now}</div></div>
     <div style="text-align:right">
-      <div style="padding:5px 12px;border-radius:6px;font-size:13px;font-weight:700;background:#EAF3DE;color:#27500A;border:1.5px solid #97C459">Admit</div>
+      <div style="padding:5px 12px;border-radius:6px;font-size:13px;font-weight:700;background:#eee;border:1.5px solid #000">Admit</div>
     </div>
   </div>
   <div style="font-size:14px;font-weight:600;margin:14px 0 6px;color:#333;border-bottom:1px solid #e0e0e0;padding-bottom:3px">ข้อมูลผู้ป่วย</div>
@@ -1793,7 +1887,7 @@ function buildAdmitSummary(tot,sev,oh,dn,bw,td,el,ab,lvoAssessed,lvoResult,now,c
   <table style="width:100%;border-collapse:collapse;font-size:12px">
     <tr><td style="padding:5px 8px;border:0.5px solid #ddd;background:#f8f8f8;font-weight:500">Stroke onset</td><td style="padding:5px 8px;border:0.5px solid #ddd">${formatDisplayDatetime(D.strokeOnset)}</td><td style="padding:5px 8px;border:0.5px solid #ddd;background:#f8f8f8;font-weight:500">ER arrival</td><td style="padding:5px 8px;border:0.5px solid #ddd">${formatDisplayDatetime(D.erArrival)}</td></tr>
     <tr><td style="padding:5px 8px;border:0.5px solid #ddd;background:#f8f8f8;font-weight:500">CT brain</td><td style="padding:5px 8px;border:0.5px solid #ddd">${formatDisplayDatetime(D.ctTime)}</td><td style="padding:5px 8px;border:0.5px solid #ddd;background:#f8f8f8;font-weight:500">Admit</td><td style="padding:5px 8px;border:0.5px solid #ddd">${formatDisplayDatetime(D.admitTime)||'—'}</td></tr>
-    <tr><td style="padding:5px 8px;border:0.5px solid #ddd;background:#f8f8f8;font-weight:500">Onset window</td><td style="padding:5px 8px;border:0.5px solid #ddd;font-weight:700">${oh!==null?oh.toFixed(1)+' ชม.':'ไม่ทราบ'}</td><td style="padding:5px 8px;border:0.5px solid #ddd;background:#f8f8f8;font-weight:500">DTN</td><td style="padding:5px 8px;border:0.5px solid #ddd;font-weight:700;color:${dn!==null&&dn<=60?'#185FA5':'#A32D2D'}">${dn!==null?dn+' นาที':'—'}</td></tr>
+    <tr><td style="padding:5px 8px;border:0.5px solid #ddd;background:#f8f8f8;font-weight:500">Onset window</td><td style="padding:5px 8px;border:0.5px solid #ddd;font-weight:700">${oh!==null?oh.toFixed(1)+' ชม.':'ไม่ทราบ'}</td><td style="padding:5px 8px;border:0.5px solid #ddd;background:#f8f8f8;font-weight:500">DTN</td><td style="padding:5px 8px;border:0.5px solid #ddd;font-weight:700">${dn!==null?dn+' นาที':'—'}</td></tr>
   </table>
   <div style="font-size:14px;font-weight:600;margin:14px 0 6px;color:#333;border-bottom:1px solid #e0e0e0;padding-bottom:3px">CT Brain: ${ctMap[D.ctResult]||'ไม่ระบุ'}</div>
   <div style="font-size:14px;font-weight:600;margin:14px 0 6px;color:#333;border-bottom:1px solid #e0e0e0;padding-bottom:3px">NIHSS — ${tot}/42 (${sev.label})</div>
@@ -1946,7 +2040,8 @@ function clearAll(){
     equip:{foley:false,ett:false,canular:false,mask:false,ivNss:false,lock:false,tube:false},
     docs:{cdPacs:false,kanjor:false,certificate:false},
     drResident:'',drNeurologist:'',drInterventionist:'',drAnes:'',drNsxStaff:'',drNsxResident:'',
-    vs:{temp:'',rr:'',pr:'',bp:'',o2:'',o2mode:'RA'}};
+    vs:{temp:'',rr:'',pr:'',bp:'',o2:'',o2mode:'RA'},
+    pmh:{dm:false,ht:false,dl:false,heart:false},pmhOther:'',currentMed:''};
   step=0;
   document.getElementById('app').style.display='none';
   document.getElementById('lockWrap').style.display='flex';
