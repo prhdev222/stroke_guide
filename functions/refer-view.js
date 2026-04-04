@@ -130,15 +130,14 @@ body{font-family:'Sarabun',sans-serif;background:#f4f4f4;color:#222}
 .reason-box{background:#f8f8f8;border:1px solid #ddd;border-radius:8px;padding:12px;font-size:14px;line-height:1.6}
 .pdpa-note{margin:12px 20px 0;padding:10px 14px;background:#EAF3DE;border-radius:8px;font-size:11px;color:#3B6D11;line-height:1.7}
 .footer{padding:14px 20px;background:#f9f9f9;border-top:1px solid #eee;margin-top:12px}
-.footer .ts{font-size:11px;color:#999;margin-bottom:10px}
-.btn-print{width:100%;padding:13px;border-radius:8px;font-size:15px;font-weight:700;border:none;cursor:pointer;background:#C1121F;color:#fff}
-.hint-box{display:none;margin-top:10px;padding:12px 14px;background:#FFF3CD;border:1px solid #E85D04;border-radius:8px;font-size:13px;color:#7B3C00;line-height:1.8}
+.footer .ts{font-size:11px;color:#999}
+.btn-print{width:100%;padding:13px;border-radius:8px;font-size:15px;font-weight:700;border:none;cursor:pointer;background:#C1121F;color:#fff;margin-top:10px}
 .empty{text-align:center;padding:60px 20px;display:flex;flex-direction:column;align-items:center;gap:14px}
 .empty .big-icon{font-size:44px}
 .empty h2{font-size:18px;font-weight:600;color:#555}
 .empty p{font-size:14px;color:#888;line-height:1.7}
 .btn-blue{background:#185FA5;color:#fff;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none}
-@media print{.footer,.pdpa-note,.alert-bar,.hint-box{display:none!important}.page{max-width:100%}body{background:#fff}}
+@media print{.footer,.pdpa-note,.alert-bar{display:none!important}.page{max-width:100%}body{background:#fff}}
 </style>
 </head>
 <body>
@@ -149,28 +148,22 @@ body{font-family:'Sarabun',sans-serif;background:#f4f4f4;color:#222}
   </div>
   ${body}
   ${d ? `
-  <div class="footer">
+  <div class="footer" id="footer">
     <div class="ts">สร้างโดยระบบ Stroke Fast Track รพ.สงฆ์ | ${now}</div>
-    <button class="btn-print" onclick="doPrint()">🖨 พิมพ์</button>
-    <div class="hint-box" id="printHint">
-      📱 LINE browser ไม่รองรับการพิมพ์โดยตรง<br>
-      กรุณากด <strong>··· (มุมขวาบน) → เปิดใน Browser</strong><br>
-      แล้วกด พิมพ์ อีกครั้งใน Safari / Chrome ค่ะ
-    </div>
+    <button class="btn-print" id="btnPrint" onclick="window.print()">🖨 พิมพ์</button>
   </div>
   ` : ''}
 </div>
 <script>
-function doPrint() {
-  var isLine = /Line\\/|FBAN|FBAV/.test(navigator.userAgent) ||
-               navigator.userAgent.indexOf('Line/') > -1;
+// ซ่อนปุ่มพิมพ์ถ้าเปิดใน LINE browser
+(function(){
+  var ua = navigator.userAgent;
+  var isLine = ua.indexOf('Line/') > -1 || ua.indexOf('LINE/') > -1;
   if (isLine) {
-    var h = document.getElementById('printHint');
-    if (h) { h.style.display='block'; h.scrollIntoView({behavior:'smooth'}); }
-  } else {
-    window.print();
+    var btn = document.getElementById('btnPrint');
+    if (btn) btn.style.display = 'none';
   }
-}
+})();
 </script>
 </body></html>`;
 }
