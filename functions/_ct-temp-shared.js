@@ -1,7 +1,9 @@
 // Shared helpers — CT ชั่วคราว (R2 + KV) PDPA: ไม่มี HN/ชื่อใน key หรือ URL
 
 export const CT_TTL_SEC = 4 * 60 * 60; // 4 ชม.
-export const CT_MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 MB
+export const CT_MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 MB ต่อไฟล์
+export const CT_MAX_FILES = 30; // จำนวนไฟล์สูงสุดต่อ session
+export const CT_MAX_SESSION_BYTES = 200 * 1024 * 1024; // รวมทุกไฟล์ใน session
 export const CT_KV_GRACE_SEC = 300; // KV TTL เกิน exp เล็กน้อย
 
 export function randomHex(byteLen = 24) {
@@ -28,7 +30,13 @@ export function ctBindingsOk(env) {
 export async function purgeSession(env, sessionId, session) {
   if (!env.CT_SESSIONS || !session) return;
   try {
-    await env.CT_IMAGES.delete(session.r2Key);
+    if (Array.isArray(session.files)) {
+      for (const f of session.files) {
+        if (f?.r2Key) await env.CT_IMAGES.delete(f.r2Key);
+      }
+    } else if (session.r2Key) {
+      await env.CT_IMAGES.delete(session.r2Key);
+    }
   } catch (_) { /* ignore */ }
   await env.CT_SESSIONS.delete(`cts:${sessionId}`);
   await env.CT_SESSIONS.delete(`ctu:${session.uploadToken}`);

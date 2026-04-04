@@ -41,7 +41,7 @@ declare global {
     // ── CT ชั่วคราว (R2 + KV) — แชร์ภาพให้ Neuro ───────
     CT_SESSIONS?: KVNamespace;
     CT_IMAGES?: R2Bucket;
-    /** ถ้าตั้งแล้ว ต้องส่ง header X-CT-Temp-Secret ตอน POST /ct-temp/session */
+    /** ทางเลือก: ถ้าตั้งแล้ว ต้องส่ง header X-CT-Temp-Secret ตอน POST /ct-temp/session — ไม่ตั้ง = สร้างลิงก์ได้ทันที */
     CT_TEMP_SECRET?: string;
 
     // ── General ─────────────────────────────────────────

@@ -57,7 +57,7 @@ pages_build_output_dir = "public"
 #   3) wrangler kv namespace create CT_SESSIONS --preview   (สำหรับ local)
 #   4) ใส่ id / preview_id / bucket_name ใน [[kv_namespaces]] และ [[r2_buckets]] ด้านล่าง แล้ว push
 #      (โปรเจกต์นี้ใช้ wrangler เป็น source of truth — ไม่ต้อง Add binding ใน Dashboard)
-#   5) (แนะนำ production) CT_TEMP_SECRET = รหัสลับ — ตั้งใน Pages → Environment variables
+#   5) (ทางเลือก) CT_TEMP_SECRET — ไม่ตั้งได้; ถ้าตั้งแล้วต้องใส่ในช่อง wizard ตอนสร้างลิงก์
 #   6) R2 Lifecycle (แดชบอร์ด): ลบ prefix ct/ หลัง 1 วัน — เก็บซากไฟล์หลัง KV หมดอายุ
 # ============================================================
 

@@ -1,9 +1,10 @@
 // POST /ct-temp/session — สร้าง session อัปโหลด + ลิงก์ดูให้ Neuro (อายุ 4 ชม.)
-// Header (ถ้ามี CT_TEMP_SECRET): X-CT-Temp-Secret
+// รองรับหลายไฟล์ต่อ session (prefix R2 + ดัชนี)
 
 import {
   CT_TTL_SEC,
   CT_KV_GRACE_SEC,
+  CT_MAX_FILES,
   randomHex,
   checkCtTempSecret,
   ctBindingsOk,
@@ -23,7 +24,7 @@ export async function onRequestPost(context) {
     return Response.json(
       {
         error:
-          'ยังไม่ได้ผูก KV (CT_SESSIONS) และ R2 (CT_IMAGES) — Cloudflare Pages → Settings → Functions → Bindings',
+          'ยังไม่ได้ผูก KV (CT_SESSIONS) และ R2 (CT_IMAGES) — ดู wrangler.toml',
       },
       { status: 503 }
     );
@@ -32,15 +33,14 @@ export async function onRequestPost(context) {
   const sessionId = crypto.randomUUID();
   const uploadToken = randomHex(24);
   const viewToken = randomHex(24);
-  const r2Key = `ct/${sessionId}/img`;
   const exp = Date.now() + CT_TTL_SEC * 1000;
   const session = {
-    r2Key,
+    prefix: `ct/${sessionId}`,
+    files: [],
+    nextIdx: 0,
     exp,
     uploadToken,
     viewToken,
-    uploaded: false,
-    contentType: 'application/octet-stream',
   };
 
   const ttl = CT_TTL_SEC + CT_KV_GRACE_SEC;
@@ -58,11 +58,11 @@ export async function onRequestPost(context) {
   return Response.json({
     sessionId,
     uploadToken,
-    viewToken,
-    uploadUrl: `${origin}/ct-temp/upload`,
     viewUrl: `${origin}/ct-temp/view?t=${encodeURIComponent(viewToken)}`,
+    uploadUrl: `${origin}/ct-temp/upload`,
     expiresAt: new Date(exp).toISOString(),
     expiresInSec: CT_TTL_SEC,
+    maxFiles: CT_MAX_FILES,
   });
 }
 
@@ -72,7 +72,8 @@ export async function onRequestOptions() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, X-CT-Temp-Secret, Authorization',
+      'Access-Control-Allow-Headers':
+        'Content-Type, X-CT-Temp-Secret, Authorization',
     },
   });
 }

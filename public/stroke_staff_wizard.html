@@ -170,6 +170,17 @@ input.quick-time-input::placeholder{color:var(--tx2);font-size:11px}
 .app-footer a{color:var(--ftx);text-decoration:underline}
 .app-footer a:hover{color:var(--tx2)}
 
+/* CT Neuro — ถ่ายวิดีโอจากมือถือ (แสดงจอแคบ) */
+.ct-neuro-cap-wrap{display:none}
+@media (max-width:768px){
+  .ct-neuro-cap-wrap:not(.ct-neuro-cap-unsup){display:block !important;margin-top:14px;padding-top:14px;border-top:0.5px solid var(--ibd)}
+}
+.ct-neuro-cap-unsup{display:none !important}
+.ct-neuro-rec-btn{padding:12px 14px;border-radius:var(--rm);border:0.5px solid var(--bm);font-size:14px;font-family:inherit;cursor:pointer;min-height:48px;touch-action:manipulation}
+#ctNeuroRecStart{background:var(--dtx);color:#fff;border-color:var(--dbd);font-weight:700}
+#ctNeuroRecStop{background:var(--bg2);color:var(--tx)}
+#ctNeuroRecFlip{background:var(--ibg);color:var(--itx);border-color:var(--ibd);font-size:12px}
+
 /* ── MOBILE ─────────────────────────────────────── */
 @media (max-width:520px){
   /* top-bar */
@@ -992,16 +1003,24 @@ function getCTNeuroShareHTML(){
     <p style="font-size:12px;color:var(--itx);line-height:1.65;margin-bottom:10px">
       สร้างลิงก์ → อัปโหลดไฟล์จากมือถือ/PC → ส่งลิงก์ดูให้แพทย์ (LINE) — <strong>ไม่มี HN/ชื่อ</strong> ใน URL • หมดอายุอัตโนมัติ
     </p>
-    <div style="margin-bottom:8px">
-      <div class="lbl">รหัส CT share (เฉพาะถ้าตั้ง <code style="font-size:10px">CT_TEMP_SECRET</code> บน Cloudflare)</div>
-      <input type="password" id="ctTempSecretInp" placeholder="ว่างได้ถ้ายังไม่ได้ตั้งค่า" style="width:100%" autocomplete="off">
-    </div>
     <button type="button" onclick="ctNeuroCreateSession()" style="width:100%;padding:11px;border-radius:var(--rm);border:0.5px solid var(--ibd);background:var(--itx);color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:8px">1) สร้างลิงก์อัปโหลด + ลิงก์ให้ Neuro</button>
     <div id="ctNeuroSessionOut" style="display:none;font-size:11px;color:var(--tx2);margin-bottom:10px"></div>
     <div id="ctNeuroUploadRow" style="display:none">
-      <div class="lbl">2) เลือกไฟล์ภาพ CT / DICOM</div>
-      <input type="file" id="ctNeuroFile" accept="image/*,.dcm,application/dicom" style="width:100%;margin-bottom:8px;font-size:13px">
-      <button type="button" onclick="ctNeuroUpload()" style="width:100%;padding:10px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);color:var(--tx);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">อัปโหลดไฟล์</button>
+      <div class="lbl">2) เลือกภาพ CT / DICOM — <strong>หลายไฟล์ได้</strong> (กด Ctrl/ค้างเลือก)</div>
+      <input type="file" id="ctNeuroFile" multiple accept="image/*,video/*,.dcm,application/dicom" style="width:100%;margin-bottom:8px;font-size:13px">
+      <div class="ct-neuro-cap-wrap" id="ctNeuroCapWrap">
+        <div class="lbl" style="color:var(--itx)">📹 ถ่ายวิดีโอจากมือถือ (หลายคลิป / หลายมุม)</div>
+        <p style="font-size:11px;color:var(--tx2);line-height:1.55;margin:6px 0 10px">ต้องอนุญาตกล้อง+ไมค์ • ถ่ายทีละคลิป (เช่น จอ PACS มุมต่างๆ) แล้วกด <strong>อัปโหลด</strong> — คลิปจะส่งพร้อมไฟล์ที่เลือกด้านบน</p>
+        <video id="ctNeuroCamPrev" playsinline muted style="width:100%;max-height:220px;background:#111;border-radius:var(--rm);display:none"></video>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
+          <button type="button" class="ct-neuro-rec-btn" id="ctNeuroRecStart" onclick="ctNeuroRecStart()">● เริ่มถ่าย</button>
+          <button type="button" class="ct-neuro-rec-btn" id="ctNeuroRecStop" onclick="ctNeuroRecStop()" disabled>■ หยุดถ่าย</button>
+          <button type="button" class="ct-neuro-rec-btn" id="ctNeuroRecFlip" onclick="ctNeuroRecFlip()">↻ สลับกล้อง</button>
+        </div>
+        <div id="ctNeuroRecHint" style="font-size:10px;color:var(--tx2);margin-top:8px">รอบถัดไป: กล้องหลัง</div>
+        <div id="ctNeuroRecList" style="margin-top:10px"></div>
+      </div>
+      <button type="button" onclick="ctNeuroUpload()" style="width:100%;padding:10px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);color:var(--tx);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">อัปโหลด (ซ้ำได้เพื่อแนบเพิ่ม)</button>
     </div>
     <div id="ctNeuroStatus" style="font-size:11px;margin-top:8px;min-height:18px;color:var(--tx2)"></div>
   </div>`;
@@ -1059,6 +1078,107 @@ window.updCTResultKeepScroll=function(){
 };
 
 window._ctNeuro={uploadToken:null,viewUrl:null};
+window._ctNeuroRecordedFiles=[];
+window._ctNeuroFacing='environment';
+window._ctNeuroRecStream=null;
+window._ctNeuroMediaRec=null;
+window._ctNeuroRecChunks=[];
+window.ctNeuroCapInit=function(){
+  var w=document.getElementById('ctNeuroCapWrap');
+  if(!w)return;
+  if(!window.MediaRecorder||!navigator.mediaDevices||typeof navigator.mediaDevices.getUserMedia!=='function'){
+    w.classList.add('ct-neuro-cap-unsup');
+    return;
+  }
+  w.classList.remove('ct-neuro-cap-unsup');
+};
+window.ctNeuroRecPickMime=function(){
+  var c=['video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+  for(var i=0;i<c.length;i++){if(MediaRecorder.isTypeSupported(c[i]))return c[i];}
+  return '';
+};
+window.ctNeuroRecFlip=function(){
+  window._ctNeuroFacing=window._ctNeuroFacing==='environment'?'user':'environment';
+  var h=document.getElementById('ctNeuroRecHint');
+  if(h)h.textContent='รอบถัดไป: '+(window._ctNeuroFacing==='environment'?'กล้องหลัง':'กล้องหน้า');
+};
+window.ctNeuroRecListRefresh=function(){
+  var el=document.getElementById('ctNeuroRecList');
+  if(!el)return;
+  var arr=window._ctNeuroRecordedFiles||[];
+  if(!arr.length){el.innerHTML='';return;}
+  el.innerHTML='<div style="font-weight:600;margin-bottom:6px;color:var(--itx)">คลิปรออัปโหลด ('+arr.length+')</div>'+arr.map(function(f,i){
+    var mb=(f.size/(1024*1024)).toFixed(2);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--bl);font-size:12px"><span>คลิป '+(i+1)+' — '+mb+' MB</span><button type="button" onclick="ctNeuroRecRemove('+i+')" style="padding:6px 12px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);font-size:12px;font-family:inherit;cursor:pointer">ลบ</button></div>';
+  }).join('');
+};
+window.ctNeuroRecRemove=function(i){
+  var arr=window._ctNeuroRecordedFiles||[];
+  if(i>=0&&i<arr.length){arr.splice(i,1);window._ctNeuroRecordedFiles=arr;ctNeuroRecListRefresh();}
+};
+window.ctNeuroRecStop=function(){
+  if(window._ctNeuroMediaRec&&window._ctNeuroMediaRec.state==='recording'){
+    try{window._ctNeuroMediaRec.stop();}catch(e){}
+  }
+};
+window.ctNeuroRecStart=async function(){
+  if(window._ctNeuroMediaRec&&window._ctNeuroMediaRec.state==='recording')return;
+  var bs=document.getElementById('ctNeuroRecStart');
+  var be=document.getElementById('ctNeuroRecStop');
+  try{
+    window._ctNeuroRecChunks=[];
+    var constraints={audio:true,video:{facingMode:window._ctNeuroFacing,width:{ideal:1280},height:{ideal:720}}};
+    try{
+      window._ctNeuroRecStream=await navigator.mediaDevices.getUserMedia(constraints);
+    }catch(e0){
+      try{
+        window._ctNeuroRecStream=await navigator.mediaDevices.getUserMedia({audio:true,video:{facingMode:window._ctNeuroFacing}});
+      }catch(e1){
+        window._ctNeuroRecStream=await navigator.mediaDevices.getUserMedia({audio:true,video:true});
+      }
+    }
+    var v=document.getElementById('ctNeuroCamPrev');
+    if(v){v.srcObject=window._ctNeuroRecStream;v.style.display='block';}
+    var mime=ctNeuroRecPickMime();
+    if(!mime){
+      window._ctNeuroRecStream.getTracks().forEach(function(t){t.stop();});
+      window._ctNeuroRecStream=null;
+      alert('เบราว์เซอร์นี้ไม่รองรับการบันทึกวิดีโอ — ใช้เลือกไฟล์แทน');
+      return;
+    }
+    window._ctNeuroMediaRec=new MediaRecorder(window._ctNeuroRecStream,{mimeType:mime});
+    window._ctNeuroMediaRec.ondataavailable=function(e){if(e.data&&e.data.size>0)window._ctNeuroRecChunks.push(e.data);};
+    window._ctNeuroMediaRec.onstop=function(){
+      var mr=window._ctNeuroMediaRec;
+      var blob=new Blob(window._ctNeuroRecChunks,{type:(mr&&mr.mimeType)||mime||'video/webm'});
+      var ext=blob.type.indexOf('mp4')>=0?'mp4':'webm';
+      var file=new File([blob],'stroke-clip-'+(window._ctNeuroRecordedFiles.length+1)+'-'+Date.now()+'.'+ext,{type:blob.type||mime});
+      window._ctNeuroRecordedFiles.push(file);
+      ctNeuroRecListRefresh();
+      if(window._ctNeuroRecStream){
+        window._ctNeuroRecStream.getTracks().forEach(function(t){t.stop();});
+        window._ctNeuroRecStream=null;
+      }
+      window._ctNeuroMediaRec=null;
+      window._ctNeuroRecChunks=[];
+      var pv=document.getElementById('ctNeuroCamPrev');
+      if(pv){pv.srcObject=null;pv.style.display='none';}
+      if(bs)bs.disabled=false;
+      if(be)be.disabled=true;
+    };
+    window._ctNeuroMediaRec.start(500);
+    if(bs)bs.disabled=true;
+    if(be)be.disabled=false;
+  }catch(err){
+    if(window._ctNeuroRecStream){
+      window._ctNeuroRecStream.getTracks().forEach(function(t){t.stop();});
+      window._ctNeuroRecStream=null;
+    }
+    if(bs)bs.disabled=false;
+    if(be)be.disabled=true;
+    alert('เปิดกล้องไม่ได้: '+(err&&err.message?err.message:err));
+  }
+};
 window.ctNeuroCopyViewUrl=function(){
   const u=window._ctNeuro&&window._ctNeuro.viewUrl;
   if(!u)return;
@@ -1067,37 +1187,88 @@ window.ctNeuroCopyViewUrl=function(){
     if(st)st.textContent='คัดลอกลิงก์ Neuro แล้ว';
   }).catch(()=>alert(u));
 };
-/** เปิด LINE พร้อมข้อความร่าง (รวมลิงก์) — ผู้ใช้เลือกแชทแล้วกดส่งเอง */
-window.ctNeuroShareLine=function(){
+/** ข้อความส่ง Neuro: อายุ / onset / V/S / BEFAST+GCS / NIHSS ถ้าครบ (ไม่ใส่ชื่อ-HN) + ลิงก์ */
+window.buildCtNeuroLineText=function(){
   const u=window._ctNeuro&&window._ctNeuro.viewUrl;
-  if(!u){alert('ยังไม่มีลิงก์ — กดสร้างลิงก์ก่อน');return;}
-  const text='[Stroke Fast Track] ลิงก์ดูภาพ CT (ชั่วคราว ~4ชม. ไม่มี HN ในลิงก์)\n'+u;
+  if(!u)return null;
+  const lines=['[Stroke Fast Track] แชร์ภาพ CT (ชั่วคราว ~4ชม. ไม่มี HN/ชื่อในลิงก์)'];
+  const ag=(D.age&&String(D.age).trim());
+  if(ag)lines.push('อายุ: '+ag);
+  const oh=typeof getOnsetHours==='function'?getOnsetHours():null;
+  lines.push('Onset: '+(oh!==null?oh.toFixed(1)+' ชม. (last seen → ER)':'ไม่ทราบ / ยังไม่ครบคู่เวลา'));
+  const vs=D.vs||{};
+  const vb=[];
+  if(String(vs.temp||'').trim())vb.push('T '+String(vs.temp).trim()+'°C');
+  if(String(vs.rr||'').trim())vb.push('RR '+String(vs.rr).trim());
+  if(String(vs.pr||'').trim())vb.push('PR '+String(vs.pr).trim());
+  if(String(vs.bp||'').trim())vb.push('BP '+String(vs.bp).trim());
+  const o2m=String(vs.o2mode||'').trim();
+  const o2v=String(vs.o2||'').trim();
+  if(o2m||o2v)vb.push('O₂ '+(o2m&&o2v?o2m+' '+o2v:o2m||o2v));
+  if(vb.length)lines.push('V/S: '+vb.join(', '));
+  const gcs=D.gcs||{};
+  const gcsOk=gcs.E&&gcs.V&&gcs.M;
+  if(gcsOk){
+    const ge=Number(gcs.E),gv=Number(gcs.V),gm=Number(gcs.M);
+    const bfKeys=['B','E','F','A','S'];
+    const bfOn=bfKeys.filter(function(k){return D.befast&&D.befast[k];});
+    let bfG='GCS E'+ge+' V'+gv+' M'+gm+' (รวม '+(ge+gv+gm)+')';
+    if(bfOn.length)bfG='BEFAST +'+(bfOn.join(', '))+' | '+bfG;
+    lines.push(bfG);
+  }
+  if(typeof NIHSS!=='undefined'&&NIHSS.length&&NIHSS.every(function(i){return D.nihss&&typeof D.nihss[i.id]==='number';})){
+    const ntot=typeof getNIHSS==='function'?getNIHSS():0;
+    const sev=typeof getSev==='function'?getSev(ntot):{label:''};
+    lines.push('NIHSS: '+ntot+'/42 — '+(sev.label||''));
+  }
+  lines.push('ลิงก์ดูภาพ:\n'+u);
+  return lines.join('\n');
+};
+/** ส่งเข้า LINE ผ่าน OA (Messaging API) — ถ้าไม่ตั้ง token จะ fallback เปิด LINE ฉบับร่าง */
+window.ctNeuroShareLine=async function(){
+  const text=typeof buildCtNeuroLineText==='function'?buildCtNeuroLineText():null;
+  if(!text){alert('ยังไม่มีลิงก์ — กดสร้างลิงก์ก่อน');return;}
+  const st=document.getElementById('ctNeuroStatus');
+  if(st)st.textContent='กำลังส่งเข้า LINE...';
+  try{
+    const r=await fetch('/line-ct-push',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+    const j=await r.json().catch(()=>({}));
+    if(r.ok&&j.ok){
+      const m=j.method==='push_neuro'?'Neuro (1:1)':j.method==='push_refer_group'?'กลุ่ม Refer':j.method==='group_push'?'กลุ่มในระบบ':'Broadcast';
+      if(st)st.textContent='ส่งเข้า LINE แล้ว ('+m+')';
+      return;
+    }
+    const err=j.error||('HTTP '+r.status);
+    if(st)st.textContent='';
+    if(!confirm('ส่งผ่าน OA ไม่สำเร็จ: '+err+'\n\nเปิด LINE แบบข้อความร่างให้คัดลอกเองแทน?'))return;
+  }catch(e){
+    if(st)st.textContent='';
+    if(!confirm('เชื่อมต่อส่ง LINE ไม่ได้ — เปิด LINE แบบร่างข้อความแทน?'))return;
+  }
   const lineUrl='https://line.me/R/msg/text/?'+encodeURIComponent(text);
   try{
     window.open(lineUrl,'_blank','noopener,noreferrer');
-    const st=document.getElementById('ctNeuroStatus');
-    if(st)st.textContent='เปิด LINE แล้ว — เลือกแชท/กลุ่ม Neuro แล้วกดส่ง';
-  }catch(e){
-    alert('เปิด LINE ไม่ได้ — ใช้คัดลอกลิงก์แล้ววางในแชทแทน\n\n'+u);
+    if(st)st.textContent='เปิด LINE แล้ว — เลือกแชทแล้วกดส่ง';
+  }catch(e2){
+    alert('เปิด LINE ไม่ได้ — ใช้คัดลอกลิงก์\n\n'+(window._ctNeuro&&window._ctNeuro.viewUrl));
   }
 };
 window.ctNeuroCreateSession=async function(){
   const st=document.getElementById('ctNeuroStatus');
   const out=document.getElementById('ctNeuroSessionOut');
   const upRow=document.getElementById('ctNeuroUploadRow');
-  const secInp=document.getElementById('ctTempSecretInp');
   if(st)st.textContent='';
-  const headers={};
-  const s=secInp&&secInp.value.trim();
-  if(s)headers['X-CT-Temp-Secret']=s;
   try{
-    const r=await fetch('/ct-temp/session',{method:'POST',headers});
+    const r=await fetch('/ct-temp/session',{method:'POST'});
     const j=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(j.error||('HTTP '+r.status));
     window._ctNeuro={uploadToken:j.uploadToken,viewUrl:j.viewUrl};
+    window._ctNeuroRecordedFiles=[];
+    if(typeof ctNeuroRecListRefresh==='function')ctNeuroRecListRefresh();
+    if(typeof ctNeuroCapInit==='function')ctNeuroCapInit();
     if(out){
       out.style.display='block';
-      out.innerHTML='<div style="margin-bottom:6px;font-weight:700;color:var(--tx)">ลิงก์ให้ Neuro เปิดดู</div><div style="word-break:break-all;background:var(--bg2);padding:10px;border-radius:var(--rm);font-size:11px;margin-bottom:8px" id="ctNeuroViewUrlEl"></div><button type="button" onclick="ctNeuroCopyViewUrl()" style="width:100%;padding:9px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);font-size:12px;font-family:inherit;cursor:pointer">📋 คัดลอกลิงก์</button><button type="button" onclick="ctNeuroShareLine()" style="width:100%;padding:10px;margin-top:8px;border-radius:var(--rm);border:none;background:#06C755;color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">💬 เปิด LINE (ข้อความ+ลิงก์ร่าง)</button><div style="font-size:10px;color:var(--tx2);margin-top:6px;line-height:1.45">ถ้า LINE ไม่เปิดหรือเว็บใน LINE โหลดไม่ได้ — ใช้คัดลอก หรือเมนู ⋯ → เปิดใน Safari/Chrome</div>';
+      out.innerHTML='<div style="margin-bottom:6px;font-weight:700;color:var(--tx)">ลิงก์ให้ Neuro เปิดดู</div><div style="word-break:break-all;background:var(--bg2);padding:10px;border-radius:var(--rm);font-size:11px;margin-bottom:8px" id="ctNeuroViewUrlEl"></div><button type="button" onclick="ctNeuroCopyViewUrl()" style="width:100%;padding:9px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);font-size:12px;font-family:inherit;cursor:pointer">📋 คัดลอกลิงก์</button><button type="button" onclick="ctNeuroShareLine()" style="width:100%;padding:10px;margin-top:8px;border-radius:var(--rm);border:none;background:#06C755;color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">💬 ส่งเข้า LINE (OA)</button><div style="font-size:10px;color:var(--tx2);margin-top:6px;line-height:1.45">Messaging API: <code style="font-size:9px">LINE_CHANNEL_ACCESS_TOKEN</code> + ปลายทาง • ข้อความรวม BEFAST/GCS และ NIHSS เมื่อกรอกครบในขั้นอาการ/NIHSS</div>';
       const el=document.getElementById('ctNeuroViewUrlEl');
       if(el)el.textContent=j.viewUrl;
     }
@@ -1107,6 +1278,8 @@ window.ctNeuroCreateSession=async function(){
     if(out)out.style.display='none';
     if(upRow)upRow.style.display='none';
     window._ctNeuro={uploadToken:null,viewUrl:null};
+    window._ctNeuroRecordedFiles=[];
+    if(typeof ctNeuroRecListRefresh==='function')ctNeuroRecListRefresh();
     alert('สร้างลิงก์ไม่สำเร็จ: '+(e.message||e)+'\n\nถ้ายังไม่ได้ผูก KV+R2 บน Cloudflare ดู wrangler.toml');
   }
 };
@@ -1114,12 +1287,16 @@ window.ctNeuroUpload=async function(){
   const st=document.getElementById('ctNeuroStatus');
   const tok=window._ctNeuro&&window._ctNeuro.uploadToken;
   const fi=document.getElementById('ctNeuroFile');
+  const rec=window._ctNeuroRecordedFiles||[];
+  const nPick=fi&&fi.files?fi.files.length:0;
   if(!tok){if(st)st.textContent='กดสร้างลิงก์ก่อน';return;}
-  if(!fi||!fi.files||!fi.files[0]){if(st)st.textContent='เลือกไฟล์ก่อน';return;}
-  if(st)st.textContent='กำลังอัปโหลด...';
+  if(!nPick&&!rec.length){if(st)st.textContent='เลือกไฟล์หรือถ่ายวิดีโอก่อน';return;}
+  const nTotal=nPick+rec.length;
+  if(st)st.textContent='กำลังอัปโหลด '+nTotal+' ไฟล์...';
   try{
     const fd=new FormData();
-    fd.append('file',fi.files[0]);
+    for(let i=0;i<nPick;i++)fd.append('file',fi.files[i]);
+    for(let i=0;i<rec.length;i++)fd.append('file',rec[i]);
     const r=await fetch('/ct-temp/upload',{
       method:'POST',
       headers:{Authorization:'Bearer '+tok},
@@ -1127,7 +1304,12 @@ window.ctNeuroUpload=async function(){
     });
     const j=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(j.error||('HTTP '+r.status));
-    if(st)st.textContent='อัปโหลดสำเร็จ — แจ้ง Neuro เปิดลิงก์ได้เลย';
+    const add=j.added!=null?j.added:nTotal;
+    const tot=j.totalFiles!=null?j.totalFiles:add;
+    window._ctNeuroRecordedFiles=[];
+    if(typeof ctNeuroRecListRefresh==='function')ctNeuroRecListRefresh();
+    if(st)st.textContent='อัปโหลดแล้ว '+add+' ไฟล์ — รวม '+tot+' ไฟล์ในลิงก์ (เลือกเพิ่มแล้วกดอัปโหลดซ้ำได้)';
+    try{fi.value='';}catch(_){}
   }catch(e){
     if(st)st.textContent='';
     alert('อัปโหลดไม่สำเร็จ: '+(e.message||e));
@@ -2242,6 +2424,11 @@ function clearAll(){
     pmh:{dm:false,ht:false,dl:false,heart:false},pmhOther:'',currentMed:''};
   step=0;
   window._ctNeuro={uploadToken:null,viewUrl:null};
+  window._ctNeuroRecordedFiles=[];
+  if(window._ctNeuroRecStream){try{window._ctNeuroRecStream.getTracks().forEach(function(t){t.stop();});}catch(e){}window._ctNeuroRecStream=null;}
+  if(window._ctNeuroMediaRec&&window._ctNeuroMediaRec.state==='recording'){try{window._ctNeuroMediaRec.stop();}catch(e){}}
+  window._ctNeuroMediaRec=null;
+  if(typeof ctNeuroRecListRefresh==='function')ctNeuroRecListRefresh();
   document.getElementById('app').style.display='none';
   document.getElementById('lockWrap').style.display='flex';
   pinBuf='';updDots('pinDots',0);
