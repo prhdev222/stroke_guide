@@ -109,7 +109,7 @@ input[type=file]{width:100%;font-size:16px;margin:6px 0 10px;padding:10px;border
 .mob-cap h2{font-size:14px;margin:0 0 6px}
 .mob-rb{display:inline-flex;align-items:center;justify-content:center;padding:12px 14px;margin:6px 6px 0 0;border-radius:10px;border:1px solid #1b4f72;background:#f8fafc;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;touch-action:manipulation}
 .mob-rb:disabled{opacity:.5;cursor:not-allowed}
-#mobPrev{width:100%;max-height:220px;background:#111;border-radius:10px;display:none}
+#mobPrev{width:100%;max-height:220px;min-height:120px;background:#111;border-radius:10px;display:none;object-fit:contain;-webkit-transform:translateZ(0);transform:translateZ(0)}
 </style></head><body>
 ${pinBlock}
 <div id="mainUpload" class="box" style="${mainStyle}">
@@ -123,7 +123,7 @@ ${pinBlock}
 <div class="mob-cap" id="mobCapWrap">
 <h2>📹 ถ่ายวิดีโอในหน้านี้ (หลายคลิปได้)</h2>
 <p class="hint">อนุญาตกล้อง+ไมค์ • กดเริ่ม/หยุดทีละคลิป แล้วกด <strong>อัปโหลด</strong> — ส่งพร้อมรูป/วิดีโอที่เลือกด้านบน</p>
-<video id="mobPrev" playsinline muted></video>
+<video id="mobPrev" playsinline webkit-playsinline muted></video>
 <div>
 <button type="button" class="mob-rb" id="mobRecStart">● เริ่มถ่าย</button>
 <button type="button" class="mob-rb" id="mobRecStop" disabled>■ หยุดถ่าย</button>
@@ -151,6 +151,22 @@ ${pinBlock}
     var c=['video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
     for(var i=0;i<c.length;i++){if(window.MediaRecorder&&MediaRecorder.isTypeSupported(c[i]))return c[i];}
     return '';
+  }
+  function bindMobPrev(v,stream){
+    if(!v||!stream)return;
+    v.muted=true;
+    v.defaultMuted=true;
+    v.setAttribute('muted','');
+    v.setAttribute('playsinline','');
+    v.setAttribute('webkit-playsinline','');
+    try{v.playsInline=true;}catch(e){}
+    v.style.objectFit='contain';
+    v.style.minHeight='120px';
+    v.srcObject=stream;
+    v.style.display='block';
+    function tryPlay(){var p=v.play&&v.play();if(p&&typeof p.then==='function')p.catch(function(){});}
+    v.onloadedmetadata=function(){tryPlay();};
+    tryPlay();
   }
   function recListRefresh(){
     var el=document.getElementById('mobRecList');
@@ -198,7 +214,7 @@ ${pinBlock}
           catch(e1){window._mobStream=await navigator.mediaDevices.getUserMedia({audio:true,video:true});}
         }
         var v=document.getElementById('mobPrev');
-        if(v){v.srcObject=window._mobStream;v.style.display='block';}
+        bindMobPrev(v,window._mobStream);
         var mime=pickMime();
         if(!mime){
           window._mobStream.getTracks().forEach(function(t){t.stop();});
@@ -219,7 +235,7 @@ ${pinBlock}
           window._mobMR=null;
           window._mobChunks=[];
           var pv=document.getElementById('mobPrev');
-          if(pv){pv.srcObject=null;pv.style.display='none';}
+          if(pv){pv.onloadedmetadata=null;pv.srcObject=null;pv.style.display='none';}
           if(bs)bs.disabled=false;
           if(be)be.disabled=true;
         };
