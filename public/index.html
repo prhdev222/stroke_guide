@@ -235,7 +235,7 @@ function rHome(){
     <div class="launch-icon" style="background:var(--purple-bg)">🧠</div>
     <div>
       <div class="launch-title">Quiz - สถานการณ์ Stroke</div>
-      <div class="launch-sub">แบบทดสอบ 10 ข้อ · เคส Fast Track รพ.สงฆ์<br>เปิดแท็บใหม่ (GitHub Pages)</div>
+      <div class="launch-sub">แบบทดสอบ 10 ข้อ · สุ่ม 4 เคส · ทดสอบ NIHSS<br>เปิดแท็บใหม่ (GitHub Pages)</div>
     </div>
     <div class="launch-arrow">↗</div>
   </a>
@@ -434,7 +434,7 @@ async function loadAndShowVid(){
   const quizFooter=`<div class="gl-card" style="margin-top:18px;border-color:var(--purple-bd);background:var(--purple-bg)">
     <div style="font-size:10px;font-weight:600;color:var(--purple-tx);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">แบบทดสอบ</div>
     <div class="gl-title" style="color:var(--purple-tx);margin-bottom:4px">Quiz - สถานการณ์ Stroke</div>
-    <div class="gl-body" style="color:var(--tx2);margin-bottom:10px">แบบทดสอบพยาบาล 10 ข้อ · เคส Fast Track รพ.สงฆ์</div>
+    <div class="gl-body" style="color:var(--tx2);margin-bottom:10px">แบบทดสอบ 10 ข้อ · สุ่ม 4 เคส · ทดสอบ NIHSS</div>
     <a href="https://prhdev222.github.io/stroke_nurse_quiz-/" target="_blank" rel="noopener" class="link-btn link-url">↗ เปิด Quiz (GitHub Pages)</a>
   </div>`;
   const r=await tursoQuery("SELECT * FROM guidelines WHERE section='video' ORDER BY sort_order ASC, created_at DESC");

@@ -303,7 +303,7 @@ git push
 | `stroke.medpriest.com/` | index.html | Menu + Guideline + วิดีโอ |
 | `stroke.medpriest.com/stroke_staff_wizard.html` | staff | 8-step wizard + AI + PDF |
 | `stroke.medpriest.com/stroke_guest.html` | guest | BEFAST + NIHSS + rt-PA |
-| [Quiz - สถานการณ์ Stroke](https://prhdev222.github.io/stroke_nurse_quiz-/) | ภายนอก | แบบทดสอบพยาบาล · 10 ข้อ · GitHub Pages |
+| [Quiz - สถานการณ์ Stroke](https://prhdev222.github.io/stroke_nurse_quiz-/) | ภายนอก | 10 ข้อ · สุ่ม 4 เคส · ทดสอบ NIHSS · GitHub Pages |
 
 ### Staff Mode — 8 ขั้นตอน
 ```
