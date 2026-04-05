@@ -327,7 +327,7 @@ rt-PA     คำนวณ dose จากน้ำหนัก
 
 ### Menu — 3 แท็บ
 ```
-หน้าหลัก   ลิงก์ไป Staff / Guest / Quiz - สถานการณ์ Stroke / Guideline / วิดีโอ
+หน้าหลัก   ลิงก์ไป Staff / Guest / Guideline / วิดีโอ / Quiz - สถานการณ์ Stroke (ใต้การ์ดวิดีโอ) · แท็บวิดีโอมีบล็อก Quiz ท้ายรายการ
 Guideline  เพิ่ม/แก้ไข protocol ได้ (ต้องใส่ PIN) — Turso database
 วิดีโอ     YouTube embed + Google Drive link (ต้องใส่ PIN) — Turso database
 ```
