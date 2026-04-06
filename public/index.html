@@ -446,8 +446,14 @@ async function loadAndShowVid(){
     <div class="gl-body" style="color:var(--tx2);margin-bottom:10px">แบบทดสอบ 10 ข้อ · สุ่ม 4 เคส · ทดสอบ NIHSS</div>
     <a href="https://prhdev222.github.io/stroke_nurse_quiz-/" target="_blank" rel="noopener" class="link-btn link-url">↗ เปิด Quiz (GitHub Pages)</a>
   </div>`;
+  const ctFooter=`<div class="gl-card" style="margin-top:12px;border-color:var(--ibd);background:var(--ibg)">
+    <div style="font-size:10px;font-weight:600;color:var(--itx);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">CT BRAIN</div>
+    <div class="gl-title" style="color:var(--itx);margin-bottom:4px">CT Brain : อ่านเคส & แบบทดสอบ</div>
+    <div class="gl-body" style="color:var(--tx2);margin-bottom:10px">ฝึกอ่าน CT Brain NC · เคสตัวอย่าง · Quiz</div>
+    <a href="https://ct-training-3ax.pages.dev/" target="_blank" rel="noopener" class="link-btn link-url">↗ เปิด CT Brain Training</a>
+  </div>`;
   const r=await tursoQuery("SELECT * FROM guidelines WHERE section='video' ORDER BY sort_order ASC, created_at DESC");
-  if(r.error){el.innerHTML=tursoErrorHtml(r.error)+quizFooter;return;}
+  if(r.error){el.innerHTML=tursoErrorHtml(r.error)+quizFooter+ctFooter;return;}
   const rows=r.rows||[];
   const ytRows=rows.filter(x=>x.link_type==='youtube');
   const otherRows=rows.filter(x=>x.link_type!=='youtube');
@@ -471,7 +477,7 @@ async function loadAndShowVid(){
       otherRows.forEach(r=>{html+=vidLinkCard(r);});
     }
   }
-  html+=quizFooter;
+  html+=quizFooter+ctFooter;
   el.innerHTML=html;
 }
 
