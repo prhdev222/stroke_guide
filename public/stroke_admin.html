@@ -243,8 +243,35 @@ function renderWard(){
   <div class="card">
     <div class="sec">📊 Log การเข้าระบบ Staff (ล่าสุด 20 ครั้ง)</div>
     <div id="loginLogList">กำลังโหลด...</div>
-    <button type="button" class="btn-sm" onclick="loadLoginLog()" style="margin-top:10px">↺ รีเฟรช</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <button type="button" class="btn-sm" onclick="loadLoginLog()">↺ รีเฟรช</button>
+      <button type="button" class="btn-gray" onclick="exportStaffLoginLogCsv()">⬇ ดาวน์โหลด CSV</button>
+      <button type="button" class="btn-danger" onclick="resetStaffLoginLog()">🗑 reset (ลบ log ทั้งหมด)</button>
+    </div>
+    <div style="font-size:11px;color:var(--tx2);margin-top:8px;line-height:1.6">
+      หมายเหตุ: log นี้บันทึกเฉพาะ <strong>ward_code + เวลาเข้า</strong> (ไม่มี HN/ชื่อ)
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sec">📦 ส่งออกข้อมูล (Case Log / Staff Login Log)</div>
+    <div style="font-size:12px;color:var(--tx2);line-height:1.7;margin-bottom:10px">
+      ใช้ส่งต่อ/สรุปงานได้ทันที (ดาวน์โหลดเป็น CSV)
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button type="button" class="btn-gray" onclick="exportCaseLogCsv()">⬇ Case Log (CSV)</button>
+      <button type="button" class="btn-gray" onclick="exportStaffLoginLogCsv()">⬇ Staff Login Log (CSV)</button>
+      <button type="button" class="btn-danger" onclick="resetCaseLog()">🗑 reset Case Log</button>
+    </div>
   </div>`;
+}
+
+async function ensureStaffLoginLogTable(){
+  await tursoQuery(`CREATE TABLE IF NOT EXISTS staff_login_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ward_code TEXT NOT NULL,
+    logged_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+  )`);
 }
 
 async function loadWardList(){
@@ -272,6 +299,7 @@ async function loadLoginLog(){
   const el=document.getElementById('loginLogList');
   if(!el)return;
   el.textContent='กำลังโหลด...';
+  await ensureStaffLoginLogTable();
   const r=await tursoQuery('SELECT ward_code,logged_at FROM staff_login_log ORDER BY logged_at DESC LIMIT 20');
   if(r.error){el.innerHTML=`<span style="color:var(--dtx)">${r.error}</span>`;return;}
   if(!r.rows||r.rows.length===0){el.textContent='ยังไม่มี log การเข้าระบบ';return;}
@@ -286,6 +314,53 @@ async function loadLoginLog(){
         <td style="padding:6px 8px;border-bottom:0.5px solid var(--bl)">${esc(row.logged_at)}</td>
       </tr>`).join('')}
     </tbody></table>`;
+}
+
+function csvEscape(v){
+  const s=v==null?'':String(v);
+  return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+}
+function downloadCsv(filename, rows){
+  if(!rows||!rows.length){alert('ไม่มีข้อมูล');return;}
+  const cols=Object.keys(rows[0]);
+  const lines=[cols.join(','),...rows.map(r=>cols.map(c=>csvEscape(r[c])).join(','))];
+  const blob=new Blob(["\uFEFF"+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},0);
+}
+
+async function exportStaffLoginLogCsv(){
+  await ensureStaffLoginLogTable();
+  const r=await tursoQuery('SELECT ward_code,logged_at FROM staff_login_log ORDER BY logged_at DESC');
+  if(r.error){alert('ส่งออกไม่ได้: '+r.error);return;}
+  downloadCsv('staff_login_log.csv',r.rows||[]);
+}
+
+async function exportCaseLogCsv(){
+  const r=await tursoQuery('SELECT * FROM case_log ORDER BY logged_at DESC');
+  if(r.error){alert('ส่งออกไม่ได้: '+r.error);return;}
+  downloadCsv('case_log.csv',r.rows||[]);
+}
+
+async function resetStaffLoginLog(){
+  if(!confirm('ลบ Staff login log ทั้งหมดใน Turso ใช่หรือไม่?'))return;
+  await ensureStaffLoginLogTable();
+  const r=await tursoQuery('DELETE FROM staff_login_log');
+  if(r.error){alert('ลบไม่สำเร็จ: '+r.error);return;}
+  await tursoQuery(\"DELETE FROM sqlite_sequence WHERE name='staff_login_log'\").catch?.(()=>{});
+  loadLoginLog();
+}
+
+async function resetCaseLog(){
+  if(!confirm('ลบ Case Log ทั้งหมดใน Turso ใช่หรือไม่?'))return;
+  const r=await tursoQuery('DELETE FROM case_log');
+  if(r.error){alert('ลบไม่สำเร็จ: '+r.error);return;}
+  await tursoQuery(\"DELETE FROM sqlite_sequence WHERE name='case_log'\").catch?.(()=>{});
+  alert('ลบ Case Log แล้ว');
 }
 
 async function saveWard(){
