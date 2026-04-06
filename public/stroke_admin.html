@@ -351,7 +351,7 @@ async function resetStaffLoginLog(){
   await ensureStaffLoginLogTable();
   const r=await tursoQuery('DELETE FROM staff_login_log');
   if(r.error){alert('ลบไม่สำเร็จ: '+r.error);return;}
-  await tursoQuery(\"DELETE FROM sqlite_sequence WHERE name='staff_login_log'\").catch?.(()=>{});
+  await tursoQuery("DELETE FROM sqlite_sequence WHERE name='staff_login_log'").catch?.(()=>{});
   loadLoginLog();
 }
 
@@ -359,7 +359,7 @@ async function resetCaseLog(){
   if(!confirm('ลบ Case Log ทั้งหมดใน Turso ใช่หรือไม่?'))return;
   const r=await tursoQuery('DELETE FROM case_log');
   if(r.error){alert('ลบไม่สำเร็จ: '+r.error);return;}
-  await tursoQuery(\"DELETE FROM sqlite_sequence WHERE name='case_log'\").catch?.(()=>{});
+  await tursoQuery("DELETE FROM sqlite_sequence WHERE name='case_log'").catch?.(()=>{});
   alert('ลบ Case Log แล้ว');
 }
 
