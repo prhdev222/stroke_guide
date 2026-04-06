@@ -258,6 +258,19 @@ function renderWard(){
     <div style="font-size:12px;color:var(--tx2);line-height:1.7;margin-bottom:10px">
       ใช้ส่งต่อ/สรุปงานได้ทันที (ดาวน์โหลดเป็น CSV)
     </div>
+    <div class="ward-row" style="grid-template-columns:1fr 1fr;align-items:end">
+      <div>
+        <div class="lbl">วันที่เริ่ม</div>
+        <input type="date" id="exportFromDate">
+      </div>
+      <div>
+        <div class="lbl">วันที่สิ้นสุด</div>
+        <input type="date" id="exportToDate">
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--tx2);margin:6px 0 10px;line-height:1.6">
+      ถ้าไม่เลือกวันที่ = ส่งออกทั้งหมด • ถ้าเลือกช่วง = ส่งออกเฉพาะ <strong>ภายในช่วงวันที่</strong> (รวมวันสิ้นสุด)
+    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button type="button" class="btn-gray" onclick="exportCaseLogCsv()">⬇ Case Log (CSV)</button>
       <button type="button" class="btn-gray" onclick="exportStaffLoginLogCsv()">⬇ Staff Login Log (CSV)</button>
@@ -336,15 +349,61 @@ function downloadCsv(filename, rows){
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},0);
 }
 
+function getExportRange(){
+  const from=document.getElementById('exportFromDate')?.value||'';
+  const to=document.getElementById('exportToDate')?.value||'';
+  const f=String(from).trim();
+  const t=String(to).trim();
+  if(!f&&!t)return null;
+  if(f&&t&&f>t)throw new Error('ช่วงวันที่ไม่ถูกต้อง: วันที่เริ่มต้องไม่เกินวันที่สิ้นสุด');
+  return { from: f || null, to: t || null };
+}
+function nextDay(yyyyMmDd){
+  const m=String(yyyyMmDd||'').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return null;
+  const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));
+  d.setDate(d.getDate()+1);
+  const y=d.getFullYear();
+  const mo=String(d.getMonth()+1).padStart(2,'0');
+  const da=String(d.getDate()).padStart(2,'0');
+  return `${y}-${mo}-${da}`;
+}
+
 async function exportStaffLoginLogCsv(){
   await ensureStaffLoginLogTable();
-  const r=await tursoQuery('SELECT ward_code,logged_at FROM staff_login_log ORDER BY logged_at DESC');
+  let sql='SELECT ward_code,logged_at FROM staff_login_log';
+  const args=[];
+  try{
+    const rg=getExportRange();
+    if(rg){
+      const f=rg.from?`${rg.from} 00:00:00`:null;
+      const t=rg.to?`${nextDay(rg.to)} 00:00:00`:null;
+      if(f&&t){sql+=' WHERE logged_at >= ? AND logged_at < ?';args.push(f,t);}
+      else if(f){sql+=' WHERE logged_at >= ?';args.push(f);}
+      else if(t){sql+=' WHERE logged_at < ?';args.push(t);}
+    }
+  }catch(e){alert(e.message);return;}
+  sql+=' ORDER BY logged_at DESC';
+  const r=await tursoQuery(sql,args);
   if(r.error){alert('ส่งออกไม่ได้: '+r.error);return;}
   downloadCsv('staff_login_log.csv',r.rows||[]);
 }
 
 async function exportCaseLogCsv(){
-  const r=await tursoQuery('SELECT * FROM case_log ORDER BY logged_at DESC');
+  let sql='SELECT * FROM case_log';
+  const args=[];
+  try{
+    const rg=getExportRange();
+    if(rg){
+      const f=rg.from?`${rg.from} 00:00:00`:null;
+      const t=rg.to?`${nextDay(rg.to)} 00:00:00`:null;
+      if(f&&t){sql+=' WHERE logged_at >= ? AND logged_at < ?';args.push(f,t);}
+      else if(f){sql+=' WHERE logged_at >= ?';args.push(f);}
+      else if(t){sql+=' WHERE logged_at < ?';args.push(t);}
+    }
+  }catch(e){alert(e.message);return;}
+  sql+=' ORDER BY logged_at DESC';
+  const r=await tursoQuery(sql,args);
   if(r.error){alert('ส่งออกไม่ได้: '+r.error);return;}
   downloadCsv('case_log.csv',r.rows||[]);
 }
