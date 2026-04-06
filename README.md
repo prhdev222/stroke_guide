@@ -304,6 +304,7 @@ git push
 | `stroke.medpriest.com/stroke_staff_wizard.html` | staff | 8-step wizard + AI + PDF |
 | `stroke.medpriest.com/stroke_guest.html` | guest | BEFAST + NIHSS + rt-PA |
 | [Quiz - สถานการณ์ Stroke](https://prhdev222.github.io/stroke_nurse_quiz-/) | ภายนอก | 10 ข้อ · สุ่ม 4 เคส · ทดสอบ NIHSS · GitHub Pages |
+| [CT Brain : อ่านเคส & แบบทดสอบ](https://ct-training-3ax.pages.dev/) | ภายนอก | CT Brain NC · เคสตัวอย่าง · Quiz · Training Studio |
 
 ### Staff Mode — 8 ขั้นตอน
 ```
@@ -327,7 +328,7 @@ rt-PA     คำนวณ dose จากน้ำหนัก
 
 ### Menu — 3 แท็บ
 ```
-หน้าหลัก   ลิงก์ไป Staff / Guest / Guideline / วิดีโอ / Quiz - สถานการณ์ Stroke (ใต้การ์ดวิดีโอ) · แท็บวิดีโอมีบล็อก Quiz ท้ายรายการ
+หน้าหลัก   ลิงก์ไป Staff / Guest / Guideline / วิดีโอ / Quiz - สถานการณ์ Stroke (ใต้การ์ดวิดีโอ) · CT Brain : อ่านเคส & แบบทดสอบ (ใต้ Quiz) · แท็บวิดีโอมีบล็อก Quiz ท้ายรายการ
 Guideline  เพิ่ม/แก้ไข protocol ได้ (ต้องใส่ PIN) — Turso database
 วิดีโอ     YouTube embed + Google Drive link (ต้องใส่ PIN) — Turso database
 ```
