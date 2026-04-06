@@ -261,7 +261,6 @@ function renderWard(){
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button type="button" class="btn-gray" onclick="exportCaseLogCsv()">⬇ Case Log (CSV)</button>
       <button type="button" class="btn-gray" onclick="exportStaffLoginLogCsv()">⬇ Staff Login Log (CSV)</button>
-      <button type="button" class="btn-danger" onclick="resetCaseLog()">🗑 reset Case Log</button>
     </div>
   </div>`;
 }
@@ -353,14 +352,6 @@ async function resetStaffLoginLog(){
   if(r.error){alert('ลบไม่สำเร็จ: '+r.error);return;}
   await tursoQuery("DELETE FROM sqlite_sequence WHERE name='staff_login_log'").catch?.(()=>{});
   loadLoginLog();
-}
-
-async function resetCaseLog(){
-  if(!confirm('ลบ Case Log ทั้งหมดใน Turso ใช่หรือไม่?'))return;
-  const r=await tursoQuery('DELETE FROM case_log');
-  if(r.error){alert('ลบไม่สำเร็จ: '+r.error);return;}
-  await tursoQuery("DELETE FROM sqlite_sequence WHERE name='case_log'").catch?.(()=>{});
-  alert('ลบ Case Log แล้ว');
 }
 
 async function saveWard(){
