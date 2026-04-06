@@ -261,6 +261,10 @@ function renderWard(){
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button type="button" class="btn-gray" onclick="exportCaseLogCsv()">⬇ Case Log (CSV)</button>
       <button type="button" class="btn-gray" onclick="exportStaffLoginLogCsv()">⬇ Staff Login Log (CSV)</button>
+      <button type="button" class="btn-danger" onclick="resetCaseLog()">🗑 reset Case Log</button>
+    </div>
+    <div style="font-size:11px;color:var(--dtx);margin-top:8px;line-height:1.6">
+      ⚠️ ระวัง: ถ้ากด reset Case Log แล้ว <strong>ข้อมูลเคสจะหายทั้งหมด</strong> (กู้คืนไม่ได้)
     </div>
   </div>`;
 }
@@ -352,6 +356,17 @@ async function resetStaffLoginLog(){
   if(r.error){alert('ลบไม่สำเร็จ: '+r.error);return;}
   await tursoQuery("DELETE FROM sqlite_sequence WHERE name='staff_login_log'").catch?.(()=>{});
   loadLoginLog();
+}
+
+async function resetCaseLog(){
+  const ok1=confirm('⚠️ reset Case Log จะลบข้อมูลเคสทั้งหมดใน Turso และกู้คืนไม่ได้\n\nต้องการดำเนินการต่อหรือไม่?');
+  if(!ok1)return;
+  const typed=prompt('พิมพ์คำว่า DELETE เพื่อยืนยันการลบข้อมูล Case Log ทั้งหมด','');
+  if(String(typed||'').trim().toUpperCase()!=='DELETE'){alert('ยกเลิก — คำยืนยันไม่ถูกต้อง');return;}
+  const r=await tursoQuery('DELETE FROM case_log');
+  if(r.error){alert('ลบไม่สำเร็จ: '+r.error);return;}
+  await tursoQuery("DELETE FROM sqlite_sequence WHERE name='case_log'").catch?.(()=>{});
+  alert('ลบ Case Log แล้ว (ข้อมูลหายทั้งหมด)');
 }
 
 async function saveWard(){
