@@ -632,23 +632,72 @@ function renderLine(){
       • <code>LINE_CHANNEL_ACCESS_TOKEN</code> — จาก LINE Developers Console<br>
       • <code>WEBAPP_URL</code> — URL ของแอป (เช่น https://stroke-prh.pages.dev)
     </div>
-    <div style="font-size:12px;color:var(--tx2);margin-bottom:6px">
-      Admin สามารถแก้ข้อความ LINE สำหรับปุ่ม<br>
-      <strong>ส่งแพทย์ (Stroke Alert)</strong> และ <strong>ส่ง Refer</strong> ได้ที่นี่
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:8px;line-height:1.7">
+      ข้อความที่ส่งผ่าน OA ตอนนี้เป็น <strong>Flex Message</strong> (ไม่ใช่ข้อความ plain) — ด้านล่างเป็นตัวอย่าง <strong>payload ที่ส่งได้จริง</strong><br>
+      คุณสามารถเติมข้อความ <strong>ก่อน/หลัง</strong> ใน Flex ได้ (เช่น หมายเหตุ/คำสั่งงานเพิ่มเติม) โดยไม่ต้องแก้โค้ด
     </div>
-    <div class="form-row">
-      <div class="lbl">Template ข้อความสำหรับปุ่ม \"ส่งแพทย์\" (type = stroke_alert)</div>
-      <textarea id="tplStroke" rows="7" style="font-family:monospace;font-size:11px"></textarea>
-      <div style="font-size:11px;color:var(--tx2);margin-top:4px">
-        ตัวแปรที่ใช้ได้: <code>{{ward}}</code>, <code>{{onset}}</code>, <code>{{nihss}}</code>, <code>{{nihss_sev}}</code>,
-        <code>{{ct}}</code>, <code>{{dtn}}</code>, <code>{{dtn_line}}</code>, <code>{{web_url}}</code>
+
+    <div class="grid2">
+      <div class="card" style="border:0.5px solid var(--bm);padding:12px;margin:0">
+        <div class="sec" style="margin-bottom:6px">🚨 Stroke Alert (Flex)</div>
+        <div class="form-row">
+          <div class="lbl">เพิ่มข้อความด้านบน (optional)</div>
+          <textarea id="lineStrokePrefix" rows="2" placeholder="เช่น โปรดตอบรับภายใน 5 นาที"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="lbl">เพิ่มข้อความด้านล่าง (optional)</div>
+          <textarea id="lineStrokeSuffix" rows="2" placeholder="เช่น ติดต่อ ER เบอร์..."></textarea>
+        </div>
+        <div style="font-size:11px;color:var(--tx2);margin:6px 0 8px;line-height:1.6">
+          ใช้กับปุ่ม <strong>ส่งแพทย์</strong> (type = <code>stroke_alert</code>)
+        </div>
+        <details>
+          <summary style="cursor:pointer;font-size:12px;color:var(--itx);font-weight:600">ดูตัวอย่าง Flex payload</summary>
+          <pre id="lineFlexStrokeSample" style="white-space:pre-wrap;background:var(--bg2);border:0.5px solid var(--bm);padding:10px;border-radius:var(--rm);font-size:11px;line-height:1.55;margin-top:8px"></pre>
+        </details>
+      </div>
+
+      <div class="card" style="border:0.5px solid var(--bm);padding:12px;margin:0">
+        <div class="sec" style="margin-bottom:6px">🚑 Refer Alert (Flex)</div>
+        <div class="form-row">
+          <div class="lbl">เพิ่มข้อความด้านบน (optional)</div>
+          <textarea id="lineReferPrefix" rows="2" placeholder="เช่น เตรียมรถ refer / ประสานปลายทาง"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="lbl">เพิ่มข้อความด้านล่าง (optional)</div>
+          <textarea id="lineReferSuffix" rows="2" placeholder="เช่น แจ้งผล CT เพิ่มเติมได้ในแชทนี้"></textarea>
+        </div>
+        <div style="font-size:11px;color:var(--tx2);margin:6px 0 8px;line-height:1.6">
+          ใช้กับปุ่ม <strong>ส่ง Refer</strong> (type = <code>refer_alert</code>)
+        </div>
+        <details>
+          <summary style="cursor:pointer;font-size:12px;color:var(--itx);font-weight:600">ดูตัวอย่าง Flex payload</summary>
+          <pre id="lineFlexReferSample" style="white-space:pre-wrap;background:var(--bg2);border:0.5px solid var(--bm);padding:10px;border-radius:var(--rm);font-size:11px;line-height:1.55;margin-top:8px"></pre>
+        </details>
       </div>
     </div>
-    <div class="form-row">
-      <div class="lbl">Template ข้อความสำหรับปุ่ม \"ส่ง Refer\" (type = refer_alert)</div>
-      <textarea id="tplRefer" rows="7" style="font-family:monospace;font-size:11px"></textarea>
+
+    <div class="card" style="border:0.5px solid var(--bm);padding:12px;margin:10px 0 0">
+      <div class="sec" style="margin-bottom:6px">🧠 CT Neuro Share (ข้อความล้วน)</div>
+      <div style="font-size:12px;color:var(--tx2);line-height:1.7;margin-bottom:8px">
+        ปุ่มแชร์ CT ใน Staff Wizard จะส่งเป็น <strong>ข้อความ</strong> ไปที่ endpoint <code>/line-ct-push</code>
+      </div>
+      <div class="grid2">
+        <div class="form-row">
+          <div class="lbl">เพิ่มข้อความด้านบน (optional)</div>
+          <textarea id="lineCtPrefix" rows="2" placeholder="เช่น CT update — โปรดเปิดลิงก์ดูภาพ"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="lbl">เพิ่มข้อความด้านล่าง (optional)</div>
+          <textarea id="lineCtSuffix" rows="2" placeholder="เช่น ถ้ามี ICH ให้โทร..."></textarea>
+        </div>
+      </div>
     </div>
-    <button type="button" class="btn-red" onclick="saveLineTemplates()">บันทึกข้อความ LINE</button>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <button type="button" class="btn-gray" onclick="refreshLineSamples()">รีเฟรชตัวอย่าง Flex</button>
+      <button type="button" class="btn-red" onclick="saveLineSettings()">บันทึกการตั้งค่า LINE</button>
+    </div>
     <div id="lineTplMsg" class="msg" style="display:none;margin-top:8px"></div>
   </div>
   <div class="card">
@@ -658,55 +707,138 @@ function renderLine(){
   </div>`;
 }
 
-async function loadLineTemplates(){
-  const strokeEl=document.getElementById('tplStroke');
-  const referEl=document.getElementById('tplRefer');
-  if(!strokeEl||!referEl)return;
-  strokeEl.value=`Stroke Alert — รพ.สงฆ์
--------------------------
-Ward: {{ward}}
-Onset: {{onset}} ชม.
-NIHSS: {{nihss}} — {{nihss_sev}}
-CT: {{ct}}
-{{dtn_line}}
--------------------------
-รายละเอียด: {{web_url}}`;
+function buildLineFlexSample(type, extras){
+  const isRefer = type === 'refer_alert';
+  const d = {
+    ward: 'ER',
+    onset: 2.5,
+    nihss: 8,
+    nihss_sev: 'ปานกลาง',
+    ct: 'AIS',
+    dtn: 42
+  };
+  const webUrl = (location.origin || 'https://stroke-prh.pages.dev').replace(/\/$/, '');
+  const referUrl = `${webUrl}/refer-view?d=...`;
+  const nihss   = d.nihss != null ? String(d.nihss) : '-';
+  const sev     = d.nihss_sev || '';
+  const onset   = d.onset != null ? `${d.onset} ชม.` : '-';
+  const ward    = d.ward || '-';
+  const ct      = d.ct   || '-';
+  const dtnLine = d.dtn  ? `⏱ DTN: ${d.dtn} นาที` : '';
+  const headerColor = isRefer ? '#C1121F' : '#1B4F72';
+  const headerText  = isRefer ? '🚨 Refer Stroke — รพ.สงฆ์' : '🚨 Stroke Alert — รพ.สงฆ์';
+  const altText = isRefer
+    ? `🚨 Refer Stroke — Ward ${ward} | NIHSS ${nihss}`
+    : `🚨 Stroke Alert — Ward ${ward} | NIHSS ${nihss} | Onset ${onset}`;
 
-  referEl.value=`REFER — Stroke Fast Track
--------------------------
-Ward: {{ward}}
-Onset: {{onset}} ชม.
-NIHSS: {{nihss}} — {{nihss_sev}}
-CT: {{ct}}
-Refer — ไม่ได้ให้ที่รพ.สงฆ์
-{{dtn_line}}
--------------------------
-รายละเอียด: {{web_url}}
-กรุณาติดต่อกลับโดยด่วน`;
-
-  await ensureSettingsTable();
-  const r=await tursoQuery("SELECT key,value FROM settings WHERE key IN ('line_template_stroke','line_template_refer')");
-  if(!r.error&&r.rows){
-    r.rows.forEach(row=>{
-      if(row.key==='line_template_stroke'&&row.value)strokeEl.value=row.value;
-      if(row.key==='line_template_refer'&&row.value)referEl.value=row.value;
-    });
+  function row(label, value){
+    return {
+      type: 'box', layout: 'horizontal',
+      contents: [
+        { type: 'text', text: label, size: 'sm', color: '#888888', flex: 2 },
+        { type: 'text', text: String(value), size: 'sm', color: '#222222', flex: 5, weight: 'bold', wrap: true }
+      ]
+    };
   }
+  function extraText(t){
+    return { type:'text', text:String(t||''), size:'sm', wrap:true, color:'#444444', margin:'md' };
+  }
+
+  const bodyRows = [
+    ...(extras&&extras.prefix ? [extraText(extras.prefix), { type:'separator', margin:'md' }] : []),
+    row('Ward', ward),
+    row('Onset', onset),
+    row('NIHSS', `${nihss}${sev ? ' — ' + sev : ''}`),
+    row('CT Brain', ct),
+    ...(dtnLine ? [row('DTN', dtnLine)] : []),
+    ...(isRefer ? [
+      { type: 'separator', margin: 'md' },
+      { type: 'text', text: 'ไม่ได้ให้การรักษาที่ รพ.สงฆ์ — กรุณา Refer', size: 'sm', color: '#C1121F', weight: 'bold', margin: 'md' }
+    ] : []),
+    ...(extras&&extras.suffix ? [{ type:'separator', margin:'md' }, extraText(extras.suffix)] : [])
+  ];
+
+  return [{
+    type: 'flex',
+    altText,
+    contents: {
+      type: 'bubble',
+      size: 'kilo',
+      header: {
+        type: 'box', layout: 'vertical',
+        backgroundColor: headerColor,
+        contents: [{ type: 'text', text: headerText, color: '#ffffff', weight: 'bold', size: 'md' }]
+      },
+      body: {
+        type: 'box', layout: 'vertical', spacing: 'sm',
+        contents: bodyRows
+      },
+      footer: {
+        type: 'box', layout: 'vertical', spacing: 'sm',
+        contents: [
+          { type: 'button', style: 'primary', color: headerColor, action: { type: 'uri', label: '📋 เปิดใบ Refer PDF', uri: referUrl } },
+          { type: 'button', style: 'secondary', action: { type: 'uri', label: '🔗 เปิดระบบ', uri: webUrl } }
+        ]
+      }
+    }
+  }];
 }
 
-async function saveLineTemplates(){
-  const stroke=document.getElementById('tplStroke')?.value||'';
-  const refer=document.getElementById('tplRefer')?.value||'';
+function refreshLineSamples(){
+  const sp=(document.getElementById('lineStrokePrefix')?.value||'').trim();
+  const ss=(document.getElementById('lineStrokeSuffix')?.value||'').trim();
+  const rp=(document.getElementById('lineReferPrefix')?.value||'').trim();
+  const rs=(document.getElementById('lineReferSuffix')?.value||'').trim();
+  const sEl=document.getElementById('lineFlexStrokeSample');
+  const rEl=document.getElementById('lineFlexReferSample');
+  if(sEl)sEl.textContent=JSON.stringify(buildLineFlexSample('stroke_alert',{prefix:sp,suffix:ss}),null,2);
+  if(rEl)rEl.textContent=JSON.stringify(buildLineFlexSample('refer_alert',{prefix:rp,suffix:rs}),null,2);
+}
+
+async function loadLineSettings(){
+  const ids=['lineStrokePrefix','lineStrokeSuffix','lineReferPrefix','lineReferSuffix','lineCtPrefix','lineCtSuffix'];
+  ids.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  await ensureSettingsTable();
+  const r=await tursoQuery(
+    "SELECT key,value FROM settings WHERE key IN ('line_extra_stroke_prefix','line_extra_stroke_suffix','line_extra_refer_prefix','line_extra_refer_suffix','line_ct_prefix','line_ct_suffix')"
+  );
+  if(!r.error&&r.rows){
+    r.rows.forEach(row=>{
+      const v=row.value||'';
+      if(row.key==='line_extra_stroke_prefix'){const el=document.getElementById('lineStrokePrefix');if(el)el.value=v;}
+      if(row.key==='line_extra_stroke_suffix'){const el=document.getElementById('lineStrokeSuffix');if(el)el.value=v;}
+      if(row.key==='line_extra_refer_prefix'){const el=document.getElementById('lineReferPrefix');if(el)el.value=v;}
+      if(row.key==='line_extra_refer_suffix'){const el=document.getElementById('lineReferSuffix');if(el)el.value=v;}
+      if(row.key==='line_ct_prefix'){const el=document.getElementById('lineCtPrefix');if(el)el.value=v;}
+      if(row.key==='line_ct_suffix'){const el=document.getElementById('lineCtSuffix');if(el)el.value=v;}
+    });
+  }
+  refreshLineSamples();
+}
+
+async function saveLineSettings(){
+  const strokePrefix=(document.getElementById('lineStrokePrefix')?.value||'').trim();
+  const strokeSuffix=(document.getElementById('lineStrokeSuffix')?.value||'').trim();
+  const referPrefix=(document.getElementById('lineReferPrefix')?.value||'').trim();
+  const referSuffix=(document.getElementById('lineReferSuffix')?.value||'').trim();
+  const ctPrefix=(document.getElementById('lineCtPrefix')?.value||'').trim();
+  const ctSuffix=(document.getElementById('lineCtSuffix')?.value||'').trim();
   const msg=document.getElementById('lineTplMsg');
   if(msg){msg.style.display='block';msg.className='msg info';msg.textContent='กำลังบันทึก...';}
   await ensureSettingsTable();
   const sql="INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value";
-  const r1=await tursoQuery(sql,['line_template_stroke',stroke]);
-  const r2=await tursoQuery(sql,['line_template_refer',refer]);
-  const hasErr=r1.error||r2.error;
+  const rs=await Promise.all([
+    tursoQuery(sql,['line_extra_stroke_prefix',strokePrefix]),
+    tursoQuery(sql,['line_extra_stroke_suffix',strokeSuffix]),
+    tursoQuery(sql,['line_extra_refer_prefix',referPrefix]),
+    tursoQuery(sql,['line_extra_refer_suffix',referSuffix]),
+    tursoQuery(sql,['line_ct_prefix',ctPrefix]),
+    tursoQuery(sql,['line_ct_suffix',ctSuffix])
+  ]);
+  const hasErr=rs.some(x=>x&&x.error);
   if(msg){
     msg.className=hasErr?'msg err':'msg ok';
-    msg.textContent=hasErr?('❌ บันทึกไม่สำเร็จ: '+(r1.error||r2.error)): '✓ บันทึกข้อความ LINE แล้ว';
+    msg.textContent=hasErr?('❌ บันทึกไม่สำเร็จ: '+(rs.find(x=>x&&x.error)?.error||'')): '✓ บันทึกการตั้งค่า LINE แล้ว';
   }
 }
 
@@ -798,7 +930,7 @@ window.showTab=function(name,btn){
   if(name==='gl')setTimeout(loadGlList,50);
   if(name==='vid')setTimeout(loadVidList,50);
   if(name==='aspect')setTimeout(loadAspectLinks,50);
-  if(name==='line')setTimeout(loadLineTemplates,50);
+  if(name==='line')setTimeout(loadLineSettings,50);
 };
 </script>
 </body>

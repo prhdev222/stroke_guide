@@ -1249,8 +1249,14 @@ window.buildCtNeuroLineText=function(){
 };
 /** ส่งเข้า LINE ผ่าน OA (Messaging API) — ถ้าไม่ตั้ง token จะ fallback เปิด LINE ฉบับร่าง */
 window.ctNeuroShareLine=async function(){
-  const text=typeof buildCtNeuroLineText==='function'?buildCtNeuroLineText():null;
-  if(!text){alert('ยังไม่มีลิงก์ — กดสร้างลิงก์ก่อน');return;}
+  const baseText=typeof buildCtNeuroLineText==='function'?buildCtNeuroLineText():null;
+  if(!baseText){alert('ยังไม่มีลิงก์ — กดสร้างลิงก์ก่อน');return;}
+  const extras=await getLineCtExtras();
+  const parts=[];
+  if(extras.prefix)parts.push(extras.prefix);
+  parts.push(baseText);
+  if(extras.suffix)parts.push(extras.suffix);
+  const text=parts.join('\n\n').trim();
   const st=document.getElementById('ctNeuroStatus');
   if(st)st.textContent='กำลังส่งเข้า LINE...';
   try{
@@ -1276,6 +1282,27 @@ window.ctNeuroShareLine=async function(){
     alert('เปิด LINE ไม่ได้ — ใช้คัดลอกลิงก์\n\n'+(window._ctNeuro&&window._ctNeuro.viewUrl));
   }
 };
+
+async function getLineCtExtras(){
+  try{
+    if(window._lineCtExtras&&window._lineCtExtras._ts&&Date.now()-window._lineCtExtras._ts<60000){
+      return window._lineCtExtras;
+    }
+    await ensureSettingsTable();
+    const r=await tursoExec("SELECT key,value FROM settings WHERE key IN ('line_ct_prefix','line_ct_suffix')");
+    const out={prefix:'',suffix:'',_ts:Date.now()};
+    if(!r.error&&r.rows){
+      r.rows.forEach(row=>{
+        if(row.key==='line_ct_prefix'&&row.value)out.prefix=String(row.value);
+        if(row.key==='line_ct_suffix'&&row.value)out.suffix=String(row.value);
+      });
+    }
+    window._lineCtExtras=out;
+    return out;
+  }catch(e){
+    return {prefix:'',suffix:''};
+  }
+}
 window.ctNeuroEnsureQrLib=function(cb){
   if(window.QRCode)return void cb();
   if(window._ctNeuroQrLoadPromise)return void window._ctNeuroQrLoadPromise.then(cb).catch(function(){});

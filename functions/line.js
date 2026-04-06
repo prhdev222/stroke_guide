@@ -27,8 +27,11 @@ export async function onRequestPost(context) {
   // encode ข้อมูล clinical (ไม่มี PII) เป็น base64 → ใส่ใน URL ปุ่มใบ Refer
   const referUrl = buildReferUrl(webUrl, data);
 
+  // ดึงข้อความเสริม (prefix/suffix) ที่ admin ปรับได้
+  const extras = await getLineExtras(context.env);
+
   // สร้าง Flex message
-  const messages = buildMessages(type, data, webUrl, referUrl);
+  const messages = buildMessages(type, data, webUrl, referUrl, extras);
 
   // หา LINE Group จาก Turso
   const groups = await getGroups(context.env);
@@ -87,7 +90,7 @@ function buildReferUrl(webUrl, d) {
 
 // ── Flex Message builder ───────────────────────────────────────────────
 
-function buildMessages(type, d, webUrl, referUrl) {
+function buildMessages(type, d, webUrl, referUrl, extras) {
   const isRefer = type === 'refer_alert';
   const nihss   = d.nihss   != null ? String(d.nihss) : '-';
   const sev     = d.nihss_sev || '';
@@ -105,6 +108,12 @@ function buildMessages(type, d, webUrl, referUrl) {
     : `🚨 Stroke Alert — Ward ${ward} | NIHSS ${nihss} | Onset ${onset}`;
 
   const bodyRows = [
+    ...(getExtra(type, 'prefix', extras)
+      ? [
+        extraText(getExtra(type, 'prefix', extras)),
+        { type: 'separator', margin: 'md' }
+      ]
+      : []),
     row('Ward',    ward),
     row('Onset',   onset),
     row('NIHSS',   `${nihss}${sev ? ' — ' + sev : ''}`),
@@ -115,6 +124,13 @@ function buildMessages(type, d, webUrl, referUrl) {
       { type: 'text', text: 'ไม่ได้ให้การรักษาที่ รพ.สงฆ์ — กรุณา Refer',
         size: 'sm', color: '#C1121F', weight: 'bold', margin: 'md' }
     ] : [])
+    ,
+    ...(getExtra(type, 'suffix', extras)
+      ? [
+        { type: 'separator', margin: 'md' },
+        extraText(getExtra(type, 'suffix', extras))
+      ]
+      : [])
   ];
 
   return [{
@@ -161,6 +177,17 @@ function row(label, value) {
   };
 }
 
+function extraText(text) {
+  return { type: 'text', text: String(text || ''), size: 'sm', wrap: true, color: '#444444', margin: 'md' };
+}
+
+function getExtra(type, pos, extras) {
+  const isRefer = type === 'refer_alert';
+  if (!extras) return '';
+  if (isRefer) return pos === 'prefix' ? (extras.referPrefix || '') : (extras.referSuffix || '');
+  return pos === 'prefix' ? (extras.strokePrefix || '') : (extras.strokeSuffix || '');
+}
+
 // ── Turso: ดึง LINE groups ─────────────────────────────────────────────
 
 async function getGroups(env) {
@@ -177,6 +204,33 @@ async function getGroups(env) {
     }]);
     return toRows(res);
   } catch { return []; }
+}
+
+async function getLineExtras(env) {
+  const out = { strokePrefix: '', strokeSuffix: '', referPrefix: '', referSuffix: '' };
+  try {
+    await runTurso(env, [{
+      sql: `CREATE TABLE IF NOT EXISTS settings (
+        key   TEXT PRIMARY KEY,
+        value TEXT
+      )`
+    }]);
+    const res = await runTurso(env, [{
+      sql: `SELECT key, value FROM settings WHERE key IN (
+        'line_extra_stroke_prefix','line_extra_stroke_suffix',
+        'line_extra_refer_prefix','line_extra_refer_suffix'
+      )`
+    }]);
+    const rows = toRows(res);
+    rows.forEach(r => {
+      const v = r.value != null ? String(r.value) : '';
+      if (r.key === 'line_extra_stroke_prefix') out.strokePrefix = v;
+      if (r.key === 'line_extra_stroke_suffix') out.strokeSuffix = v;
+      if (r.key === 'line_extra_refer_prefix') out.referPrefix = v;
+      if (r.key === 'line_extra_refer_suffix') out.referSuffix = v;
+    });
+  } catch {}
+  return out;
 }
 
 function toRows(res) {
