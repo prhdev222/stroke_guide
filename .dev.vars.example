@@ -15,6 +15,8 @@ SAMBANOVA_API_KEY=sn-...
 RESEND_API_KEY=re_xxxxxxxxxx
 ADMIN_EMAIL=stroketeamprh@gmail.com
 # NEURO_EMAIL=...  (ไม่บังคับ — ถ้าไม่มี ADMIN_EMAIL ระบบจะลองใช้ค่านี้)
+# เข้ารหัสไฟล์แนบอีเมล (PDPA) — ตั้งแล้วแนบเป็น .stroke-enc; ถอดที่ /pdf-unlock.html
+# PDF_ATTACH_PASSWORD=strokeprh
 
 # ── CT ชั่วคราวให้ Neuro (ผูก KV/R2; CT_TEMP_SECRET ไม่บังคับ)
 # CT_TEMP_SECRET=...

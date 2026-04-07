@@ -37,6 +37,8 @@ declare global {
     RESEND_API_KEY?: string;
     NEURO_EMAIL?: string;
     ADMIN_EMAIL?: string;
+    /** ถ้าตั้งแล้ว ไฟล์ PDF แนบอีเมลจะถูกเข้ารหัสเป็น .stroke-enc — ถอดที่ /pdf-unlock.html */
+    PDF_ATTACH_PASSWORD?: string;
 
     // ── CT ชั่วคราว (R2 + KV) — แชร์ภาพให้ Neuro ───────
     CT_SESSIONS?: KVNamespace;

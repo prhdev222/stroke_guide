@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ถอดรหัส PDF แนบอีเมล — Stroke Fast Track</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sans-serif;background:#eeece8;color:#1a1a18;padding:20px;line-height:1.6;max-width:520px;margin:0 auto}
+h1{font-size:18px;margin-bottom:8px}
+p{font-size:13px;color:#555;margin-bottom:14px}
+.card{background:#fff;border:1px solid #e5e3dc;border-radius:12px;padding:18px;margin-bottom:14px}
+label{display:block;font-size:12px;color:#666;margin-bottom:4px}
+input[type=file],input[type=password]{width:100%;padding:10px 12px;border:1px solid #c8c6be;border-radius:8px;font-size:14px;margin-bottom:12px}
+button{width:100%;padding:12px;border:none;border-radius:8px;background:#C41E3A;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+button:disabled{opacity:.5;cursor:not-allowed}
+.note{font-size:11px;color:#791F1F;background:#FCEBEB;padding:10px 12px;border-radius:8px;margin-top:12px;line-height:1.55}
+.ok{font-size:12px;color:#27500A;margin-top:10px}
+.err{font-size:12px;color:#791F1F;margin-top:10px}
+a{color:#185FA5}
+</style>
+</head>
+<body>
+<h1>🔓 ถอดรหัสไฟล์แนบ (Stroke Fast Track)</h1>
+<p>ใช้สำหรับไฟล์ที่ส่งจากอีเมล <strong>หลังมีการเข้ารหัส</strong> (นามสกุล <code>.stroke-enc</code>) — รหัสผ่านได้จากทีมโรงพยาบาล (ไม่ส่งผ่านอีเมล)</p>
+
+<div class="card">
+  <label for="f">เลือกไฟล์ (.stroke-enc)</label>
+  <input type="file" id="f" accept=".stroke-enc,.enc,application/octet-stream">
+  <label for="pw">รหัสผ่าน</label>
+  <input type="password" id="pw" placeholder="รหัสที่ทีมกำหนด" autocomplete="off">
+  <button type="button" id="btn">ถอดรหัสและดาวน์โหลด PDF</button>
+  <div class="note">ข้อมูลประมวลผลบนเครื่องคุณเท่านั้น — ไม่มีการอัปโหลดไฟล์ไปเซิร์ฟเวอร์</div>
+  <div id="msg"></div>
+</div>
+<p style="font-size:12px"><a href="/">← กลับหน้าหลัก</a></p>
+
+<script>
+const MAGIC_STR='STKE1';
+const HEADER_LEN=5+1+16+12;
+
+function u8(buf){return buf instanceof Uint8Array?buf:new Uint8Array(buf);}
+
+async function decryptStrokeEnc(fileBuf,password){
+  const data=u8(fileBuf);
+  const magic=new TextEncoder().encode(MAGIC_STR);
+  for(let i=0;i<5;i++)if(data[i]!==magic[i])throw new Error('ไฟล์ไม่ใช่รูปแบบ Stroke encrypted');
+  if(data[5]!==1)throw new Error('เวอร์ชันไฟล์ไม่รองรับ');
+  const salt=data.subarray(6,22);
+  const iv=data.subarray(22,34);
+  const ct=data.subarray(34);
+  const enc=new TextEncoder();
+  const keyMaterial=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey(
+    {name:'PBKDF2',salt,iterations:210000,hash:'SHA-256'},
+    keyMaterial,
+    {name:'AES-GCM',length:256},
+    false,
+    ['decrypt']
+  );
+  const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct);
+  return new Uint8Array(plain);
+}
+
+function downloadBlob(bytes,filename){
+  const blob=new Blob([bytes],{type:'application/pdf'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+
+document.getElementById('btn').onclick=async function(){
+  const msg=document.getElementById('msg');
+  msg.textContent='';
+  msg.className='';
+  const inp=document.getElementById('f');
+  const pw=(document.getElementById('pw').value||'').trim();
+  if(!inp.files||!inp.files[0]){msg.className='err';msg.textContent='เลือกไฟล์ก่อน';return;}
+  if(!pw){msg.className='err';msg.textContent='ใส่รหัสผ่าน';return;}
+  const btn=this;
+  btn.disabled=true;
+  try{
+    const ab=await inp.files[0].arrayBuffer();
+    const pdf=await decryptStrokeEnc(ab,pw);
+    const base=(inp.files[0].name||'stroke').replace(/\.stroke-enc$/i,'').replace(/\.enc$/i,'');
+    const fn=base.endsWith('.pdf')?base:base+'.pdf';
+    downloadBlob(pdf,fn);
+    msg.className='ok';
+    msg.textContent='ถอดรหัสสำเร็จ — ดาวน์โหลด PDF แล้ว';
+  }catch(e){
+    msg.className='err';
+    msg.textContent='ถอดรหัสไม่สำเร็จ: '+(e.message||e)+' (ตรวจรหัสผ่าน/ไฟล์)';
+  }finally{
+    btn.disabled=false;
+  }
+};
+</script>
+</body>
+</html>

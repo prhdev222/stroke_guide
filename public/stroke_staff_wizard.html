@@ -2426,7 +2426,9 @@ window.sendEmailAlert=async function(){
     const sent=(data.sent||[]).join(', ');
     const failed=(data.failed||[]).map(f=>(f.to||'')+': '+(f.error||'')).filter(Boolean).join(' | ');
     if(st)st.textContent='ส่งถึง Admin แล้ว: '+sent+(failed?(' | ไม่สำเร็จ: '+failed):'');
-    alert('ส่ง PDF ถึงอีเมล Admin สำเร็จ'+(sent?'\n('+sent+')':''));
+    let okMsg='ส่ง PDF ถึงอีเมล Admin สำเร็จ'+(sent?'\n('+sent+')':'');
+    if(data.encrypted&&data.unlock_url)okMsg+='\n\nไฟล์แนบเข้ารหัสแล้ว — เปิดถอดรหัสที่:\n'+data.unlock_url;
+    alert(okMsg);
   }catch(e){
     if(st)st.textContent='';
     alert('ส่งอีเมลไม่สำเร็จ: '+(e.message||e));
