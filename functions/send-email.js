@@ -23,7 +23,8 @@
 
 const STKE_MAGIC = new TextEncoder().encode('STKE1');
 const STKE_VERSION = 1;
-const PBKDF2_ITER = 210000;
+// Cloudflare Web Crypto จำกัด PBKDF2 iterations ไม่เกิน 100000
+const PBKDF2_ITER = 100000;
 
 /** @param {Uint8Array} pdfBytes */
 async function encryptPdfForAttachment(pdfBytes, password) {
