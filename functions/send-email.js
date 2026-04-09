@@ -93,38 +93,14 @@ export async function onRequestPost(context) {
   }
 
   const webBase = (WEBAPP_URL || 'https://stroke-prh.pages.dev').replace(/\/$/, '');
-  const pass = PDF_ATTACH_PASSWORD != null ? String(PDF_ATTACH_PASSWORD).trim() : '';
+  // ปิดโหมดเข้ารหัสไฟล์แนบ — ส่ง PDF ปกติเสมอ
+  const pass = '';
 
   let finalHtml = html;
   let attachments;
 
   if (pdf_base64 && filename) {
-    let attachB64 = pdf_base64;
-    let attachName = filename;
-    let encrypted = false;
-
-    if (pass) {
-      try {
-        const b64 = pdf_base64.replace(/\s/g, '');
-        const bin = atob(b64);
-        const raw = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) raw[i] = bin.charCodeAt(i);
-        const encBytes = await encryptPdfForAttachment(raw, pass);
-        attachB64 = bytesToBase64(encBytes);
-        attachName = /\.pdf$/i.test(filename)
-          ? filename.replace(/\.pdf$/i, '.pdf.stroke-enc')
-          : `${filename}.stroke-enc`;
-        encrypted = true;
-      } catch (e) {
-        return Response.json({ error: 'เข้ารหัสไฟล์แนบไม่สำเร็จ: ' + e.message }, { status: 500 });
-      }
-    }
-
-    if (encrypted) {
-      finalHtml += `<p style="font-size:12px;color:#b00020;line-height:1.65;margin-top:14px"><strong>PDPA:</strong> ไฟล์แนบถูกเข้ารหัสแล้ว — ดาวน์โหลดไฟล์แนบ แล้วเปิดถอดรหัสที่ <a href="${webBase}/pdf-unlock.html" target="_blank" rel="noopener">หน้าเปิด PDF (ถอดรหัส)</a> โดยใช้รหัสผ่านตามที่โรงพยาบาลกำหนด (ไม่แนะนำส่งรหัสผ่านทางอีเมล)</p>`;
-    }
-
-    attachments = [{ filename: attachName, content: attachB64 }];
+    attachments = [{ filename, content: pdf_base64 }];
   } else {
     attachments = undefined;
   }
