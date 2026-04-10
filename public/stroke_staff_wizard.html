@@ -1082,7 +1082,7 @@ window.updCTResultKeepScroll=function(){
   requestAnimationFrame(()=>window.scrollTo(0,sy));
 };
 
-window._ctNeuro={uploadToken:null,viewUrl:null};
+window._ctNeuro={uploadToken:null,viewUrl:null,uploadPin:null,mobileKey:null,expiresAt:null,expiresInSec:null};
 window._ctNeuroRecordedFiles=[];
 window._ctNeuroFacing='environment';
 window._ctNeuroRecStream=null;
@@ -1350,7 +1350,7 @@ window.ctNeuroCreateSession=async function(){
     const r=await fetch('/ct-temp/session',{method:'POST'});
     const j=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(j.error||('HTTP '+r.status));
-    window._ctNeuro={uploadToken:j.uploadToken,viewUrl:j.viewUrl,uploadPin:j.uploadPin,mobileKey:j.mobileKey};
+    window._ctNeuro={uploadToken:j.uploadToken,viewUrl:j.viewUrl,uploadPin:j.uploadPin,mobileKey:j.mobileKey,expiresAt:j.expiresAt||null,expiresInSec:j.expiresInSec!=null?j.expiresInSec:null};
     window._ctNeuroRecordedFiles=[];
     if(typeof ctNeuroRecListRefresh==='function')ctNeuroRecListRefresh();
     if(typeof ctNeuroCapInit==='function')ctNeuroCapInit();
@@ -1370,7 +1370,7 @@ window.ctNeuroCreateSession=async function(){
   }catch(e){
     if(out)out.style.display='none';
     if(upRow)upRow.style.display='none';
-    window._ctNeuro={uploadToken:null,viewUrl:null,uploadPin:null,mobileKey:null};
+    window._ctNeuro={uploadToken:null,viewUrl:null,uploadPin:null,mobileKey:null,expiresAt:null,expiresInSec:null};
     window._ctNeuroRecordedFiles=[];
     if(typeof ctNeuroRecListRefresh==='function')ctNeuroRecListRefresh();
     alert('สร้างลิงก์ไม่สำเร็จ: '+(e.message||e)+'\n\nถ้ายังไม่ได้ผูก KV+R2 บน Cloudflare ดู wrangler.toml');
@@ -2062,14 +2062,30 @@ function getCtNeuroViewUrlForPdf(){
 }
 function escPdfAttr(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function escPdfText(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+/** ข้อความเล็ก ๆ วงเล็บ — ดูได้ถึงเมื่อไหร่ (~4 ชม.) */
+function getCtNeuroPdfExpiryHint(){
+  try{
+    const exp=window._ctNeuro&&window._ctNeuro.expiresAt;
+    const sec=window._ctNeuro&&window._ctNeuro.expiresInSec;
+    const h=sec!=null&&Number(sec)>0?Math.round(Number(sec)/3600):4;
+    if(exp){
+      const d=new Date(exp);
+      if(!isNaN(d.getTime())){
+        const th=d.toLocaleString('th-TH',{dateStyle:'medium',timeStyle:'short'});
+        return ` <span style="font-size:7.5px;color:#666;font-weight:400">(ดูได้ถึง ${escPdfText(th)} — ลิงก์ใช้ได้ราว ${h} ชม.)</span>`;
+      }
+    }
+  }catch(e){}
+  return ` <span style="font-size:7.5px;color:#666;font-weight:400">(ลิงก์ดูภาพใช้ได้ชั่วคราวราว 4 ชม. หลังสร้าง)</span>`;
+}
 /** แถวตารางใต้ CT (Refer PDF) */
 function getCtNeuroPdfTableRow(){
   const u=getCtNeuroViewUrlForPdf();
   if(!u)return '';
   return `<tr>
   <td colspan="4" style="padding:5px 6px;border:1px solid #85B7EB;background:#e6f1fb;font-size:9.5px;line-height:1.45">
-    <strong style="color:#185FA5">ลิงก์ดูภาพ CT (ส่งให้ Neuro)</strong><br>
-    <a href="${escPdfAttr(u)}" style="color:#0369a1;font-weight:700">กดเปิดดูภาพ CT</a>
+    <div><strong style="color:#185FA5">ลิงก์ดูภาพ CT</strong>${getCtNeuroPdfExpiryHint()}</div>
+    <a href="${escPdfAttr(u)}" style="color:#0369a1;font-weight:700">กดดูภาพ CT</a>
     <div style="word-break:break-all;color:#333;margin-top:3px;font-size:8.5px">${escPdfText(u)}</div>
   </td>
 </tr>`;
@@ -2079,8 +2095,8 @@ function getCtNeuroPdfBlockAdmit(){
   const u=getCtNeuroViewUrlForPdf();
   if(!u)return '';
   return `<div style="margin-top:8px;padding:8px 10px;background:#e6f1fb;border:1px solid #85B7EB;border-radius:6px;font-size:10px;line-height:1.45">
-    <strong style="color:#185FA5">ลิงก์ดูภาพ CT (ส่งให้ Neuro)</strong><br>
-    <a href="${escPdfAttr(u)}" style="color:#0369a1;font-weight:700">กดเปิดดูภาพ CT</a>
+    <div><strong style="color:#185FA5">ลิงก์ดูภาพ CT</strong>${getCtNeuroPdfExpiryHint()}</div>
+    <a href="${escPdfAttr(u)}" style="color:#0369a1;font-weight:700">กดดูภาพ CT</a>
     <div style="word-break:break-all;color:#333;margin-top:4px;font-size:9px">${escPdfText(u)}</div>
   </div>`;
 }
@@ -2556,7 +2572,7 @@ function clearAll(){
     vs:{temp:'',rr:'',pr:'',bp:'',o2:'',o2mode:'RA'},
     pmh:{dm:false,ht:false,dl:false,heart:false},pmhOther:'',currentMed:''};
   step=0;
-  window._ctNeuro={uploadToken:null,viewUrl:null};
+  window._ctNeuro={uploadToken:null,viewUrl:null,uploadPin:null,mobileKey:null,expiresAt:null,expiresInSec:null};
   window._ctNeuroRecordedFiles=[];
   if(window._ctNeuroRecStream){try{window._ctNeuroRecStream.getTracks().forEach(function(t){t.stop();});}catch(e){}window._ctNeuroRecStream=null;}
   if(window._ctNeuroMediaRec&&window._ctNeuroMediaRec.state==='recording'){try{window._ctNeuroMediaRec.stop();}catch(e){}}
