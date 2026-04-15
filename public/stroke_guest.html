@@ -97,6 +97,20 @@ button{font-family:inherit;cursor:pointer}
 .dose-card{background:var(--bg2);border-radius:var(--rm);padding:10px;text-align:center}
 .warn-row{display:flex;gap:8px;margin-bottom:7px;font-size:13px;align-items:flex-start}
 .step-num{width:19px;height:19px;border-radius:50%;background:var(--dbg);color:var(--dtx);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+
+/* Guest — คัดลอก / พิมพ์ */
+.guest-export-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px;padding:8px 10px;background:var(--bg);border:0.5px solid var(--bl);border-radius:var(--rl)}
+.guest-export-btn{padding:8px 12px;border-radius:var(--rm);border:0.5px solid var(--bm);background:var(--bg2);color:var(--tx);font-size:12px;font-weight:600}
+.guest-export-btn:active{opacity:.85}
+.guest-copy-status{margin-left:auto;font-size:11px;color:var(--stx);font-weight:600;min-height:1.2em}
+@media(max-width:480px){.guest-copy-status{flex-basis:100%;margin-left:0;margin-top:4px}}
+.guest-print-only{position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);margin:0;padding:0;border:0}
+@media print{
+  body{background:#fff}
+  .no-print,.topbar,.tab-bar,#nihssBadge,#strokeActivateBanner{display:none!important}
+  #content{display:none!important}
+  .guest-print-only{position:static!important;left:auto!important;top:auto!important;width:auto!important;height:auto!important;overflow:visible!important;clip:auto!important;display:block!important;padding:14px 18px;font-size:11pt;line-height:1.5;white-space:pre-wrap;font-family:'Noto Sans Thai',-apple-system,sans-serif;color:#000}
+}
 </style>
 </head>
 <body>
@@ -124,10 +138,13 @@ button{font-family:inherit;cursor:pointer}
 </div>
 
 <div class="content" id="content"></div>
+<pre id="guestPrintReport" class="guest-print-only" aria-hidden="true"></pre>
 
 <script>
 // ── STATE ──
 let currentTab='befast';
+/** 'tab' = พิมพ์เฉพาะแท็บปัจจุบัน, 'all' = พิมพ์รวมทุกขั้น */
+let guestPrintScope='all';
 let D={
   befast:{B:false,E:false,F:false,A:false,S:false},
   symp:{hemi:false,numb:false,comm:false,dys:false,vis:false,drow:false,atax:false},
@@ -223,6 +240,160 @@ function hasAbs(){return Object.values(D.absX).some(Boolean);}
 function allIncl(){return D.incl.ais&&D.incl.o45&&D.incl.a18;}
 function elig(){return allIncl()&&!hasAbs();}
 
+// ── Guest: คัดลอก / พิมพ์ข้อความรายงาน ──
+function guestReportHeader(){
+  return 'Stroke Clinical Tools — Guest\nโรงพยาบาลสงฆ์\n'+new Date().toLocaleString('th-TH')+'\n';
+}
+function nihssLineLabel(itemId,val){
+  const item=NIHSS.find(x=>x.id===itemId);
+  if(!item||val===undefined)return null;
+  const o=item.opts.find(p=>p.v===val);
+  return o?`${item.th}: ${val} (${o.th})`:item.th+': '+val;
+}
+function textBefast(){
+  const bf=[['B','Balance — เวียนหัว / เดินเซ / ทรงตัวไม่ได้'],['E','Eyes — ตาพร่า / ซ้อน / มองไม่เห็นบางส่วน'],['F','Face — ปากเบี้ยว / หน้าเบี้ยว'],['A','Arm/Leg — อ่อนแรง / ชาครึ่งซีก'],['S','Speech — พูดไม่ชัด / สับสน']];
+  let s='=== BEFAST ===\n';
+  bf.forEach(([k,desc])=>{s+=`${k}: ${D.befast[k]?'มีอาการ':'ไม่มี'} — ${desc}\n`;});
+  s+='T — Time: บันทึกเวลา onset / รายงานแพทย์ถ้า onset ≤24 ชม.\n\n=== Nurse checklist ===\n';
+  const sy=[['hemi','อ่อนแรงครึ่งซีกเฉียบพลัน'],['numb','ชาครึ่งซีกเฉียบพลัน'],['comm','สื่อสารไม่เข้าใจเฉียบพลัน'],['dys','พูดไม่ชัดเฉียบพลัน'],['vis','ตามัวซีก'],['drow','ซึมลงเฉียบพลัน'],['atax','เดินเซเฉียบพลัน']];
+  sy.forEach(([id,t])=>{s+=`- ${t}: ${D.symp[id]?'ใช่':'ไม่'}\n`;});
+  return s.trimEnd();
+}
+function textCriteria(){
+  let s='=== Checklist (rt-PA) ===\n\n[Inclusion]\n';
+  s+=`- Acute Ischemic Stroke: ${D.incl.ais?'ใช่':'ไม่'}\n`;
+  s+=`- Onset ≤4.5 ชม.: ${D.incl.o45?'ใช่':'ไม่'}\n`;
+  s+=`- อายุ ≥18: ${D.incl.a18?'ใช่':'ไม่'}\n\n[Absolute exclusion — ถ้าใช่ = ห้ามยา]\n`;
+  ABS.forEach(i=>{s+=`- ${i.t}: ${D.absX[i.id]?'มี (ห้าม)':'ไม่'}\n`;});
+  s+='\n[Relative exclusion]\n';
+  REL.forEach(i=>{s+=`- ${i.t}: ${D.relX[i.id]?'มี':'ไม่'}\n`;});
+  s+='\n[Onset 3–4.5 ชม.]\n';
+  s+=`- NIHSS >25: ${D.excl45.n25?'มี':'ไม่'}\n`;
+  s+=`- INR >1.7: ${D.excl45.i17?'มี':'ไม่'}\n`;
+  s+=`- อายุ >80: ${D.rel45.a80?'มี':'ไม่'}\n`;
+  s+=`- Stroke + DM: ${D.rel45.sdm?'มี':'ไม่'}\n\n`;
+  const el=elig(),ab=hasAbs();
+  s+=el?'สรุป: เข้าเกณฑ์การให้ rt-PA':ab?'สรุป: ห้ามให้ rt-PA — มีข้อห้ามเด็ดขาด':'สรุป: ยังประเมินไม่ครบ';
+  return s;
+}
+function textNihss(){
+  const t=totNIHSS(),sc=Object.keys(D.nihss).length,sv=getSev(t);
+  let s=`=== NIHSS (รวม ${t}/42) — ${sv.l} — กรอกแล้ว ${sc}/15 ข้อ ===\n\n`;
+  NIHSS.forEach(item=>{
+    const v=D.nihss[item.id];
+    if(v===undefined)s+=`${item.th}: (ยังไม่เลือก)\n`;
+    else{const line=nihssLineLabel(item.id,v);s+=line?line+'\n':`${item.th}: ${v}\n`;}
+  });
+  return s.trimEnd();
+}
+function textAspectLvo(){
+  const aspect=D.aspect!==undefined&&D.aspect!==''?Number(D.aspect):undefined;
+  const n=totNIHSS();
+  const nihss6=n>=6;
+  const gaze=(D.nihss['2']??0)>0;
+  const hemi=(D.lvoSigns?.lvo_hemi)||([(D.nihss['5a']??0),(D.nihss['5b']??0),(D.nihss['6a']??0),(D.nihss['6b']??0)].some(v=>v>=2));
+  const aphasia=(D.nihss['9']??0)>=2||(D.lvoSigns?.lvo_aphasia);
+  const neglect=(D.nihss['11']??0)>=1||(D.lvoSigns?.lvo_neglect);
+  const lvoCount=[nihss6,gaze,hemi,aphasia,neglect].filter(Boolean).length;
+  const lvoText=lvoCount>=2?'สงสัย LVO ชัดเจน':lvoCount===1?'อาจสงสัย LVO':'ยังไม่สงสัย LVO';
+  const aspectOk=aspect!==undefined&&!isNaN(aspect)&&aspect>=6;
+  let s='=== ASPECT & LVO ===\n';
+  s+=`ASPECT: ${aspect!==undefined&&!isNaN(aspect)?aspect:'ยังไม่เลือก'} (${aspectOk?'≥6 เข้าเกณฑ์พิจารณา Thrombectomy':'<6 อาจไม่เหมาะ'})\n`;
+  s+=`NIHSS ≥6 (อัตโนมัติ): ${nihss6?'ใช่':'ไม่'} (NIHSS=${n})\n`;
+  s+=`Gaze deviation (เพิ่ม/อัตโนมัติ): ${(D.lvoSigns?.lvo_gaze)||gaze?'ใช่':'ไม่'}\n`;
+  s+=`Hemiplegia: ${hemi?'ใช่':'ไม่'}\n`;
+  s+=`Aphasia รุนแรง: ${aphasia?'ใช่':'ไม่'}\n`;
+  s+=`Neglect: ${neglect?'ใช่':'ไม่'}\n`;
+  s+=`สรุป LVO: ${lvoText}\n\n[Thrombectomy — inclusion]\n`;
+  const inclList=[
+    ['mrs01','prestroke mRS 0–1'],['rtpa45','ได้ IV rt-PA ภายใน 4.5 ชม.'],['icam1','ICA หรือ MCA (M1) occlusion'],['age18','อายุ >18'],['nihss6','NIHSS ≥6'],['aspect6','ASPECTS ≥6'],['groin6','groin puncture ภายใน 6 ชม.'],['noContra','ไม่มีข้อห้าม IV rt-PA (หรือพิจารณาได้)'],
+  ];
+  inclList.forEach(([k,l])=>{
+    const auto=k==='nihss6'?nihss6:k==='aspect6'?aspectOk:false;
+    const v=k==='nihss6'||k==='aspect6'?auto:!!D.thromboIncl?.[k];
+    s+=`- ${l}: ${v?'ใช่':'ไม่'}\n`;
+  });
+  s+='\n[Thrombectomy — relative exclusion]\n';
+  [['m2etc','MCA M2/M3, ACA, VA, PCA, BA'],['mrs2','mRS <2'],['nihss6ex','NIHSS <6'],['age18ex','อายุ <18'],['groin24','groin ภายใน 24 ชม.']].forEach(([k,l])=>{
+    const auto=k==='nihss6ex'?(n<6):false;
+    const v=k==='nihss6ex'?auto:!!D.thromboExcl?.[k];
+    s+=`- ${l}: ${v?'มี':'ไม่'}\n`;
+  });
+  return s.trimEnd();
+}
+function textRtpa(){
+  const bw=parseFloat(D.weight)||0;
+  const td=bw?Math.min(bw*0.9,90):0;
+  let s='=== rt-PA ===\n';
+  if(!bw)s+='น้ำหนัก: (ยังไม่ป้อน)\n';
+  else{
+    s+=`น้ำหนัก: ${bw} kg\n`;
+    s+=`Total dose: ${td.toFixed(1)} mg\n`;
+    s+=`Bolus 10%: ${(td*.1).toFixed(1)} mg IV push 1 นาที\n`;
+    s+=`Infusion 90%: ${(td*.9).toFixed(1)} mg drip 60 นาที\n`;
+  }
+  s+='\n[ข้อควรระวัง]\n';
+  ['ใช้ SWFI ละลายยา 1 mg/ml — ห้ามเจือจางด้วย Dextrose','ห้ามเขย่าขวด','ห้ามผสมกับยาอื่นในสาย IV เดียวกัน','ความคงตัว: 24 ชม. ในตู้เย็น / 8 ชม. ≤25°C'].forEach(t=>{s+=`- ${t}\n`;});
+  s+='\n[รายงานแพทย์เมื่อ]\n';
+  ['SBP >185 หรือ <110','DBP >110 หรือ <60','Pulse <50','Neurological แย่ลง','Internal bleeding'].forEach(t=>{s+=`- ${t}\n`;});
+  s+='\n[สงสัย ICH]\n';
+  ['หยุดยา rt-PA','CT brain NC ฉุกเฉิน','Repeat CBC, PT, PTT, INR','FFP 6–8 units'].forEach((t,i)=>{s+=`${i+1}. ${t}\n`;});
+  s+='\n[ห้าม 24 ชม. หลัง rt-PA]\n';
+  ['Foley','NG tube','Arterial puncture','IM injection','Antiplatelet/anticoagulant'].forEach(t=>{s+=`- ${t}\n`;});
+  return s.trimEnd();
+}
+function textGuestSection(tab){
+  if(tab==='befast')return textBefast();
+  if(tab==='criteria')return textCriteria();
+  if(tab==='nihss')return textNihss();
+  if(tab==='aspectlvo')return textAspectLvo();
+  if(tab==='rtpa')return textRtpa();
+  return '';
+}
+function textGuestCurrentTab(){
+  const names={befast:'BEFAST',criteria:'Checklist',nihss:'NIHSS',aspectlvo:'ASPECT & LVO',rtpa:'rt-PA'};
+  return guestReportHeader()+'แท็บปัจจุบัน: '+(names[currentTab]||currentTab)+'\n\n'+textGuestSection(currentTab);
+}
+function textGuestReportAll(){
+  return guestReportHeader()+
+    '──────── รายงานทุกขั้นตอน ────────\n\n'+
+    textBefast()+'\n\n'+textCriteria()+'\n\n'+textNihss()+'\n\n'+textAspectLvo()+'\n\n'+textRtpa();
+}
+function guestExportBarHtml(){
+  const names={befast:'BEFAST',criteria:'Checklist',nihss:'NIHSS',aspectlvo:'ASPECT & LVO',rtpa:'rt-PA'};
+  const L=names[currentTab]||currentTab;
+  return `<div class="guest-export-bar no-print" role="toolbar" aria-label="คัดลอกและพิมพ์">
+    <button type="button" class="guest-export-btn" onclick="guestActionCopyTab()">คัดลอกหน้านี้ (${L})</button>
+    <button type="button" class="guest-export-btn" onclick="guestActionCopyAll()">คัดลอกทั้งหมด</button>
+    <button type="button" class="guest-export-btn" onclick="guestActionPrintTab()">พิมพ์หน้านี้ (${L})</button>
+    <button type="button" class="guest-export-btn" onclick="guestActionPrintAll()">พิมพ์ทั้งหมด</button>
+    <span class="guest-copy-status" id="guestCopyStatus"></span>
+  </div>`;
+}
+async function guestCopyText(text,hint){
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText)await navigator.clipboard.writeText(text);
+    else{
+      const ta=document.createElement('textarea');
+      ta.value=text;ta.style.cssText='position:fixed;left:-2000px;top:0';
+      document.body.appendChild(ta);ta.focus();ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    const s=document.getElementById('guestCopyStatus');
+    if(s&&hint){s.textContent=hint;clearTimeout(guestCopyText._t);guestCopyText._t=setTimeout(()=>{s.textContent='';},2200);}
+  }catch(_){alert('คัดลอกไม่สำเร็จ — ลองเลือกข้อความจากรายงานที่พิมพ์แล้วคัดลอกเอง');}
+}
+window.guestActionCopyTab=function(){guestCopyText(textGuestCurrentTab(),'คัดลอกหน้านี้แล้ว');};
+window.guestActionCopyAll=function(){guestCopyText(textGuestReportAll(),'คัดลอกทั้งหมดแล้ว');};
+window.guestActionPrintTab=function(){guestPrintScope='tab';window.print();};
+window.guestActionPrintAll=function(){guestPrintScope='all';window.print();};
+window.addEventListener('beforeprint',function(){
+  const pre=document.getElementById('guestPrintReport');
+  if(pre)pre.textContent=guestPrintScope==='tab'?textGuestCurrentTab():textGuestReportAll();
+});
+window.addEventListener('afterprint',function(){guestPrintScope='all';});
+
 // ── TABS ──
 function switchTab(tab, btn){
   currentTab=tab;
@@ -251,7 +422,7 @@ function render(){
   }
 
   const fns={befast:rBEFAST,criteria:rCriteria,nihss:rNIHSS,aspectlvo:rAspectLvo,rtpa:rRtPA};
-  document.getElementById('content').innerHTML=(fns[currentTab]||rBEFAST)();
+  document.getElementById('content').innerHTML=guestExportBarHtml()+(fns[currentTab]||rBEFAST)();
 }
 
 // ── BEFAST ──
@@ -554,6 +725,24 @@ function tick(){
   if(el)el.textContent=d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
 setInterval(tick,1000);tick();
+
+// ── Stroke Activate (จาก QR /stroke_activate_qr.html) ──
+(function strokeActivateFromQr(){
+  try{
+    const p=new URLSearchParams(location.search);
+    if(p.get('activate')!=='1')return;
+    let unit=(p.get('unit')||'').toUpperCase().replace(/[^A-Z]/g,'');
+    if(unit.length>6)unit=unit.slice(0,6);
+    const fromLabel=unit?'จาก '+unit:'จากหน่วยงาน';
+    const bar=document.createElement('div');
+    bar.id='strokeActivateBanner';
+    bar.setAttribute('role','status');
+    bar.style.cssText='padding:10px 12px;background:linear-gradient(90deg,#fff8e6,#fde9c9);border-bottom:1px solid var(--wbd);font-size:12px;color:var(--wtx);text-align:center;line-height:1.55';
+    bar.innerHTML='<strong style="font-size:13px">⚡ Stroke Activate</strong><br><span>'+fromLabel+' — เริ่มประเมิน BEFAST ได้ทันที</span> <button type="button" style="margin-left:8px;padding:4px 10px;border-radius:var(--rm);border:0.5px solid var(--wbd);background:var(--bg);font-size:11px;cursor:pointer;font-family:inherit" onclick="this.parentElement.remove()">ปิด</button>';
+    const top=document.getElementById('topbar');
+    if(top&&top.parentNode)top.parentNode.insertBefore(bar,top.nextSibling);
+  }catch(e){}
+})();
 
 // ── INIT ──
 render();

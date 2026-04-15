@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stroke Activate — QR</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=IBM+Plex+Mono:wght@600&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: #0f1623;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 14px 40px;
+    min-height: 100vh;
+  }
+  .toolbar {
+    max-width: 680px;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 18px;
+  }
+  .toolbar a, .toolbar button {
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.08);
+    color: #e2e8f0;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .toolbar a:hover, .toolbar button:hover { background: rgba(255,255,255,.14); }
+  .toolbar .primary {
+    background: linear-gradient(135deg, #c41e3a, #ea580c);
+    border-color: rgba(0,0,0,.15);
+    color: #fff;
+  }
+  .header { text-align: center; margin-bottom: 22px; max-width: 680px; width: 100%; }
+  .header h1 { font-size: 24px; font-weight: 700; color: #f1f5f9; margin-bottom: 8px; }
+  .header h1 span { color: #e53935; }
+  .header .desc { font-size: 12px; color: #64748b; line-height: 1.75; }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    max-width: 680px;
+    width: 100%;
+  }
+  @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: #1a2235;
+    border-radius: 18px;
+    padding: 22px 16px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid rgba(255,255,255,.06);
+    box-shadow: 0 8px 28px rgba(0,0,0,.35);
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 18px 18px 0 0;
+  }
+  .card.er::before { background: linear-gradient(90deg, #ef4444, #f97316); }
+  .card.ward::before { background: linear-gradient(90deg, #3b82f6, #06b6d4); }
+  .card.ct::before { background: linear-gradient(90deg, #8b5cf6, #ec4899); }
+  .card.lab::before { background: linear-gradient(90deg, #10b981, #84cc16); }
+  .dept-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    padding: 3px 10px;
+    border-radius: 100px;
+    text-transform: uppercase;
+  }
+  .card.er .dept-badge { background: rgba(239,68,68,.15); color: #fca5a5; }
+  .card.ward .dept-badge { background: rgba(59,130,246,.15); color: #93c5fd; }
+  .card.ct .dept-badge { background: rgba(139,92,246,.15); color: #c4b5fd; }
+  .card.lab .dept-badge { background: rgba(16,185,129,.15); color: #6ee7b7; }
+  .dept-name { font-size: 22px; font-weight: 700; color: #f1f5f9; }
+  .dept-name-th { font-size: 11px; color: #94a3b8; margin-top: -4px; }
+  .qr-wrap {
+    background: #fff;
+    border-radius: 12px;
+    padding: 10px;
+    width: 148px;
+    height: 148px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .qr-wrap canvas, .qr-wrap img { width: 124px !important; height: 124px !important; }
+  .scan-hint { font-size: 10px; color: #64748b; text-align: center; line-height: 1.45; }
+  .row-btns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 4px; }
+  .row-btns button {
+    font-size: 10px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.06);
+    color: #cbd5e1;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .row-btns a {
+    font-size: 10px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(112,144,255,.35);
+    color: #93c5fd;
+    text-decoration: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <a class="primary" href="/">← กลับเมนูหลัก</a>
+  <a href="/stroke_guest.html?activate=1&unit=ER">เปิด Guest</a>
+</div>
+
+<div class="header">
+  <h1>Stroke <span>Activate</span></h1>
+  <p class="desc">
+    สแกน QR จากมือถือแต่ละจุด (ER / Ward / CT / Lab) → เข้า <strong>Guest Mode</strong> พร้อมแถบแจ้งหน่วยงานที่เปิดใช้งาน
+  </p>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<script>
+(function(){
+  const BASE = (location.origin || '').replace(/\/$/, '');
+
+  const UNITS = [
+    { key: 'ER',   cls: 'er',   badge: 'ER',   th: 'ห้องฉุกเฉิน' },
+    { key: 'WARD', cls: 'ward', badge: 'WARD', th: 'หอผู้ป่วย' },
+    { key: 'CT',   cls: 'ct',   badge: 'CT',   th: 'ห้อง CT Scan' },
+    { key: 'LAB',  cls: 'lab',  badge: 'LAB',  th: 'ห้อง Lab' },
+  ];
+
+  function guestUrl(unit) {
+    return BASE + '/stroke_guest.html?activate=1&unit=' + encodeURIComponent(unit);
+  }
+
+  const grid = document.getElementById('grid');
+  UNITS.forEach(function (u) {
+    const wrapId = 'qr-' + u.key.toLowerCase();
+    const card = document.createElement('div');
+    card.className = 'card ' + u.cls;
+    card.innerHTML =
+      '<span class="dept-badge">' + u.badge + '</span>' +
+      '<div class="dept-name">' + u.key + '</div>' +
+      '<div class="dept-name-th">' + u.th + '</div>' +
+      '<div class="qr-wrap" id="' + wrapId + '"></div>' +
+      '<span class="scan-hint">สแกน → เปิด Guest Mode</span>' +
+      '<div class="row-btns">' +
+      '<a href="' + guestUrl(u.key) + '">เปิด Guest</a>' +
+      '</div>';
+    grid.appendChild(card);
+    new QRCode(document.getElementById(wrapId), {
+      text: guestUrl(u.key),
+      width: 124,
+      height: 124,
+      colorDark: '#0f172a',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  });
+})();
+</script>
+</body>
+</html>
