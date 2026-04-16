@@ -126,6 +126,21 @@
     color: #93c5fd;
     text-decoration: none;
   }
+
+  @media print {
+    @page { size: A4; margin: 10mm; }
+    body { background: #fff !important; padding: 0 !important; }
+    .toolbar { display: none !important; }
+    .header { margin: 0 0 10mm !important; }
+    .header h1 { color: #111827 !important; }
+    .header .desc { color: #374151 !important; }
+    .grid { max-width: 100% !important; gap: 10mm !important; }
+    .card { box-shadow: none !important; border: 1px solid #e5e7eb !important; background: #fff !important; }
+    .dept-name, .dept-name-th { color: #111827 !important; }
+    .dept-badge { color: #111827 !important; background: #f3f4f6 !important; }
+    .scan-hint, .row-btns { display: none !important; }
+    .qr-wrap { border: 1px solid #e5e7eb; }
+  }
 </style>
 </head>
 <body>
@@ -134,6 +149,7 @@
   <a class="primary" href="/">← กลับเมนูหลัก</a>
   <a href="/quick_menu.html">🚨 Quick</a>
   <a href="/stroke_guest.html?activate=1&unit=ER">เปิด Guest</a>
+  <button type="button" onclick="window.print()">🖨 พิมพ์ QR</button>
 </div>
 
 <div class="header">
