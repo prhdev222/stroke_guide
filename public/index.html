@@ -112,6 +112,7 @@ button{font-family:inherit;cursor:pointer}
     <div style="font-size:10px;color:var(--tx2)">โรงพยาบาลสงฆ์ — Priest Hospital</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+    <a href="/quick_menu.html" class="btn-gray" style="text-decoration:none;padding:7px 12px;border-radius:999px" title="Emergency Quick Menu (ปุ่มใหญ่ 4 โหมด)">🚨 Quick</a>
     <div id="clockEl" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--tx2)"></div>
   </div>
 </div>
@@ -503,17 +504,27 @@ async function loadAndShowVid(){
   await ensureTable();
   const el=document.getElementById('vidContent');
   if(!el)return;
-  const quizFooter=`<div class="gl-card" style="margin-top:18px;border-color:var(--purple-bd);background:var(--purple-bg)">
-    <div style="font-size:10px;font-weight:600;color:var(--purple-tx);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">แบบทดสอบ</div>
-    <div class="gl-title" style="color:var(--purple-tx);margin-bottom:4px">Quiz - สถานการณ์ Stroke</div>
-    <div class="gl-body" style="color:var(--tx2);margin-bottom:10px">แบบทดสอบ 10 ข้อ · สุ่ม 4 เคส · ทดสอบ NIHSS</div>
-    <a href="https://prhdev222.github.io/stroke_nurse_quiz-/" target="_blank" rel="noopener" class="link-btn link-url">↗ เปิด Quiz (GitHub Pages)</a>
+  const quizFooter=`<div class="gl-card" style="margin-top:18px;border:1px solid var(--purple-bd);background:linear-gradient(135deg,var(--purple-bg),var(--bg));overflow:hidden">
+    <div style="display:flex;gap:10px;align-items:flex-start">
+      <div style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;flex-shrink:0;border:1px solid rgba(0,0,0,.06)">🧠</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;font-weight:800;color:var(--purple-tx);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">แบบทดสอบ</div>
+        <div class="gl-title" style="color:var(--purple-tx);margin-bottom:4px">Quiz - สถานการณ์ Stroke</div>
+        <div class="gl-body" style="color:var(--tx2);margin-bottom:12px">แบบทดสอบ 10 ข้อ · สุ่ม 4 เคส · ทดสอบ NIHSS</div>
+        <a href="https://prhdev222.github.io/stroke_nurse_quiz-/" target="_blank" rel="noopener" class="link-btn link-url" style="background:rgba(124,58,237,.12);border-color:rgba(124,58,237,.35);color:var(--purple-tx)">↗ เปิด Quiz</a>
+      </div>
+    </div>
   </div>`;
-  const ctFooter=`<div class="gl-card" style="margin-top:12px;border-color:var(--ibd);background:var(--ibg)">
-    <div style="font-size:10px;font-weight:600;color:var(--itx);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">CT BRAIN</div>
-    <div class="gl-title" style="color:var(--itx);margin-bottom:4px">CT Brain : อ่านเคส & แบบทดสอบ</div>
-    <div class="gl-body" style="color:var(--tx2);margin-bottom:10px">ฝึกอ่าน CT Brain NC · เคสตัวอย่าง · Quiz</div>
-    <a href="https://ct-training-3ax.pages.dev/" target="_blank" rel="noopener" class="link-btn link-url">↗ เปิด CT Brain Training</a>
+  const ctFooter=`<div class="gl-card" style="margin-top:12px;border:1px solid var(--ibd);background:linear-gradient(135deg,var(--ibg),var(--bg));overflow:hidden">
+    <div style="display:flex;gap:10px;align-items:flex-start">
+      <div style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;flex-shrink:0;border:1px solid rgba(0,0,0,.06)">🧠</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;font-weight:800;color:var(--itx);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">CT BRAIN</div>
+        <div class="gl-title" style="color:var(--itx);margin-bottom:4px">CT Brain : อ่านเคส & แบบทดสอบ</div>
+        <div class="gl-body" style="color:var(--tx2);margin-bottom:12px">ฝึกอ่าน CT Brain NC · เคสตัวอย่าง · Quiz</div>
+        <a href="https://ct-training-3ax.pages.dev/" target="_blank" rel="noopener" class="link-btn link-url" style="background:rgba(14,165,233,.12);border-color:rgba(14,165,233,.35);color:var(--itx)">↗ เปิด CT Brain Training</a>
+      </div>
+    </div>
   </div>`;
   const r=await tursoQuery("SELECT * FROM guidelines WHERE section='video' ORDER BY sort_order ASC, created_at DESC");
   if(r.error){el.innerHTML=tursoErrorHtml(r.error)+quizFooter+ctFooter;return;}
