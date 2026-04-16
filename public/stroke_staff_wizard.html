@@ -435,6 +435,9 @@ let D={ // all clinical data
   rtpaGiven:null, // true=ให้ rt-PA, false=ไม่ให้ (Refer)
   referTime:'',   // วันเวลา Refer (เมื่อไม่ให้ rt-PA หรือ refer)
   admitTime:'',   // วันเวลา Admit (กรณีเลือก admit เพื่อพิมพ์สรุปเก็บ)
+  departTime:'',  // เวลาออกจาก ER/Refer ออกจริง (สำหรับ DIDO หลังพิมพ์ PDF)
+  delayFlags:{},  // checklist สาเหตุล่าช้า (post log)
+  delayNote:'',   // หมายเหตุสั้นๆ (post log)
   planDisposition:'', // 'admit' | 'refer' | '' (ใช้ในกรณีไม่ใช่ fast tract ให้เลือกเอง)
   timerStartedAt:null, // ISO string — เริ่มจับเวลาเมื่อกดเริ่ม หรือกำหนดเวลาเริ่มต้น
   timerTargetMin:null, // number นาที — ตั้งเป้าหมายเพื่อเตือนเมื่อเกินเวลา fast tract
@@ -1826,6 +1829,41 @@ function rPlan(){
     </div></div>
     <button type="button" class="now-btn" onclick="var v=getNowDatetime();D['${key}']=v;var i=document.getElementById('${idStr}');if(i)i.value=v.slice(0,16)">📅 Now</button></div>`;
 
+  // Helper: depart time row (DIDO)
+  const departRow=(key,idStr)=>`<div class="time-row"><div style="flex:1">
+    <div class="lbl">เวลารถออกจาก ER (Depart) ${D[key]?`<span style="color:var(--stx)">✓ ${formatDisplayDatetime(D[key])}</span>`:''}</div>
+    <div class="quick-time-wrap">
+      <input type="datetime-local" id="${idStr}" value="${toDatetimeLocalValue(D[key])}" oninput="D['${key}']=this.value" class="datetime-input" step="60">
+      <span style="font-size:11px;color:var(--tx2)">หรือ</span>
+      <input type="text" class="quick-time-input" placeholder="18.45" data-timekey="${key}" onblur="applyQuickTime(this)" onkeydown="if(event.key==='Enter'){applyQuickTime(this);event.preventDefault()}" title="เวลา 24 ชม. เช่น 18.45">
+    </div></div>
+    <button type="button" class="now-btn" onclick="var v=getNowDatetime();D['${key}']=v;var i=document.getElementById('${idStr}');if(i)i.value=v.slice(0,16)">📅 Now</button></div>`;
+
+  const didoBlock = (isAutoRefer || D.planDisposition==='refer')
+    ? `<div class="card" style="background:var(--wbg);border-color:var(--wbd)">
+        <div class="sec" style="color:var(--wtx)">🚨 DIDO / ความล่าช้า (กรอกเพิ่มได้)</div>
+        <div style="font-size:12px;color:var(--wtx);line-height:1.6;margin-bottom:10px">
+          กรอกเพื่อบันทึก <strong>DIDO</strong> (ER arrival → รถออกจาก ER) และช่วยสรุป KPI (ทำหรือไม่ทำก็ได้)
+        </div>
+        ${departRow('departTime','departTimeInpS7')}
+        <div style="font-size:11px;color:var(--tx2);margin:10px 0 6px">ถ้ารู้สึกว่าล่าช้าเพราะขั้นตอนใดบ้าง (ติ๊กได้)</div>
+        <div class="sym-grid">
+          ${[
+            ['delay_triage','Triage/คัดกรองช้า'],
+            ['delay_ct','รอ CT/คิว CT'],
+            ['delay_lab','รอผล Lab'],
+            ['delay_consult','รอ Consult/ตัดสินใจ'],
+            ['delay_transfer','รอรถ/เปล/เคลื่อนย้าย'],
+            ['delay_other','อื่นๆ/ระบบ'],
+          ].map(([k,t])=>`<div class="sym-chip${D.delayFlags&&D.delayFlags[k]?' on':''}" onclick="D.delayFlags=D.delayFlags||{};D.delayFlags['${k}']=!D.delayFlags['${k}'];renderStepKeepScroll()"><div class="sym-chip-dot"></div>${t}</div>`).join('')}
+        </div>
+        <div style="margin-top:10px">
+          <div class="lbl">หมายเหตุ (สั้นๆ)</div>
+          <textarea rows="2" placeholder="เช่น รอรถ refer 20 นาที / CT คิวแน่น..." oninput="D.delayNote=this.value" style="width:100%">${escapeHtml(D.delayNote||'')}</textarea>
+        </div>
+      </div>`
+    : '';
+
   const dispositionBlock = isManualChoice
     ? `<div class="card" style="border-color:var(--bm)">
         <div class="sec">🩺 แพทย์พิจารณาปลายทาง</div>
@@ -2021,7 +2059,9 @@ function rPlan(){
   `<div style="padding:10px 14px;background:var(--bg2);border-radius:var(--rl);border:0.5px solid var(--bl);font-size:12px;color:var(--tx2);display:flex;align-items:center;justify-content:space-between;gap:8px">
     <span>📦 Turso ยังไม่ได้ตั้งค่า — กด 📦 มุมบนขวาเพื่อเพิ่ม</span>
     <button onclick="showTursoSettings()" style="padding:4px 10px;border:0.5px solid var(--bm);border-radius:var(--rm);background:var(--bg);font-size:11px;font-family:inherit;color:var(--tx2)">ตั้งค่า</button>
-  </div>`;})()}`;
+  </div>`;})()}
+
+  ${didoBlock}`;
 }
 
 // ==================== ATTACH ====================
@@ -2410,7 +2450,7 @@ async function generatePDF(opts){
       a.href=url;a.download=pdfName;a.click();URL.revokeObjectURL(url);
     }
 
-    // Log anonymized case to Turso รวมข้อมูลจับเวลา (silent — ไม่แสดง error ถ้าไม่ได้ตั้งค่า)
+    // Log anonymized case to Turso รวมข้อมูลจับเวลา
     const completedAt=new Date().toISOString();
     const timerData=D.timerStartedAt?{startedAt:D.timerStartedAt,completedAt,durationSec:Math.round((new Date(completedAt).getTime()-new Date(D.timerStartedAt).getTime())/1000)}:null;
     const recKey=(()=>{
@@ -2427,7 +2467,8 @@ async function generatePDF(opts){
       if(ab)return'icu';
       return'conservative';
     })();
-    logCase(recKey,timerData).catch(()=>{});
+    // บันทึก case_log (รวม DIDO/เหตุผลล่าช้าถ้ากรอกไว้)
+    try{ await logCase(recKey,timerData); }catch(_){}
 
     setP(skipDownload?'พร้อมส่งอีเมล ✓':'เสร็จแล้ว 🎉',100);await new Promise(r=>setTimeout(r,skipDownload?400:1200));
   }catch(e){alert('Error: '+e.message);}finally{ol.style.display='none';}
@@ -2561,7 +2602,7 @@ function goBack(){
 function confirmExit(){if(confirm('ออกจากระบบและเคลียร์ข้อมูลทั้งหมด?')){clearAll();}}
 function clearAll(){
   const keepWard=D.ward;const keepWardLabel=D.wardLabel;
-  D={name:'',hn:'',age:'',weight:'',ward:keepWard||'',wardLabel:keepWardLabel||'',lastSeen:'',strokeOnset:'',erArrival:'',bloodDrawn:'',ctTime:'',activateFT:'',ivRtPA:'',rtpaGiven:null,referTime:'',admitTime:'',planDisposition:'',timerStartedAt:null,timerTargetMin:null,timerAlerted:false,
+  D={name:'',hn:'',age:'',weight:'',ward:keepWard||'',wardLabel:keepWardLabel||'',lastSeen:'',strokeOnset:'',erArrival:'',bloodDrawn:'',ctTime:'',activateFT:'',ivRtPA:'',rtpaGiven:null,referTime:'',admitTime:'',departTime:'',delayFlags:{},delayNote:'',planDisposition:'',timerStartedAt:null,timerTargetMin:null,timerAlerted:false,
     befast:{B:false,E:false,F:false,A:false,S:false},gcs:{E:'',V:'',M:''},symptoms:{hemi:false,numb:false,comm:false,dysarthria:false,vis:false,drow:false,ataxia:false},
     ctResult:'',nihss:{},incl:{ais:false,onset45:false,age18:false},absExcl:{},relExcl:{},
     excl45:{nihss25:false,inr17:false},relExcl45:{age80:false,strokeDM:false},
@@ -2870,14 +2911,31 @@ async function ensureCaseTable(){
     rtpa_given  INTEGER,
     referred    INTEGER,
     dtn_min     INTEGER,
+    door_at     TEXT,
+    ct_at       TEXT,
+    decision_at TEXT,
+    refer_at    TEXT,
+    dtct_min    INTEGER,
+    dtdc_min    INTEGER,
+    dtrefer_min INTEGER,
+    depart_at   TEXT,
+    dido_min    INTEGER,
+    delay_flags TEXT,
+    delay_note  TEXT,
     note        TEXT,
     decision_summary TEXT,
     timer_started_at  TEXT,
     timer_completed_at TEXT,
     timer_duration_sec INTEGER
   )`);
-  for(const col of['decision_summary','timer_started_at','timer_completed_at','timer_duration_sec']){
-    const alt=await tursoExec(`ALTER TABLE case_log ADD COLUMN ${col} ${col==='timer_duration_sec'?'INTEGER':'TEXT'}`);
+  for(const col of[
+    'decision_summary','timer_started_at','timer_completed_at','timer_duration_sec',
+    'door_at','ct_at','decision_at','refer_at',
+    'dtct_min','dtdc_min','dtrefer_min',
+    'depart_at','dido_min','delay_flags','delay_note',
+  ]){
+    const type = (col==='timer_duration_sec' || col==='dtct_min' || col==='dtdc_min' || col==='dtrefer_min' || col==='dido_min') ? 'INTEGER' : 'TEXT';
+    const alt=await tursoExec(`ALTER TABLE case_log ADD COLUMN ${col} ${type}`);
     if(alt&&alt.error&&!alt.error.includes('duplicate')){}
   }
 }
@@ -2895,6 +2953,14 @@ function onsetBucket(h){
 async function logCase(rec,timerData){
   const tot=getNIHSS();const sev=getSev(tot);
   const oh=getOnsetHours();const dn=diffMin(D.erArrival,D.ivRtPA);
+  const dtct=diffMin(D.erArrival,D.ctTime);
+  const decisionTime = (D.planDisposition==='refer') ? D.referTime : D.admitTime;
+  const dtdc=diffMin(D.erArrival,decisionTime);
+  const dtrefer=(D.referTime&&String(D.referTime).trim())?diffMin(D.erArrival,D.referTime):null;
+  const dido=diffMin(D.erArrival,D.departTime);
+  const flagsObj=D.delayFlags||{};
+  const delayFlags=Object.keys(flagsObj).filter(k=>!!flagsObj[k]).join(',');
+  const delayNote=(D.delayNote||'').trim();
   const absN=Object.values(D.absExcl).filter(Boolean).length;
   const relN=Object.values(D.relExcl).filter(Boolean).length;
   const rtpaGiven = 0;
@@ -2905,8 +2971,21 @@ async function logCase(rec,timerData){
   else decisionSummary = 'Admit';
   await ensureCaseTable();
   const r=await tursoExec(
-    `INSERT INTO case_log(ward,age_group,ct_result,onset_bucket,nihss_score,nihss_sev,lvo_suspect,rtpa_elig,abs_excl_n,rel_excl_n,action,rtpa_given,referred,dtn_min,note,decision_summary,timer_started_at,timer_completed_at,timer_duration_sec) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    [D.ward||'',ageGroup(D.age),D.ctResult||'',onsetBucket(oh),tot,sev.label,suspectLVO()?1:0,eligible()?1:0,absN,relN,rec,rtpaGiven,isReferred?1:0,dn??-1,'',decisionSummary,timerData?.startedAt??null,timerData?.completedAt??null,timerData?.durationSec??null]
+    `INSERT INTO case_log(
+      ward,age_group,ct_result,onset_bucket,nihss_score,nihss_sev,lvo_suspect,rtpa_elig,abs_excl_n,rel_excl_n,
+      action,rtpa_given,referred,dtn_min,
+      door_at,ct_at,decision_at,refer_at,dtct_min,dtdc_min,dtrefer_min,
+      depart_at,dido_min,delay_flags,delay_note,
+      note,decision_summary,timer_started_at,timer_completed_at,timer_duration_sec
+    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      D.ward||'',ageGroup(D.age),D.ctResult||'',onsetBucket(oh),tot,sev.label,suspectLVO()?1:0,eligible()?1:0,absN,relN,
+      rec,rtpaGiven,isReferred?1:0,dn??-1,
+      D.erArrival||null,D.ctTime||null,decisionTime||null,D.referTime||null,
+      dtct??-1,dtdc??-1,(dtrefer??-1),
+      D.departTime||null,(dido!==null?dido:-1),delayFlags,delayNote,
+      '',decisionSummary,timerData?.startedAt??null,timerData?.completedAt??null,timerData?.durationSec??null
+    ]
   );
   return r.error?'error':'ok';
 }

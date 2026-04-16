@@ -1032,12 +1032,31 @@ function appendChatBubble(role,text,id=''){
 
 async function fetchCaseLogSummary(){
   try{
-    const r=await tursoQuery(`SELECT COUNT(*) as total,SUM(rtpa_given) as rtpa_n,SUM(referred) as refer_n,ROUND(AVG(nihss_score),1) as avg_nihss,ROUND(AVG(CASE WHEN dtn_min>0 THEN dtn_min END),0) as avg_dtn,SUM(CASE WHEN dtn_min<=60 THEN 1 ELSE 0 END) as dtn_ok,SUM(CASE WHEN ct_result='ich' THEN 1 ELSE 0 END) as ich_n,MIN(logged_at) as first_case,MAX(logged_at) as last_case FROM case_log`);
+    const r=await tursoQuery(`SELECT
+      COUNT(*) as total,
+      SUM(rtpa_given) as rtpa_n,
+      SUM(referred) as refer_n,
+      ROUND(AVG(nihss_score),1) as avg_nihss,
+      ROUND(AVG(CASE WHEN dtn_min>0 THEN dtn_min END),0) as avg_dtn,
+      ROUND(AVG(CASE WHEN dtct_min>0 THEN dtct_min END),0) as avg_dtct,
+      ROUND(AVG(CASE WHEN dtdc_min>0 THEN dtdc_min END),0) as avg_dtdc,
+      ROUND(AVG(CASE WHEN dtrefer_min>0 THEN dtrefer_min END),0) as avg_dtrefer,
+      ROUND(AVG(CASE WHEN dido_min>0 THEN dido_min END),0) as avg_dido,
+      SUM(CASE WHEN dtn_min<=60 THEN 1 ELSE 0 END) as dtn_ok,
+      SUM(CASE WHEN ct_result='ich' THEN 1 ELSE 0 END) as ich_n,
+      MIN(logged_at) as first_case,
+      MAX(logged_at) as last_case
+    FROM case_log`);
     if(r.error||!r.rows?.length)return null;
     const s=r.rows[0];
     const total=Number(s.total||0);if(total===0)return 'ยังไม่มีข้อมูล Case Log';
     const rtpa_n=Number(s.rtpa_n||0),refer_n=Number(s.refer_n||0),ich_n=Number(s.ich_n||0),dtn_ok=Number(s.dtn_ok||0);
-    return `ข้อมูล Case Log:\n- รวม: ${total} เคส (${(s.first_case||'?').substring(0,10)} ถึง ${(s.last_case||'?').substring(0,10)})\n- rt-PA: ${rtpa_n} เคส (${total>0?Math.round(rtpa_n/total*100):0}%)\n- Refer: ${refer_n} เคส\n- ICH: ${ich_n} เคส\n- NIHSS เฉลี่ย: ${s.avg_nihss||'ไม่มีข้อมูล'}\n- DTN เฉลี่ย: ${s.avg_dtn?Math.round(Number(s.avg_dtn)):'ไม่มีข้อมูล'} นาที\n- DTN ≤60 นาที: ${dtn_ok}/${rtpa_n} เคส`;
+    const avg_dtn=s.avg_dtn?Math.round(Number(s.avg_dtn)):'ไม่มีข้อมูล';
+    const avg_dtct=s.avg_dtct?Math.round(Number(s.avg_dtct)):'ไม่มีข้อมูล';
+    const avg_dtdc=s.avg_dtdc?Math.round(Number(s.avg_dtdc)):'ไม่มีข้อมูล';
+    const avg_dtrefer=s.avg_dtrefer?Math.round(Number(s.avg_dtrefer)):'ไม่มีข้อมูล';
+    const avg_dido=s.avg_dido?Math.round(Number(s.avg_dido)):'ไม่มีข้อมูล';
+    return `ข้อมูล Case Log:\n- รวม: ${total} เคส (${(s.first_case||'?').substring(0,10)} ถึง ${(s.last_case||'?').substring(0,10)})\n- rt-PA: ${rtpa_n} เคส (${total>0?Math.round(rtpa_n/total*100):0}%)\n- Refer: ${refer_n} เคส\n- ICH: ${ich_n} เคส\n- NIHSS เฉลี่ย: ${s.avg_nihss||'ไม่มีข้อมูล'}\n- DTN เฉลี่ย: ${avg_dtn} นาที\n- Door-to-CT เฉลี่ย: ${avg_dtct} นาที\n- Door-to-Decision เฉลี่ย: ${avg_dtdc} นาที\n- Door-to-Refer เฉลี่ย: ${avg_dtrefer} นาที\n- DIDO เฉลี่ย: ${avg_dido} นาที\n- DTN ≤60 นาที: ${dtn_ok}/${rtpa_n} เคส`;
   }catch{return null;}
 }
 

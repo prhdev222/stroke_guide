@@ -786,6 +786,10 @@ async function fetchCaseLogSummary(){
         SUM(referred) as refer_n,
         ROUND(AVG(nihss_score),1) as avg_nihss,
         ROUND(AVG(CASE WHEN dtn_min > 0 THEN dtn_min END),0) as avg_dtn,
+        ROUND(AVG(CASE WHEN dtct_min > 0 THEN dtct_min END),0) as avg_dtct,
+        ROUND(AVG(CASE WHEN dtdc_min > 0 THEN dtdc_min END),0) as avg_dtdc,
+        ROUND(AVG(CASE WHEN dtrefer_min > 0 THEN dtrefer_min END),0) as avg_dtrefer,
+        ROUND(AVG(CASE WHEN dido_min > 0 THEN dido_min END),0) as avg_dido,
         SUM(CASE WHEN dtn_min <= 60 THEN 1 ELSE 0 END) as dtn_ok,
         SUM(CASE WHEN ct_result='ich' THEN 1 ELSE 0 END) as ich_n,
         MIN(logged_at) as first_case,
@@ -801,6 +805,10 @@ async function fetchCaseLogSummary(){
     const dtn_ok  = Number(s.dtn_ok  || 0);
     const avg_nihss = s.avg_nihss ? Number(s.avg_nihss).toFixed(1) : 'ไม่มีข้อมูล';
     const avg_dtn   = s.avg_dtn   ? Math.round(Number(s.avg_dtn))  : 'ไม่มีข้อมูล';
+    const avg_dtct  = s.avg_dtct  ? Math.round(Number(s.avg_dtct)) : 'ไม่มีข้อมูล';
+    const avg_dtdc  = s.avg_dtdc  ? Math.round(Number(s.avg_dtdc)) : 'ไม่มีข้อมูล';
+    const avg_dtrefer = s.avg_dtrefer ? Math.round(Number(s.avg_dtrefer)) : 'ไม่มีข้อมูล';
+    const avg_dido  = s.avg_dido ? Math.round(Number(s.avg_dido)) : 'ไม่มีข้อมูล';
     const first_c = s.first_case?.substring(0,10) || '?';
     const last_c  = s.last_case?.substring(0,10)  || '?';
     if(total === 0) return 'ยังไม่มีข้อมูล Case Log — กรณีที่บันทึกไว้จะแสดงที่นี่หลังจาก Staff สร้าง PDF ครั้งแรก';
@@ -811,6 +819,10 @@ async function fetchCaseLogSummary(){
 - Hemorrhagic stroke: ${ich_n} เคส
 - NIHSS เฉลี่ย: ${avg_nihss}
 - DTN เฉลี่ย: ${avg_dtn} นาที
+- Door-to-CT เฉลี่ย: ${avg_dtct} นาที
+- Door-to-Decision เฉลี่ย: ${avg_dtdc} นาที
+- Door-to-Refer เฉลี่ย: ${avg_dtrefer} นาที
+- DIDO เฉลี่ย: ${avg_dido} นาที
 - DTN ≤60 นาที: ${dtn_ok} จาก ${rtpa_n} เคส rt-PA`;
   } catch(e){ console.error('fetchCaseLogSummary error:', e); return null; }
 }
