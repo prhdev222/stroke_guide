@@ -167,6 +167,24 @@ button{font-family:inherit;cursor:pointer}
   </div>
 </div>
 
+<!-- GUIDELINE / VIDEO MENU MODAL -->
+<div class="modal-bg" id="gvModal" onclick="if(event.target===this)closeGvModal()">
+  <div class="modal">
+    <div style="font-size:28px;margin-bottom:8px">📚</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:6px">Guideline & Media</div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:14px;line-height:1.5">เลือกหัวข้อที่ต้องการดู</div>
+    <div style="display:grid;gap:8px">
+      <button type="button" class="btn-red" onclick="openGuidelinesFromModal()" style="display:flex;align-items:center;justify-content:center;gap:8px">
+        <span>📋 Guideline & Protocol</span><span style="opacity:.9">›</span>
+      </button>
+      <button type="button" class="btn-gray" onclick="openVideosFromModal()" style="display:flex;align-items:center;justify-content:center;gap:8px">
+        <span>🎬 วิดีโอ & ลิงก์อ้างอิง</span><span style="opacity:.9">›</span>
+      </button>
+    </div>
+    <button onclick="closeGvModal()" style="margin-top:12px;padding:7px 20px;border:0.5px solid var(--bm);border-radius:var(--rm);background:transparent;color:var(--tx2);font-size:12px;font-family:inherit">ปิด</button>
+  </div>
+</div>
+
 <script>
 // ── CONFIG (saved in localStorage) ──
 function getCfg(){
@@ -186,6 +204,24 @@ function openQuizCtMenu(){
 function closeQcModal(){
   const m=document.getElementById('qcModal');
   if(m)m.classList.remove('show');
+}
+
+// ── Guideline / Video modal ──
+function openGuideVideoMenu(){
+  const m=document.getElementById('gvModal');
+  if(m)m.classList.add('show');
+}
+function closeGvModal(){
+  const m=document.getElementById('gvModal');
+  if(m)m.classList.remove('show');
+}
+function openGuidelinesFromModal(){
+  closeGvModal();
+  switchTab('guidelines',document.querySelectorAll('.tab-btn')[1]);
+}
+function openVideosFromModal(){
+  closeGvModal();
+  switchTab('videos',document.querySelectorAll('.tab-btn')[2]);
 }
 
 // ── CLOCK ──
@@ -258,20 +294,11 @@ function rHome(){
     <div class="launch-arrow">↗</div>
   </a>
 
-  <a class="launch-card" onclick="switchTab('guidelines',document.querySelectorAll('.tab-btn')[1])" href="javascript:void(0)" style="border-color:var(--purple-bd)">
-    <div class="launch-icon" style="background:var(--purple-bg)">📋</div>
+  <a class="launch-card" onclick="openGuideVideoMenu()" href="javascript:void(0)" style="border-color:var(--purple-bd);background:linear-gradient(135deg,var(--purple-bg),#fff)">
+    <div class="launch-icon" style="background:var(--purple-bg);color:var(--purple-tx)">📚</div>
     <div>
-      <div class="launch-title">Guideline & Protocol</div>
-      <div class="launch-sub">แนวทาง Stroke · rt-PA Protocol · Refer criteria<br>เนื้อหาที่ทีมเพิ่มเข้ามาเอง</div>
-    </div>
-    <div class="launch-arrow">›</div>
-  </a>
-
-  <a class="launch-card" onclick="switchTab('videos',document.querySelectorAll('.tab-btn')[2])" href="javascript:void(0)" style="border-color:var(--ibd)">
-    <div class="launch-icon" style="background:var(--ibg)">🎬</div>
-    <div>
-      <div class="launch-title">วิดีโอ & ลิงก์อ้างอิง</div>
-      <div class="launch-sub">สอนประเมิน NIHSS · เนื้อหา Neurology<br>YouTube · Google Drive · ลิงก์อื่นๆ</div>
+      <div class="launch-title">Guideline & Media</div>
+      <div class="launch-sub">รวมแนวทางและวิดีโออ้างอิง<br>กดเพื่อเลือกหัวข้อ</div>
     </div>
     <div class="launch-arrow">›</div>
   </a>
