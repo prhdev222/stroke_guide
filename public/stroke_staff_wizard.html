@@ -357,6 +357,26 @@ input.quick-time-input::placeholder{color:var(--tx2);font-size:11px}
   <div style="width:280px;height:8px;background:rgba(255,255,255,.2);border-radius:4px;overflow:hidden"><div id="pdfBar" style="height:100%;background:white;border-radius:4px;transition:width .3s;width:0%"></div></div>
 </div>
 
+<!-- LINE OA QR MODAL -->
+<div id="lineQrModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10001;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeLineQrModal()">
+  <div style="width:100%;max-width:420px;background:var(--bg);border:0.5px solid var(--bl);border-radius:18px;padding:16px;text-align:center">
+    <div style="font-size:16px;font-weight:800;margin-bottom:4px">📲 LINE OA</div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:12px;line-height:1.5">สแกน QR หรือเพิ่มเพื่อนด้วย LINE ID</div>
+    <div style="background:white;border:0.5px solid var(--bl);border-radius:14px;padding:10px;display:flex;align-items:center;justify-content:center">
+      <img src="/QRcode_neuro.png" alt="QR code LINE OA" style="width:min(280px,80vw);height:auto;display:block">
+    </div>
+    <div style="margin-top:12px;padding:10px 12px;border-radius:14px;background:var(--bg2);border:0.5px solid var(--bl);text-align:left">
+      <div style="font-size:11px;color:var(--tx2);margin-bottom:6px">LINE ID</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <code id="lineIdText" style="font-size:14px;font-weight:800;color:var(--tx);background:transparent">@157pxsvq</code>
+        <button type="button" onclick="copyLineId()" style="margin-left:auto;padding:6px 10px;border:0.5px solid var(--bm);border-radius:999px;background:white;color:var(--tx2);font-size:12px;font-family:inherit;cursor:pointer">คัดลอก</button>
+      </div>
+      <div id="lineIdCopied" style="font-size:11px;color:var(--stx);min-height:14px;margin-top:6px"></div>
+    </div>
+    <button type="button" onclick="closeLineQrModal()" style="margin-top:12px;padding:8px 18px;border:0.5px solid var(--bm);border-radius:999px;background:var(--bg2);color:var(--tx2);font-size:12px;font-family:inherit;cursor:pointer">ปิด</button>
+  </div>
+</div>
+
 <script>
 // ==================== PIN (รหัสหน่วยจาก Turso — Admin ตั้งรหัสประจำหน่วย เช่น ER 1234, MED1 2417) ====================
 let pinBuf='',pinChecking=false;
@@ -2027,6 +2047,9 @@ function rPlan(){
   <button type="button" onclick="showLineMessageSummary()" style="width:100%;margin-top:8px;padding:8px 12px;border:0.5px solid var(--sbd);border-radius:var(--rm);background:var(--bg2);color:var(--tx2);font-size:12px;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
     📋 สรุป message — Copy ส่ง LINE เอง (เผื่อ OA ไม่ได้)
   </button>
+  <button type="button" onclick="openLineQrModal()" style="width:100%;margin-top:8px;padding:8px 12px;border:0.5px solid var(--sbd);border-radius:var(--rm);background:white;color:var(--stx);font-size:12px;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+    📷 ดู QR LINE OA / เพิ่มเพื่อน
+  </button>
   <div style="font-size:10px;color:var(--stx);margin-top:6px;line-height:1.5">
     ส่ง message สั้น + link webapp ไปยัง LINE OA — ไม่มีข้อมูลผู้ป่วย (PDPA safe)
   </div>
@@ -2529,6 +2552,36 @@ window.sendEmailAlert=async function(){
 
 function escapeHtml(s){
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ==================== LINE OA QR ====================
+function openLineQrModal(){
+  const m=document.getElementById('lineQrModal');
+  if(!m)return;
+  const msg=document.getElementById('lineIdCopied');
+  if(msg) msg.textContent='';
+  m.style.display='flex';
+}
+function closeLineQrModal(){
+  const m=document.getElementById('lineQrModal');
+  if(m) m.style.display='none';
+}
+async function copyLineId(){
+  const text='@157pxsvq';
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText) await navigator.clipboard.writeText(text);
+    else{
+      const ta=document.createElement('textarea');
+      ta.value=text;ta.style.cssText='position:fixed;left:-2000px;top:0';
+      document.body.appendChild(ta);ta.focus();ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    const msg=document.getElementById('lineIdCopied');
+    if(msg) msg.textContent='คัดลอกแล้ว ✓';
+  }catch(_){
+    alert('คัดลอกไม่สำเร็จ: '+text);
+  }
 }
 
 async function finalizeAdmit(){
