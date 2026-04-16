@@ -54,6 +54,55 @@
     }
     .wrap{max-width:920px;margin:0 auto;padding:14px}
     .hint{font-size:12px;color:var(--tx2);margin:8px 2px 12px;line-height:1.55}
+    .motivation{
+      margin:6px 0 12px;
+      padding:14px 14px;
+      border-radius:22px;
+      border:1px solid rgba(0,0,0,.06);
+      background:linear-gradient(135deg,#c41e3a,#ea580c);
+      color:#fff;
+      box-shadow:0 14px 30px rgba(196,30,58,.18);
+      display:flex;
+      align-items:stretch;
+      gap:12px;
+      overflow:hidden;
+    }
+    @media(prefers-color-scheme:dark){
+      .motivation{border-color:rgba(255,255,255,.10);box-shadow:0 14px 34px rgba(0,0,0,.45)}
+    }
+    .motivation-left{flex:1;min-width:0}
+    .motivation-kicker{
+      font-size:10px;
+      font-weight:900;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      opacity:.9;
+      margin-bottom:8px;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    .motivation-title{font-size:16px;font-weight:900;line-height:1.25;margin-bottom:6px}
+    .motivation-sub{font-size:12px;opacity:.92;line-height:1.45}
+    .goal{
+      width:180px;
+      flex-shrink:0;
+      border-radius:18px;
+      background:rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.18);
+      padding:10px 12px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+    }
+    .goal-k{font-size:10px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;opacity:.85}
+    .goal-v{font-size:16px;font-weight:900;margin-top:6px;line-height:1.15}
+    .goal-v small{display:block;font-size:11px;font-weight:800;opacity:.9;margin-top:2px}
+    @media(max-width:520px){
+      .motivation{flex-direction:column}
+      .goal{width:100%}
+      .motivation-title{font-size:15px}
+    }
     .grid{
       display:grid;
       grid-template-columns:repeat(2,minmax(0,1fr));
@@ -110,6 +159,17 @@
   </div>
 
   <div class="wrap">
+    <div class="motivation" role="note" aria-label="Time is brain">
+      <div class="motivation-left">
+        <div class="motivation-kicker">TIME IS BRAIN</div>
+        <div class="motivation-title">ทุกนาทีมีค่า — Activate ให้เร็ว เพื่อรักษาสมองผู้ป่วย</div>
+        <div class="motivation-sub">เมื่อสงสัย Stroke → เริ่ม Fast Track ทันที</div>
+      </div>
+      <div class="goal" aria-label="Goal Door-to-Needle">
+        <div class="goal-k">GOAL</div>
+        <div class="goal-v">Door‑to‑Needle < 60<small>min</small></div>
+      </div>
+    </div>
     <div class="hint">ปุ่มใหญ่สำหรับมือถือ/แท็บเล็ต — กดแล้วเข้าโหมดได้ทันที</div>
 
     <div class="grid">
