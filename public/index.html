@@ -149,6 +149,24 @@ button{font-family:inherit;cursor:pointer}
   </div>
 </div>
 
+<!-- QUIZ / CT MENU MODAL -->
+<div class="modal-bg" id="qcModal" onclick="if(event.target===this)closeQcModal()">
+  <div class="modal">
+    <div style="font-size:28px;margin-bottom:8px">🧠</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:6px">Quiz case stroke / CT brain</div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:14px;line-height:1.5">เลือกหัวข้อที่จะเปิด (แท็บใหม่)</div>
+    <div style="display:grid;gap:8px">
+      <a href="https://prhdev222.github.io/stroke_nurse_quiz-/" target="_blank" rel="noopener" class="btn-red" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">
+        <span>Quiz - สถานการณ์ Stroke</span><span style="opacity:.9">↗</span>
+      </a>
+      <a href="https://ct-training-3ax.pages.dev/" target="_blank" rel="noopener" class="btn-gray" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">
+        <span>CT Brain : อ่านเคส & แบบทดสอบ</span><span style="opacity:.9">↗</span>
+      </a>
+    </div>
+    <button onclick="closeQcModal()" style="margin-top:12px;padding:7px 20px;border:0.5px solid var(--bm);border-radius:var(--rm);background:transparent;color:var(--tx2);font-size:12px;font-family:inherit">ปิด</button>
+  </div>
+</div>
+
 <script>
 // ── CONFIG (saved in localStorage) ──
 function getCfg(){
@@ -159,6 +177,16 @@ function saveCfg(c){localStorage.setItem('stroke_menu_cfg',JSON.stringify(c));}
 // Staff file paths (same folder assumed)
 const STAFF_FILE='stroke_staff_wizard.html';
 const GUEST_FILE='stroke_guest.html';
+
+// ── Quiz / CT modal ──
+function openQuizCtMenu(){
+  const m=document.getElementById('qcModal');
+  if(m)m.classList.add('show');
+}
+function closeQcModal(){
+  const m=document.getElementById('qcModal');
+  if(m)m.classList.remove('show');
+}
 
 // ── CLOCK ──
 setInterval(()=>{const d=new Date();const el=document.getElementById('clockEl');if(el)el.textContent='ขณะนี้เวลา '+d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});},1000);
@@ -248,22 +276,13 @@ function rHome(){
     <div class="launch-arrow">›</div>
   </a>
 
-  <a class="launch-card" href="https://prhdev222.github.io/stroke_nurse_quiz-/" target="_blank" rel="noopener" style="border-color:var(--purple-bd)">
-    <div class="launch-icon" style="background:var(--purple-bg)">🧠</div>
+  <a class="launch-card" onclick="openQuizCtMenu()" href="javascript:void(0)" style="border-color:var(--purple-bd);background:linear-gradient(135deg,var(--purple-bg),#fff)">
+    <div class="launch-icon" style="background:var(--purple-bg);color:var(--purple-tx)">🧠</div>
     <div>
-      <div class="launch-title">Quiz - สถานการณ์ Stroke</div>
-      <div class="launch-sub">แบบทดสอบ 10 ข้อ · สุ่ม 4 เคส · ทดสอบ NIHSS<br>เปิดแท็บใหม่ (GitHub Pages)</div>
+      <div class="launch-title">Quiz case stroke / CT brain</div>
+      <div class="launch-sub">รวมเมนูแบบทดสอบและ CT training<br>กดเพื่อเลือกหัวข้อ</div>
     </div>
-    <div class="launch-arrow">↗</div>
-  </a>
-
-  <a class="launch-card" href="https://ct-training-3ax.pages.dev/" target="_blank" rel="noopener" style="border-color:var(--ibd)">
-    <div class="launch-icon" style="background:var(--ibg)">🧠</div>
-    <div>
-      <div class="launch-title">CT Brain : อ่านเคส & แบบทดสอบ</div>
-      <div class="launch-sub">ฝึกอ่าน CT Brain NC · เคสตัวอย่าง · Quiz<br>เปิดแท็บใหม่</div>
-    </div>
-    <div class="launch-arrow">↗</div>
+    <div class="launch-arrow">›</div>
   </a>
 
   <div style="padding:12px 14px;background:var(--ibg);border-radius:var(--rl);border:0.5px solid var(--ibd);font-size:12px;color:var(--itx);line-height:1.7;margin-top:4px">
