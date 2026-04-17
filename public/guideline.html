@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guideline & Media</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#fff;--bg2:#f5f5f4;--bg3:#eeece8;--tx:#1a1a18;--tx2:#6b6b67;
+      --bl:#e5e3dc;--bm:#c8c6be;--rm:8px;--rl:12px;
+      --red:#C41E3A;
+      --purple-bg:#EEEDFE;--purple-tx:#3C3489;--purple-bd:#AFA9EC;
+      --ibg:#E6F1FB;--itx:#185FA5;--ibd:#85B7EB;
+    }
+    @media(prefers-color-scheme:dark){:root{
+      --bg:#1e1e1c;--bg2:#2a2a27;--bg3:#111110;--tx:#f0ede6;--tx2:#9a9893;
+      --bl:#2e2e2b;--bm:#3a3a36;
+      --purple-bg:#26215C;--purple-tx:#CECBF6;--purple-bd:#534AB7;
+      --ibg:#042C53;--itx:#B5D4F4;--ibd:#185FA5;
+    }}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans Thai',sans-serif;background:var(--bg3);color:var(--tx);min-height:100vh}
+    .topbar{background:var(--bg);border-bottom:0.5px solid var(--bl);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:0.5px solid var(--bm);border-radius:999px;background:var(--bg2);color:var(--tx);text-decoration:none;font-size:12px;font-weight:600}
+    .content{padding:14px;max-width:680px;margin:0 auto;padding-bottom:24px}
+    .launch-card{background:var(--bg);border-radius:var(--rl);padding:20px;display:flex;align-items:center;gap:16px;margin-bottom:10px;border:1px solid var(--bl);text-decoration:none;color:var(--tx);cursor:pointer}
+    .launch-card:active{transform:scale(.98)}
+    .launch-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+    .launch-title{font-size:16px;font-weight:700;margin-bottom:2px}
+    .launch-sub{font-size:12px;color:var(--tx2);line-height:1.5}
+    .launch-arrow{font-size:20px;color:var(--bm);margin-left:auto;flex-shrink:0}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <div style="font-size:14px;font-weight:700">Guideline & Media</div>
+      <div style="font-size:10px;color:var(--tx2)">ลิงก์สำหรับ LINE Rich Menu</div>
+    </div>
+    <a class="btn" href="/">← กลับหน้าหลัก</a>
+  </div>
+
+  <div class="content">
+    <div style="padding:10px 0 6px">
+      <div style="font-size:18px;font-weight:700;margin-bottom:2px">เลือกหัวข้อ</div>
+      <div style="font-size:13px;color:var(--tx2);margin-bottom:14px">กดเพื่อเปิดแท็บในหน้าเมนูหลักทันที</div>
+    </div>
+
+    <a class="launch-card" href="/?tab=guidelines" style="border-color:var(--purple-bd);background:linear-gradient(135deg,var(--purple-bg),#fff)">
+      <div class="launch-icon" style="background:var(--purple-bg);color:var(--purple-tx)">📋</div>
+      <div>
+        <div class="launch-title">Guideline & Protocol</div>
+        <div class="launch-sub">แนวทาง Stroke · rt-PA Protocol · Refer criteria</div>
+      </div>
+      <div class="launch-arrow">›</div>
+    </a>
+
+    <a class="launch-card" href="/?tab=videos" style="border-color:var(--ibd);background:linear-gradient(135deg,var(--ibg),#fff)">
+      <div class="launch-icon" style="background:var(--ibg);color:var(--itx)">🎬</div>
+      <div>
+        <div class="launch-title">Media & Reference Links</div>
+        <div class="launch-sub">วิดีโอสอน NIHSS · YouTube/Drive · ลิงก์อ้างอิง</div>
+      </div>
+      <div class="launch-arrow">›</div>
+    </a>
+  </div>
+</body>
+</html>
+

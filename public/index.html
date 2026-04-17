@@ -1011,6 +1011,21 @@ function showSettings(){
 // ── INIT ──
 window.loadAndShowGl=loadAndShowGl;
 window.loadAndShowVid=loadAndShowVid;
+// รองรับ deep link จาก LINE rich menu เช่น /?tab=guidelines หรือ /?tab=videos
+(function applyInitialTabFromURL(){
+  try{
+    const qp = new URLSearchParams(location.search || '');
+    const t = (qp.get('tab') || qp.get('t') || '').toLowerCase();
+    if(!t) return;
+    const map = { home: 0, guidelines: 1, videos: 2 };
+    if(!(t in map)) return;
+    currentTab = t;
+    const btns = document.querySelectorAll('.tab-btn');
+    btns.forEach(b => b.classList.remove('active'));
+    const idx = map[t];
+    if(btns[idx]) btns[idx].classList.add('active');
+  }catch(_){}
+})();
 render();
 </script>
 </body>
