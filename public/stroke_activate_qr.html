@@ -14,7 +14,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px 14px 40px;
+    padding: 32px 16px 48px;
     min-height: 100vh;
   }
   .toolbar {
@@ -47,34 +47,47 @@
     border-color: rgba(0,0,0,.15);
     color: #fff;
   }
-  .header { text-align: center; margin-bottom: 22px; max-width: 680px; width: 100%; }
-  .header h1 { font-size: 24px; font-weight: 700; color: #f1f5f9; margin-bottom: 8px; }
+  .header { text-align: center; margin-bottom: 28px; max-width: 680px; width: 100%; }
+  .header .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    opacity: 0.6;
+    margin-bottom: 10px;
+  }
+  .header h1 { font-size: 26px; font-weight: 700; color: #f1f5f9; margin-bottom: 10px; letter-spacing: -0.01em; }
   .header h1 span { color: #e53935; }
-  .header .desc { font-size: 12px; color: #64748b; line-height: 1.75; }
+  .header .desc { font-size: 13px; color: #64748b; line-height: 1.8; }
+  .header .desc strong { color: #94a3b8; }
   .grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    gap: 20px;
     max-width: 680px;
     width: 100%;
   }
   @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
   .card {
     background: #1a2235;
-    border-radius: 18px;
-    padding: 22px 16px 18px;
+    border-radius: 20px;
+    padding: 26px 20px 22px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     border: 1px solid rgba(255,255,255,.06);
-    box-shadow: 0 8px 28px rgba(0,0,0,.35);
+    box-shadow: 0 8px 32px rgba(0,0,0,.4);
     position: relative;
     overflow: hidden;
   }
   .card::before {
     content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 18px 18px 0 0;
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    border-radius: 20px 20px 0 0;
   }
   .card.er::before { background: linear-gradient(90deg, #ef4444, #f97316); }
   .card.ward::before { background: linear-gradient(90deg, #3b82f6, #06b6d4); }
@@ -82,9 +95,9 @@
   .card.lab::before { background: linear-gradient(90deg, #10b981, #84cc16); }
   .dept-badge {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 600;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.2em;
     padding: 3px 10px;
     border-radius: 100px;
     text-transform: uppercase;
@@ -93,20 +106,21 @@
   .card.ward .dept-badge { background: rgba(59,130,246,.15); color: #93c5fd; }
   .card.ct .dept-badge { background: rgba(139,92,246,.15); color: #c4b5fd; }
   .card.lab .dept-badge { background: rgba(16,185,129,.15); color: #6ee7b7; }
-  .dept-name { font-size: 22px; font-weight: 700; color: #f1f5f9; }
-  .dept-name-th { font-size: 11px; color: #94a3b8; margin-top: -4px; }
+  .dept-name { font-size: 24px; font-weight: 700; color: #f1f5f9; letter-spacing: 0.02em; line-height: 1; }
+  .dept-name-th { font-size: 12px; color: #94a3b8; font-weight: 400; margin-top: -6px; }
   .qr-wrap {
     background: #fff;
-    border-radius: 12px;
-    padding: 10px;
-    width: 148px;
-    height: 148px;
+    border-radius: 14px;
+    padding: 12px;
+    width: 152px;
+    height: 152px;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
   }
-  .qr-wrap canvas, .qr-wrap img { width: 124px !important; height: 124px !important; }
-  .scan-hint { font-size: 10px; color: #64748b; text-align: center; line-height: 1.45; }
+  .qr-wrap canvas, .qr-wrap img { width: 128px !important; height: 128px !important; }
+  .scan-hint { font-size: 11px; color: #475569; letter-spacing: 0.04em; text-align: center; line-height: 1.5; }
   .row-btns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 4px; }
   .row-btns button {
     font-size: 10px;
@@ -132,14 +146,18 @@
     body { background: #fff !important; padding: 0 !important; }
     .toolbar { display: none !important; }
     .header { margin: 0 0 10mm !important; }
-    .header h1 { color: #111827 !important; }
-    .header .desc { color: #374151 !important; }
+    .header .eyebrow { color: #64748b !important; opacity: 1 !important; }
+    .header h1 { color: #0f172a !important; }
+    .header h1 span { color: #dc2626 !important; }
+    .header .desc { color: #475569 !important; }
+    .header .desc strong { color: #1e293b !important; }
     .grid { max-width: 100% !important; gap: 10mm !important; }
-    .card { box-shadow: none !important; border: 1px solid #e5e7eb !important; background: #fff !important; }
-    .dept-name, .dept-name-th { color: #111827 !important; }
-    .dept-badge { color: #111827 !important; background: #f3f4f6 !important; }
-    .scan-hint, .row-btns { display: none !important; }
-    .qr-wrap { border: 1px solid #e5e7eb; }
+    .card { background: #fff !important; border: 1.5px solid #e2e8f0 !important; box-shadow: none !important; break-inside: avoid; }
+    .dept-name { color: #0f172a !important; }
+    .dept-name-th { color: #64748b !important; }
+    .scan-hint { color: #94a3b8 !important; }
+    .row-btns { display: none !important; }
+    .qr-wrap { border: 1px solid #e5e7eb; box-shadow: none !important; }
   }
 </style>
 </head>
@@ -153,6 +171,7 @@
 </div>
 
 <div class="header">
+  <div class="eyebrow">🏥 โรงพยาบาลสงฆ์ · Priest Hospital · 2026</div>
   <h1>Stroke <span>Activate</span></h1>
   <p class="desc">
     สแกน QR จากมือถือแต่ละจุด (ER / Ward / CT / Lab) → เข้า <strong>Guest Mode</strong> พร้อมแถบแจ้งหน่วยงานที่เปิดใช้งาน
@@ -166,10 +185,10 @@
   const BASE = (location.origin || '').replace(/\/$/, '');
 
   const UNITS = [
-    { key: 'ER',   cls: 'er',   badge: 'ER',   th: 'ห้องฉุกเฉิน' },
-    { key: 'WARD', cls: 'ward', badge: 'WARD', th: 'หอผู้ป่วย' },
-    { key: 'CT',   cls: 'ct',   badge: 'CT',   th: 'ห้อง CT Scan' },
-    { key: 'LAB',  cls: 'lab',  badge: 'LAB',  th: 'ห้อง Lab' },
+    { key: 'ER',   cls: 'er',   badge: 'ER Access',   th: 'ห้องฉุกเฉิน' },
+    { key: 'WARD', cls: 'ward', badge: 'Ward Access', th: 'หอผู้ป่วย' },
+    { key: 'CT',   cls: 'ct',   badge: 'CT Access',   th: 'ห้อง CT Scan' },
+    { key: 'LAB',  cls: 'lab',  badge: 'Lab Access',  th: 'ห้อง Lab' },
   ];
 
   function guestUrl(unit) {
@@ -177,6 +196,7 @@
   }
 
   const grid = document.getElementById('grid');
+  const hostLbl = (location && (location.host || location.hostname)) ? (location.host || location.hostname) : '';
   UNITS.forEach(function (u) {
     const wrapId = 'qr-' + u.key.toLowerCase();
     const card = document.createElement('div');
@@ -186,15 +206,15 @@
       '<div class="dept-name">' + u.key + '</div>' +
       '<div class="dept-name-th">' + u.th + '</div>' +
       '<div class="qr-wrap" id="' + wrapId + '"></div>' +
-      '<span class="scan-hint">สแกน → เปิด Guest Mode</span>' +
+      '<span class="scan-hint">สแกนเพื่อเข้าระบบทันที' + (hostLbl ? '<br/>' + hostLbl : '') + '</span>' +
       '<div class="row-btns">' +
       '<a href="' + guestUrl(u.key) + '">เปิด Guest</a>' +
       '</div>';
     grid.appendChild(card);
     new QRCode(document.getElementById(wrapId), {
       text: guestUrl(u.key),
-      width: 124,
-      height: 124,
+      width: 128,
+      height: 128,
       colorDark: '#0f172a',
       colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.M,
