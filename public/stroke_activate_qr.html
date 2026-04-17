@@ -182,7 +182,8 @@
 
 <script>
 (function(){
-  const BASE = (location.origin || '').replace(/\/$/, '');
+  // ปัก BASE ให้ชี้ไปปลายทางจริงของ Stroke Activate
+  const BASE = 'https://stroke-activate.pages.dev';
 
   const UNITS = [
     { key: 'ER',   cls: 'er',   badge: 'ER Access',   th: 'ห้องฉุกเฉิน',  token: 'PRH_ER_2026' },
@@ -196,7 +197,9 @@
   }
 
   const grid = document.getElementById('grid');
-  const hostLbl = (location && (location.host || location.hostname)) ? (location.host || location.hostname) : '';
+  const hostLbl = (function(){
+    try { return new URL(BASE).host; } catch (e) { return ''; }
+  })();
   UNITS.forEach(function (u) {
     const wrapId = 'qr-' + u.key.toLowerCase();
     const card = document.createElement('div');
