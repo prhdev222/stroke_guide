@@ -185,14 +185,14 @@
   const BASE = (location.origin || '').replace(/\/$/, '');
 
   const UNITS = [
-    { key: 'ER',   cls: 'er',   badge: 'ER Access',   th: 'ห้องฉุกเฉิน' },
-    { key: 'WARD', cls: 'ward', badge: 'Ward Access', th: 'หอผู้ป่วย' },
-    { key: 'CT',   cls: 'ct',   badge: 'CT Access',   th: 'ห้อง CT Scan' },
-    { key: 'LAB',  cls: 'lab',  badge: 'Lab Access',  th: 'ห้อง Lab' },
+    { key: 'ER',   cls: 'er',   badge: 'ER Access',   th: 'ห้องฉุกเฉิน',  token: 'PRH_ER_2026' },
+    { key: 'WARD', cls: 'ward', badge: 'Ward Access', th: 'หอผู้ป่วย',    token: 'PRH_WD_2026' },
+    { key: 'CT',   cls: 'ct',   badge: 'CT Access',   th: 'ห้อง CT Scan', token: 'PRH_CT_2026' },
+    { key: 'LAB',  cls: 'lab',  badge: 'Lab Access',  th: 'ห้อง Lab',     token: 'PRH_LB_2026' },
   ];
 
-  function guestUrl(unit) {
-    return BASE + '/stroke_guest.html?activate=1&unit=' + encodeURIComponent(unit);
+  function tokenUrl(token) {
+    return BASE + '/?token=' + encodeURIComponent(token);
   }
 
   const grid = document.getElementById('grid');
@@ -208,11 +208,11 @@
       '<div class="qr-wrap" id="' + wrapId + '"></div>' +
       '<span class="scan-hint">สแกนเพื่อเข้าระบบทันที' + (hostLbl ? '<br/>' + hostLbl : '') + '</span>' +
       '<div class="row-btns">' +
-      '<a href="' + guestUrl(u.key) + '">เปิด Guest</a>' +
+      '<a href="' + tokenUrl(u.token) + '">เปิดลิงก์</a>' +
       '</div>';
     grid.appendChild(card);
     new QRCode(document.getElementById(wrapId), {
-      text: guestUrl(u.key),
+      text: tokenUrl(u.token),
       width: 128,
       height: 128,
       colorDark: '#0f172a',
